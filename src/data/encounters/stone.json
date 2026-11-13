@@ -46,7 +46,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Chịu nghe tôi nói là quý rồi. Ơn này tôi không quên.", "Cho tôi chút ăn, rồi tôi làm việc đền đáp."]},
-            {"when": "mood>-2 && mood<2", "say": ["Tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này thôi."]},
+            {"when": "mood==1", "say": ["Nghe anh nói tôi bớt sợ rồi. Tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này."]},
+            {"when": "mood==0", "say": ["Tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này thôi."]},
+            {"when": "mood==-1", "say": ["Anh nói vậy nghe chạnh lòng... Nhưng tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này thôi."]},
             {"when": "mood<=-2", "say": ["Hừ... nghe mấy người nói thì chắc chẳng ai cho gì đâu.", "Thôi, mấy người muốn làm gì thì làm."]}
           ],
           "choices": [
@@ -198,7 +200,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Khách quý thì tôi bớt giá cho. Xem đi, món nào cũng có phần hời."]},
-            {"when": "mood>-2 && mood<2", "say": ["Giá như mọi khi. Muốn xem hàng thì xem, trả bằng vỏ sò."]},
+            {"when": "mood==1", "say": ["Nghe lọt tai đấy. Giá như mọi khi, nhưng tôi thêm cho chút lời. Xem hàng đi, trả bằng vỏ sò."]},
+            {"when": "mood==0", "say": ["Giá như mọi khi. Muốn xem hàng thì xem, trả bằng vỏ sò."]},
+            {"when": "mood==-1", "say": ["Nói vậy thì tôi hơi chạnh lòng. Giá vẫn như mọi khi: muốn xem hàng thì xem, trả bằng vỏ sò."]},
             {"when": "mood<=-2", "say": ["Nói chuyện kiểu đó thì hôm nay giá cao hơn. Mua hay không tùy mấy người."]}
           ],
           "choices": [
@@ -641,7 +645,9 @@
         "final": {
           "say": [
             { "when": "room>=1 && mood>=2", "say": [{ "any": ["Chịu nghe tụi tôi nói là quý lắm rồi. Biết ơn lắm.", "Tử tế quá... tụi tôi không quên đâu."] }, "Nếu được ở lại, tụi tôi xin góp ít lương hái được."] },
-            { "when": "room>=1 && mood>-2 && mood<2", "say": ["Nghe hết rồi đó. Tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."] },
+            {"when": "room>=1 && mood==1", "say": ["Cảm ơn đã chịu nghe. Tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."]},
+            {"when": "room>=1 && mood==0", "say": ["Nghe hết rồi đó. Tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."]},
+            {"when": "room>=1 && mood==-1", "say": ["Nói nghe lạnh thật... Nhưng tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."]},
             { "when": "room>=1 && mood<=-2", "say": [{ "any": ["Hừ... các bạn nói chuyện gắt quá.", "Thôi được, bọn tôi không mong gì nhiều."] }, "Nếu các bạn nhận thì cho bọn tôi ăn trước đã, đói lả cả rồi."] },
             { "when": "room<1", "say": [{ "any": ["Làng các bạn không còn chỗ cho bọn tôi sao...", "Hết chỗ rồi à? Vậy bọn tôi biết đi đâu bây giờ."] }, "Bọn tôi hiểu. Chỉ mong các bạn đừng đuổi bọn tôi đi tay không."] }
           ],
@@ -775,7 +781,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Nếu cho tụi tôi ở lại, tụi tôi xin góp chút lương mang theo. Tụi tôi sẽ làm việc hết sức.", "Tụi tôi biết ơn lắm. Chỉ xin một chỗ nằm."]},
-            {"when": "mood>-2 && mood<2", "say": ["Cho tụi tôi ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp."]},
+            {"when": "mood==1", "say": ["Cảm ơn đã chịu nghe. Cho tụi tôi ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp."]},
+            {"when": "mood==0", "say": ["Cho tụi tôi ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp."]},
+            {"when": "mood==-1", "say": ["Tụi tôi hiểu, ai cũng khó... Nhưng cho ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp, được không?"]},
             {"when": "mood<=-2", "say": ["Tụi tôi chẳng mong gì nữa. Cho gì thì cho, không thì thôi."]}
           ],
           "choices": [
@@ -860,7 +868,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Làng này biết điều. Bọn ta nói thẳng được.", "Thủ lĩnh bảo xem xong thì báo. Bây muốn bọn ta xem gì?"]},
-            {"when": "mood>-2 && mood<2", "say": ["Bọn ta qua xem làng thôi. Tiếp hay đuổi, quyết đi."]},
+            {"when": "mood==1", "say": ["Làng bây tiếp khách cũng được. Bọn ta chỉ xem thôi. Tiếp hay đuổi, quyết đi."]},
+            {"when": "mood==0", "say": ["Bọn ta qua xem làng thôi. Tiếp hay đuổi, quyết đi."]},
+            {"when": "mood==-1", "say": ["Giọng đó bọn ta nhớ. Nhưng bọn ta chỉ qua xem làng thôi. Tiếp hay đuổi, quyết đi."]},
             {"when": "mood<=-2", "say": ["Cách nói đó thì thủ lĩnh sẽ không vui đâu.", "Tính sao?"]}
           ],
           "choices": [
@@ -965,7 +975,9 @@
         "final": {
           "say": [
             { "when": "mood>=2", "say": ["Hừ... được, mày biết điều. Bọn ta lấy ít thôi: 30 vỏ sò và 30 thức ăn."] },
-            { "when": "mood>-2 && mood<2", "say": ["Điều kiện của bọn ta: 55 vỏ sò và 50 thức ăn."] },
+            {"when": "mood==1", "say": ["Hừ, nói vậy còn nghe được. Điều kiện của bọn ta: 55 vỏ sò và 50 thức ăn."]},
+            {"when": "mood==0", "say": ["Điều kiện của bọn ta: 55 vỏ sò và 50 thức ăn."]},
+            {"when": "mood==-1", "say": ["Cứng miệng lắm. Nhưng bọn ta vẫn nói giá: 55 vỏ sò và 50 thức ăn."]},
             { "when": "mood<=-2", "say": ["Mồm mày gắt quá. Giá lên: 90 vỏ sò và 80 thức ăn."] }
           ],
           "choices": [
@@ -1114,7 +1126,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Thủ lĩnh bảo mày biết điều. Nộp ít thôi cũng được.", "Rút hẳn hay hoãn vài ngày đều được, giá dễ chịu."]},
-            {"when": "mood>-2 && mood<2", "say": ["Muốn rút hẳn hay hoãn vài ngày? Giá thế này."]},
+            {"when": "mood==1", "say": ["Làng này không dễ nuốt, thủ lĩnh biết. Vì thế mới chịu nhận thức ăn thay vì đánh. Rút hẳn hay hoãn vài ngày? Giá thế này."]},
+            {"when": "mood==0", "say": ["Muốn rút hẳn hay hoãn vài ngày? Giá thế này."]},
+            {"when": "mood==-1", "say": ["Cứng miệng đấy. Nhưng thủ lĩnh vẫn cho mày chọn: rút hẳn hay hoãn vài ngày? Giá thế này."]},
             {"when": "mood<=-2", "say": ["Mồm mày gắt quá. Giá lên cao hơn, đừng trách."]}
           ],
           "choices": [
@@ -1189,7 +1203,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Tôi thề từ nay không đụng vào đồ ai nữa. Cho tôi làm việc đền lại.", "Xin tha cho tôi, tôi sẽ nhớ ơn này."]},
-            {"when": "mood>-2 && mood<2", "say": ["Tôi đã trả lại hết. Các người định làm gì tôi?"]},
+            {"when": "mood==1", "say": ["Cảm ơn đã nghe. Tôi đã trả lại hết. Các người định làm gì tôi?"]},
+            {"when": "mood==0", "say": ["Tôi đã trả lại hết. Các người định làm gì tôi?"]},
+            {"when": "mood==-1", "say": ["Muốn mắng thì mắng... Tôi đã trả lại hết rồi. Các người định làm gì tôi?"]},
             {"when": "mood<=-2", "say": ["Hừ. Muốn phạt thì phạt, tôi không xin xỏ ai đâu."]}
           ],
           "choices": [
@@ -1278,7 +1294,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Chịu nghe là quý rồi. Tụi tôi chỉ xin nghỉ chân, có gì ăn thì ăn."]},
-            {"when": "mood>-2 && mood<2", "say": ["Tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
+            {"when": "mood==1", "say": ["Cảm ơn đã chịu nghe. Tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
+            {"when": "mood==0", "say": ["Tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
+            {"when": "mood==-1", "say": ["Nói nghe lạnh thật... Nhưng tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
             {"when": "mood<=-2", "say": ["Hừ... nói gắt vậy chắc không tiếp rồi. Tụi tôi cũng không mong nhiều."]}
           ],
           "choices": [
@@ -1486,7 +1504,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Được, bọn ta lấy ít thôi: 70 vỏ sò và 40 thức ăn, người của mày về làng."]},
-            {"when": "mood>-2 && mood<2", "say": ["Giá của bọn ta: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
+            {"when": "mood==1", "say": ["Nói vậy thì bọn ta dễ chịu. Giá của bọn ta: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
+            {"when": "mood==0", "say": ["Giá của bọn ta: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
+            {"when": "mood==-1", "say": ["Mày gắt đấy. Nhưng bọn ta vẫn giữ giá: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
             {"when": "mood<=-2", "say": ["Giờ giá khác rồi: 150 vỏ sò và 90 thức ăn. Mày tự chuốc lấy."]}
           ],
           "choices": [
@@ -1556,7 +1576,9 @@
         "final": {
           "say": [
             {"when": "mood>=2", "say": ["Thôi được, mày biết điều. Giao người ra, hoặc nộp ít lương thực cũng được."]},
-            {"when": "mood>-2 && mood<2", "say": ["Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
+            {"when": "mood==1", "say": ["Nói lý thế thì bọn ta nghe. Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
+            {"when": "mood==0", "say": ["Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
+            {"when": "mood==-1", "say": ["Đừng lên giọng với bọn ta. Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
             {"when": "mood<=-2", "say": ["Mồm mày gắt quá. Giao ra, hoặc nộp nhiều hơn, không thì bọn ta tự vào."]}
           ],
           "choices": [
