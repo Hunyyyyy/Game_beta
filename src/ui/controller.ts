@@ -634,10 +634,12 @@ export class Controller {
   private savedView: { x: number; y: number; zoom: number } | null = null;
 
   /** Ease the camera to a tile and zoom in on it (the middle of the upper part of the screen, clear of a panel along the bottom). The view it leaves is kept for `returnView`. */
-  flyToTile(tx: number, ty: number, ms = 800): void {
+  flyToTile(tx: number, ty: number, ms = 800, free = 0.68): void {
     if (!this.savedView) this.savedView = { x: this.cam.x, y: this.cam.y, zoom: this.cam.zoom };
-    const z = Math.min(4, Math.max(3, Math.ceil(this.cam.zoom) + 1));
-    this.fly = { x0: this.cam.x, y0: this.cam.y, z0: this.cam.zoom, x1: tx * TILE - this.r.w / z / 2, y1: ty * TILE - (this.r.h * 0.34) / z, z1: z, t: 0, dur: ms / 1000 };
+    // `free` = the share of the screen height left clear above the panel; the tile goes to the middle of it. A small free strip (phone) zooms less so the people around stay in view.
+    const f = Math.min(0.9, Math.max(0.2, free));
+    const z = f < 0.5 ? Math.min(3, Math.max(2, Math.ceil(this.cam.zoom))) : Math.min(4, Math.max(3, Math.ceil(this.cam.zoom) + 1));
+    this.fly = { x0: this.cam.x, y0: this.cam.y, z0: this.cam.zoom, x1: tx * TILE - this.r.w / z / 2, y1: ty * TILE - (this.r.h * f / 2) / z, z1: z, t: 0, dur: ms / 1000 };
   }
 
   /** Ease back to the view before `flyToTile`. */

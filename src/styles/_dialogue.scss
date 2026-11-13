@@ -70,7 +70,9 @@
     .dlg-plate { margin-left: calc(min(18vh, 150px) * .7); }
     .dlg-frame { padding: 16px 12px 10px; .dlg-text { font-size: 15px; } }
     .dlg-you { max-width: 94%; font-size: 13px; }
-    .dlg-cards { grid-template-columns: 1fr; max-height: max(120px, min(36vh, calc(100vh - 300px))); max-height: max(120px, min(36dvh, calc(100dvh - 300px))); }
+    .dlg-notes { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
+    .dlg-note { flex: none; white-space: nowrap; }
+    .dlg-cards { grid-template-columns: 1fr; max-height: max(120px, min(30vh, calc(100vh - 300px))); max-height: max(120px, min(30dvh, calc(100dvh - 300px))); }
   }
 }
 
@@ -83,14 +85,21 @@
   }
 }
 
-// a landscape phone has little height: the figure goes, the panel keeps the screen, the replies in two columns
+// a landscape phone has little height: the figure stays small at the left (it is the face of the talk), the panel is compact, the notes are one scrolling line, the replies slim in two columns
 @media (max-height: 460px) {
   #dlgscene {
-    .dlg-bust { display: none; }
-    .dlg-panel { left: calc(8px + var(--sal)); width: calc(100vw - 16px - var(--sal) - var(--sar)); gap: 5px; }
-    .dlg-plate { margin-left: 8px; }
-    .dlg-frame { padding: 14px 12px 8px; min-height: 44px; .dlg-text { font-size: 14px; min-height: 2.4em; } }
-    .dlg-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 46vh; max-height: 46dvh; }
+    .dlg-paused { display: none; }
+    .dlg-bust { display: flex; left: calc(6px + var(--sal)); bottom: 0; height: min(40vh, 130px); opacity: 1; }
+    .dlg-panel { left: calc(6px + min(24vh, 78px) + var(--sal)); width: calc(100vw - 12px - min(24vh, 78px) - var(--sal) - var(--sar)); bottom: calc(4px + var(--sab)); gap: 3px; }
+    .dlg-plate { margin-left: 8px; margin-bottom: -10px; padding: 2px 10px; b { font-size: 12px; } span { font-size: 11px; } }
+    .dlg-head { align-items: center; }
+    .dlg-frame { padding: 12px 10px 6px; min-height: 36px; .dlg-text { font-size: 13px; line-height: 1.35; min-height: 2.7em; } .dlg-more { bottom: 3px; } }
+    .dlg-notes { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
+    .dlg-note { flex: none; font-size: 11px; padding: 1px 8px; white-space: nowrap; }
+    .dlg-you { font-size: 12px; padding: 3px 10px; max-width: 70%; }
+    .dlg-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; max-height: 33vh; max-height: 33dvh; }
+    .dlg-card { min-height: 32px; padding: 3px 8px; gap: 2px 6px; .dlg-ctext { font-size: 12.5px; line-height: 1.2; } .dlg-chip { font-size: 10px; } }
+    .dlg-tools button { min-height: 28px; padding: 0 10px; font-size: 12px; }
   }
 }
 

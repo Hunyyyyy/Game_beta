@@ -110,9 +110,23 @@ export class Dialogue {
         h('div', { class: 'dlg-frame' }, this.textEl, this.hintEl),
         this.notesEl,
         this.cardsEl)));
-    this.watch?.disconnect(); this.watch = new ResizeObserver(() => this.root.style.setProperty('--panel-h', `${panel.offsetHeight}px`)); this.watch.observe(panel); // (on a phone the figure stands on the top edge of the panel, whatever its height)
-    if (this.root.hidden) { const f = this.c.sim.get(v.unitId); if (f) this.c.ctl.flyToTile(f.x, f.y); }
+    let freeLast = -1;
+    const refocus = (fly: boolean): void => { // the camera looks at the visitor in the strip of the screen that the panel (and a figure standing on it) leaves clear
+      const H = window.innerHeight || 1, top = panel.getBoundingClientRect().top, b = bust.parentElement?.getBoundingClientRect();
+      const edge = b && b.width > 0 && b.bottom <= top + 40 ? Math.min(top, b.top) : top, free = Math.max(0.2, edge / H);
+      if (!fly && Math.abs(free - freeLast) < 0.04) return;
+      freeLast = free;
+      const f = this.c.sim.get(v.unitId); if (f) this.c.ctl.flyToTile(f.x, f.y, fly ? 800 : 350, free);
+    };
+    let timer = 0;
+    this.watch?.disconnect(); this.watch = new ResizeObserver(() => { // (on a phone the figure stands on the top edge of the panel, whatever its height)
+      this.root.style.setProperty('--panel-h', `${panel.offsetHeight}px`);
+      if (freeLast >= 0) { window.clearTimeout(timer); timer = window.setTimeout(() => refocus(false), 250); }
+    });
+    this.watch.observe(panel);
+    const first = this.root.hidden;
     this.root.hidden = false;
+    if (first) refocus(true);
   }
 
   /** The line is all on screen: show the choices after the last line, or the hint to go on. */
