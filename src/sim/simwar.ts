@@ -17,9 +17,10 @@ import * as wartent from './wartent';
 import * as warharass from './warharass';
 import * as warlog from './warlog';
 import type { Res } from './resources';
-import { DAY_LENGTH, FOE_PATH_SHARE } from './constants';
+import { FOE_PATH_SHARE } from './constants';
 import * as warplan from './warplan';
 import * as warquick from './warquick';
+import * as warskirmish from './warskirmish';
 import { armOf, tickProjectiles } from './battle';
 import type { Ent } from './battle';
 import type { Building } from './buildings';
@@ -36,24 +37,39 @@ export const WAR = {
     const soldiers = warmode.army(this), ranks = warmode.ranks(this, soldiers), plan = warmode.warPlan(this)!;
     this.warIds = soldiers; this.march = warmarch.marchOfPlan(this, plan);
     if (Math.floor(this.time) !== Math.floor(this.time - dt)) { // each second: the village that stayed home eats from the store (paid at the end), the army from the packs
-      if (!this.advanced) this.warMeals += (this.warNeed() + this.armyNeed()) / DAY_LENGTH; // no supply soldiers: the army eats from the village store like the village
+      if (this.era !== 'ancient') this.warMeals += (this.warNeed() + this.armyNeed()) / this.dayLen; // no supply soldiers: the army eats from the village store like the village
       else {
-        this.warMeals += this.warNeed() / DAY_LENGTH; warsupply.eatPacks(this, plan, this.armyNeed() / DAY_LENGTH);
-        if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
-        wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+        this.warMeals += this.warNeed() / this.dayLen;
+        if (!plan.skirmish) { // a skirmish has no packs, tents or harassment (warskirmish.ts)
+          warsupply.eatPacks(this, plan, this.armyNeed() / this.dayLen);
+          if (Math.floor(this.time / 2) !== Math.floor((this.time - dt) / 2)) warsupply.follow(this, plan);
+          wartent.tickTents(this, plan); warharass.tickHarass(this, plan);
+        }
       }
     }
     for (const v of [...this.villagers]) { if (ranks.has(v.id)) this.tickVillager(v, dt); else warmode.standDown(this, v, dt); }
-    army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt);
+    army.tickBattle(this, dt); scouting.tickScouts(this, dt); warplan.tickPlans(this, dt); warskirmish.tickSkirmish(this, plan);
     const enemy = warmode.warTribe(this);
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
     tickTribes(this, dt);
   },
+  /** → warskirmish.skirmishOrder: soldiers took an order against a village (commands.ts), which may begin a skirmish. */
+  skirmishOrder(this: Sim, ids: readonly number[], t: Parameters<typeof warskirmish.skirmishOrder>[2]): void { warskirmish.skirmishOrder(this, ids, t); },
+  /** → warskirmish.inSkirmish */
+  inSkirmish(this: Sim, v: Villager): boolean { return warskirmish.inSkirmish(this, v); },
+  /** → warskirmish.foeVillage */
+  foeVillage(this: Sim, v: Villager) { return warskirmish.foeVillage(this, v); },
+  /** → warskirmish.villageAt */
+  villageAt(this: Sim, x: number, y: number) { return warskirmish.villageAt(this, x, y); },
+  /** → warskirmish.edge: the boss factor of a blow in a skirmish (1 elsewhere). */
+  skirmishEdge(this: Sim, from: Villager | undefined, to: Villager): number { return warskirmish.edge(this, from, to); },
+  /** → warskirmish.cleanup */
+  skirmishCleanup(this: Sim): void { warskirmish.cleanup(this); },
   /** → warsupply.supplyAdvice */
   supplyAdvice(this: Sim, plan: Plan): warsupply.SupplyAdvice | null { return warsupply.supplyAdvice(this, plan); },
   /** Whether a feature of the war plan is researched (the details tab, the supply sums, the weather, the rest in the field). */
-  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.advanced, this.dev.freeBuild); },
+  planOpen(this: Sim, f: research.PlanFeature): boolean { return research.planOpen(this.researched, f, this.era === 'ancient', this.dev.freeBuild); },
   /** → army.squadLimit */
   squadLimit(this: Sim): number { return army.squadLimit(this); },
   /** → army.cellLimit */
@@ -94,6 +110,14 @@ export const WAR = {
   drawnFigures(this: Sim): Set<number> | null { return army.drawnFigures(this); },
   /** → army.noteBattle */
   noteBattle(this: Sim, kind: army.BattleEvent, text = ''): void { return army.noteBattle(this, kind, text); },
+  /** A line of the story of the war that is on (the log of the Lều họp chiến). → warlog.noteLine */
+  warNote(this: Sim, text: string): void { return warlog.noteLine(this, text); },
+  /** An enemy of the village we are attacking fell to ours. → warlog.noteFoeDeath */
+  warFoeDead(this: Sim, tribe: string): void { return warlog.noteFoeDeath(this, tribe); },
+  /** → army.noteLoss */
+  noteLoss(this: Sim, v: Villager): void { return army.noteLoss(this, v); },
+  /** → army.noteDamage */
+  noteDamage(this: Sim, dealt: boolean, n: number): void { return army.noteDamage(this, dealt, n); },
   /** → battle.armOf */
   armOf(this: Sim, v: Villager): Arm { return armOf(v); },
   /** → scouting.mapLevel */
@@ -243,7 +267,7 @@ export const WAR = {
   /** → training.trainCost */
   trainCost(this: Sim, stat: number, care: number): { food: number; coin: number } { return training.trainCost(stat, care); },
   /** → training.trainTime */
-  trainTime(this: Sim, stat: number): number { return training.trainTime(stat); },
+  trainTime(this: Sim, stat: number): number { return training.trainTime(this, stat); },
   /** → training.members */
   trainees(this: Sim, b: Building): Villager[] { return training.members(this, b); },
   /** → mounts.queueTame */

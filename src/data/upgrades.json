@@ -1,0 +1,13 @@
+{
+  "_note": "Mỗi lần nâng cấp nhà lính cộng cho lính của nhà đó (tính từ cấp 2 tới cấp hiện tại của nhà): mỗi cấp mới, `pick` chỉ số khác nhau trong `stats` được cộng `pct` % (chọn ngẫu nhiên nhưng cố định theo nhà và cấp, nên hộp thoại nâng cấp báo trước được). Máu và Sát thương cộng vào chỉ số, Tốc đánh cộng vào tốc độ đánh. Các nhà khác tăng theo từng cấp qua src/content/buildings/<nhà>/ (chỗ, kho, tốc độ, máu nhà) và data/pace.json levelYield (sản lượng).",
+  "camp": {
+    "kinds": ["infantry", "cavalry", "archery", "scouttent", "guardpost", "tower"],
+    "stats": ["hp", "atk", "aspd"],
+    "pick": 2,
+    "pct": 3
+  },
+  "warTent": {
+    "_note": "Lều họp chiến: mỗi cấp từ cấp 2 cộng các % này cho MỌI lính của ta (máu, sát thương, phòng thủ cận chiến, phòng thủ tầm xa).",
+    "pct": { "hp": 4, "atk": 4, "defm": 3, "defr": 3 }
+  }
+}

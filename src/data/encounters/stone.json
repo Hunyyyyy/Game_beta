@@ -1,0 +1,1616 @@
+{
+  "_note": "Kịch bản Đồ đá. Mỗi nút (node): say là một dòng hoặc nhiều dòng (bấm để sang dòng kế); choices hiện ở dòng cuối; nút không có choices là nút kết thúc (hết dòng thì người lạ đi); effects của nút chạy khi vào nút. Script: weight 0 = chỉ tới khi một kịch bản khác hẹn (schedule). party: { size [ít, nhiều], weapons (vũ khí của weapons.json, lần lượt), armor, hurt (phần máu của những người đi cùng) } = đội đi cùng người lạ (người lạ là người nói thay). truth: người lạ thật sự là gì (kind + tỉ lệ w), rút một lần từ seed của người lạ. clues: dấu hiệu, p = xác suất hiện theo từng kind (chỉ làm tăng khả năng, không chứng minh). choice: text, say (câu người chơi nói khi chọn, hiện thành khung nhỏ phía trên lời đáp), cost (trả khi chọn), cond (chỉ hiện khi đúng), group (các lựa chọn cùng group gộp dưới một nút), effects, then (nút kế) hoặc branch [{cond, then}] (cái đầu tiên đúng; không có thì then) hoặc by { truth: nút } hoặc roll { p, yes, no, mood } (rút từ seed; mood = cộng thêm mood nhân số này vào cơ hội), reveals (Hỏi kỹ: mỗi lựa chọn một lần, thêm một dấu hiệu); không có then/by/roll thì cuộc nói chuyện kết thúc. effects: rel, give / take, join (người lạ ở lại làm dân, làm khi hết cuộc nói chuyện), takeIn (cả đội ở lại làm dân, nhớ là người tị nạn; làm khi hết cuộc nói chuyện), handOver (giao người tị nạn), raid (tập kích N người từ làng của người lạ), deed (ghi sổ), host (mời cả đội vào làng ngồi nghỉ, làm khi hết cuộc nói chuyện), welcome N (nhận N người của đoàn làm dân, tùy chỗ còn trống, trừ kẻ đi làm việc xấu; làm khi hết cuộc nói chuyện), buy id (mua một món của thương nhân), shop (nút là hàng của thương nhân: show món của thời đại, moodPrice = giá rẻ đi hay mắc lên bấy nhiêu cho mỗi điểm thái độ, bonus { chance, price, fake } = có thể có món thứ tư là món hời, giả với xác suất fake kể cả của người thật thà; items { id, name, price vỏ sò, era, give = cả lô tài nguyên }), stay (ở lại nút sau khi chọn), ransom (trả người bị giữ về), eventMod { powerMul, shiftDays, cancel } (sửa tập kích sắp tới), schedule { script, days, sameTribe, priority, ifStill, maxDelay }, flag (ghi nhớ một việc trong cuộc nói chuyện, điều kiện flag.tên==1), mood (đổi thái độ ẩn của người lạ), if (điều kiện để effect có hiệu lực). cond / ifStill / when / if: stock.food>=20, deed.key>=1@30d, rel>=20, day>=9, refugees>=1, captives>=1, room>=1, party>=2, soldiers>=5, truth==scam, flag.tên==1, mood>=2, nối bằng &&. Lời nói (say) là danh sách các nhịp; mỗi nhịp là một câu cố định, hoặc { any: [phương án...] } (chọn ngẫu nhiên một phương án cho người này, mỗi nhịp rút một lần), hoặc { tone: [phương án...] } (chọn theo giọng của người này: mọi nhịp tone chọn cùng vị trí tương đối trong danh sách của mình, nên viết phương án thân thiện trước, cộc lốc sau cùng), hoặc { when: điều kiện, say: [...] } (chỉ nói khi điều kiện đúng). Mỗi phương án là một câu hoặc một danh sách câu (mỗi câu một trang). Muốn thêm câu: thêm phần tử vào danh sách. Cuộc nói chuyện theo thái độ (script có talk { hub, final, walkout, below, rounds }): người lạ nói, người chơi chọn câu đáp (effects { mood: số } = độ tác động ẩn lên thái độ của họ), họ đáp theo thái độ (when mood>=1 ...), lặp rounds [ít, nhiều] vòng (rút theo từng người lạ), rồi họ nêu điều kiện cuối theo thái độ (nút final) và người chơi quyết. then: @round kết thúc một vòng (về hub, hoặc sang final khi hết vòng). Thái độ rớt tới below hoặc thấp hơn thì họ tự bỏ đi: nút walkout (không có lựa chọn), effects của nó là hậu quả (walkout và below không bắt buộc). Hỏi một câu (choice có cờ asked...) rồi đáp: nút lời đáp có thể rẽ theo sự thật qua by, và có các câu đáp lại làm đổi thái độ rồi @round. Mẫu: newcomers, extortion. Chữ thay thế: {name} {tribe} {he} {He}.",
+  "scripts": [
+    {
+      "id": "wanderer",
+      "fireLevel": [1, 3],
+      "minDay": 5,
+      "weight": 3,
+      "maxTimes": 3,
+      "cooldownDays": 10,
+      "tribes": ["spring"],
+      "relation": [-39, 100],
+      "waitDays": 2,
+      "talk": {"hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": [["Ơ này, đừng sợ! Tôi không mang vũ khí đâu.", "Tôi {name}, ở làng {tribe}."], ["Này, đừng lo, tôi không có vũ khí.", "Tôi tên {name}, ở làng {tribe}."], ["Tôi không kiếm chuyện đâu.", "{name}, làng {tribe}."], ["Đứng đó! Tôi không có vũ khí, khỏi xông ra.", "{name}. Làng {tribe}. Thế thôi."]]},
+            {"any": ["Hai hôm nay tôi chưa có gì vào bụng.", "Ba ngày rồi tôi chưa có gì vào bụng.", "Bốn ngày rồi tôi chỉ nhai rễ cây qua bữa.", "Đi săn hụt mấy bữa liền, giờ đói lả rồi.", "Bẫy tôi đặt trống không mấy hôm nay, bụng lép kẹp.", "Tôi bị lạc đàn, đồ ăn mang theo hết sạch rồi.", "Có đám người lấy mất túi đồ ăn của tôi hôm kia.", "Tôi đi tìm đất săn mới mà đi lâu quá, hết lương.", "Suối khô, thú cũng bỏ đi hết. Tôi đói lắm rồi."]},
+            {"tone": ["Có gì bỏ bụng không? Cho tôi chút thôi cũng được.", "Cho tôi xin miếng gì ăn với.", "Có gì ăn thì cho tôi một ít.", "Có đồ ăn thì cho, không thì nói luôn đi."]},
+            {"any": ["Cái gì ăn được là tôi nhận.", "Tôi làm việc đổi cũng được.", "Một nắm hạt, nửa con cá cũng đủ.", "Tôi không đòi nhiều đâu.", "Tôi khỏe, chỉ là mấy hôm nay đói quá.", "Tôi biết đào củ, bắt cá, nhóm lửa. Có việc tôi làm."]}
+          ],
+          "choices": [
+            {"text": "Anh từ đâu tới? Sao ra nông nỗi này?", "say": "Anh từ đâu tới? Sao ra nông nỗi này?", "then": "@round"},
+            {"text": "Ngồi xuống bên lửa đã, nghỉ cho đỡ mệt.", "say": "Ngồi xuống bên lửa đã, nghỉ cho đỡ mệt.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Chúng tôi cũng chẳng dư dả gì đâu.", "say": "Chúng tôi cũng chẳng dư dả gì đâu.", "effects": [{"mood": -1}], "then": "@round"},
+            {"text": "Làng này không nuôi người lạ. Đi đi.", "say": "Làng này không nuôi người lạ. Đi đi.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Anh cần gì, nói thẳng đi.", "say": "Anh cần gì, nói thẳng đi.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["Anh được lắm. Tôi đỡ hơn nhiều rồi.", "Mấy hôm nay chưa ai nói tử tế với tôi câu nào."]}]},
+            {"when": "mood==0", "say": [{"any": ["Ừ... tôi nghe đây.", "Anh cứ hỏi tiếp đi."]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Hừ. Nói gì mà phũ thế.", "Tôi chỉ xin chút ăn thôi mà."]}]}
+          ],
+          "choices": [
+            {"text": "Anh làm được việc gì? Nói tôi nghe.", "say": "Anh làm được việc gì? Nói tôi nghe.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Cứ ăn chút gì đã rồi hãy nói.", "say": "Cứ ăn chút gì đã rồi hãy nói.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đừng trông chờ nhiều ở tụi tôi.", "say": "Đừng trông chờ nhiều ở tụi tôi.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Thôi đủ rồi, đi đi.", "say": "Thôi đủ rồi, đi đi.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Thôi, để chúng tôi quyết.", "say": "Thôi, để chúng tôi quyết.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Chịu nghe tôi nói là quý rồi. Ơn này tôi không quên.", "Cho tôi chút ăn, rồi tôi làm việc đền đáp."]},
+            {"when": "mood==1", "say": ["Nghe anh nói tôi bớt sợ rồi. Tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này."]},
+            {"when": "mood==0", "say": ["Tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này thôi."]},
+            {"when": "mood==-1", "say": ["Anh nói vậy nghe chạnh lòng... Nhưng tôi chỉ xin miếng ăn, hay chỗ làm việc cho qua mùa này thôi."]},
+            {"when": "mood<=-2", "say": ["Hừ... nghe mấy người nói thì chắc chẳng ai cho gì đâu.", "Thôi, mấy người muốn làm gì thì làm."]}
+          ],
+          "choices": [
+            {"text": "Cho {name} một bữa ăn", "say": "Ăn đi {name}, chúng tôi cho anh một bữa.", "cost": {"food": 5}, "effects": [{"rel": 6}, {"deed": "helped_wanderer"}, {"rel": 3, "if": "mood>=2"}], "then": "fed"},
+            {"text": "Ở lại làm việc cùng làng", "say": "Ở lại làm việc cùng làng đi.", "cost": {"food": 10}, "effects": [{"rel": 8}, {"join": true}, {"deed": "took_in_wanderer"}, {"rel": 3, "if": "mood>=2"}], "then": "stay"},
+            {"text": "Từ chối", "say": "Không dư đâu. Đi chỗ khác mà xin.", "effects": [{"rel": -2}, {"deed": "refused_wanderer"}], "then": "refuse"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -2}, {"deed": "refused_wanderer"}],
+          "say": [
+            {"any": [["Ừ, tôi hiểu rồi. Không ai thèm giúp cả.", "Tôi đi đây."], ["Hừ. Đã vậy thì thôi."]]}
+          ]
+        },
+        "fed": {
+          "say": [
+            {"tone": ["Trời đất, cảm ơn! Ơn này tôi nhớ.", "Cảm ơn. Có cái bỏ bụng là tôi đỡ rồi.", "Ừ. Cảm ơn.", "Tạm được. Coi như tôi nợ."]},
+            {"any": ["Về làng tôi sẽ nói chỗ này có người tốt.", "Sau này gặp lại tôi trả.", "Tôi sẽ nhớ chuyện này.", "Có dịp tôi mang cá hay thịt qua trả."]}
+          ]
+        },
+        "stay": {
+          "say": [
+            {"tone": ["Thật hả? Trời ơi, cảm ơn! Tôi sẽ làm hết sức.", "Thật à? Được, tôi ở lại. Việc gì cũng làm.", "Ở lại thì ở. Có việc cứ nói.", "Được. Có ăn có chỗ ngủ thì tôi làm."]},
+            {"any": ["Củi, nước, săn bẫy, tôi làm được hết.", "Cho tôi ăn chút đã, rồi giao việc gì tôi làm nấy.", "Chỉ chỗ ngủ cho tôi, mai tôi bắt tay vào việc.", "Có bữa ăn nóng là tôi làm cả ngày cũng được."]}
+          ]
+        },
+        "refuse": {
+          "say": [
+            {"tone": ["Ừ, tôi hiểu. Ai cũng thiếu ăn mà.", "Thôi được. Tôi đi chỗ khác.", "Ừ. Đi.", "Keo thế. Rồi cũng có ngày mấy người cần người khác thôi."]},
+            {"any": ["Tôi hỏi làng khác vậy.", "Chắc chỗ khác còn có người cho.", "Hết cách rồi, đành đi tiếp.", "Tôi đi đây."]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "peddler",
+      "fireLevel": [1, 3],
+      "minDay": 8,
+      "weight": 3,
+      "maxTimes": 4,
+      "cooldownDays": 10,
+      "tribes": ["spring", "swamp"],
+      "relation": [-39, 100],
+      "waitDays": 2,
+      "truth": [{"kind": "honest", "w": 5}, {"kind": "scam", "w": 3}],
+      "clues": [
+        {"text": "Gói hàng của {he} bọc kín mít, không cho ai sờ vào.", "p": {"honest": 0.2, "scam": 0.75}},
+        {"text": "{He} chỉ nhận vỏ sò, đổi bằng thứ gì khác cũng không chịu.", "p": {"honest": 0.5, "scam": 0.6}},
+        {"text": "Đồ đẹp quá mà giá lại rẻ hơn hẳn mọi nơi.", "p": {"honest": 0.1, "scam": 0.6}},
+        {"text": "{He} nói như tuôn, cười suốt.", "p": {"honest": 0.35, "scam": 0.5}},
+        {"text": "{He} cứ giục mua nhanh, bảo mai là hết hàng.", "p": {"honest": 0.1, "scam": 0.65}},
+        {"text": "Hỏi hàng lấy ở đâu thì {he} lảng sang chuyện khác.", "p": {"honest": 0.1, "scam": 0.7}},
+        {"text": "Muốn cầm thử món nào {he} cũng gạt tay ra.", "p": {"honest": 0.15, "scam": 0.65}},
+        {"text": "Hỏi về làng {tribe}, {he} trả lời mỗi lần một kiểu.", "p": {"honest": 0.05, "scam": 0.6}},
+        {"text": "Quần áo {he} sạch sẽ, tay không chai, nhìn chẳng giống người đi đường xa.", "p": {"honest": 0.05, "scam": 0.55}},
+        {"text": "Thấy vỏ sò là mắt {he} sáng lên.", "p": {"honest": 0.3, "scam": 0.5}},
+        {"text": "Gánh hàng của {he} nặng trĩu, vai hằn vết dây.", "p": {"honest": 0.7, "scam": 0.15}},
+        {"text": "Giày {he} mòn vẹt, chân đầy bụi đường.", "p": {"honest": 0.6, "scam": 0.25}},
+        {"text": "{He} cân nhắc từng món rồi mới báo giá, không nói thách.", "p": {"honest": 0.55, "scam": 0.1}},
+        {"text": "Hàng của {he} cũ, nhiều món xước xát, sờn mép.", "p": {"honest": 0.5, "scam": 0.15}},
+        {"text": "{He} liếc quanh liên tục, như sợ có ai theo.", "p": {"honest": 0.3, "scam": 0.4}},
+        {"text": "Hỏi làng nào dạo này thiếu gì, {he} trả lời được ngay.", "p": {"honest": 0.5, "scam": 0.2}}
+      ],
+      "shop": {
+        "show": 3,
+        "moodPrice": 0.04,
+        "bonus": {"chance": 0.25, "price": 0.5, "fake": 0.15},
+        "items": [
+          {"id": "club1", "name": "Gậy gỗ", "price": 8, "era": "stone"},
+          {"id": "spear1", "name": "Giáo gỗ", "price": 10, "era": "stone"},
+          {"id": "sling1", "name": "Dây quăng đá", "price": 14, "era": "stone"},
+          {"id": "bow1", "name": "Cung ngắn", "price": 28, "era": "stone"},
+          {"id": "mace2", "name": "Chùy đá", "price": 34, "era": "stone"},
+          {"id": "hatchet2", "name": "Rìu đá (vũ khí)", "price": 38, "era": "stone"},
+          {"id": "grass1", "name": "Áo cỏ", "price": 8, "era": "stone"},
+          {"id": "hide1", "name": "Áo da thú", "price": 22, "era": "stone"},
+          {"id": "bone2", "name": "Giáp da xương", "price": 46, "era": "stone"},
+          {"id": "axe1", "name": "Rìu gỗ", "price": 8, "era": "stone"},
+          {"id": "pick1", "name": "Cuốc chim gỗ", "price": 8, "era": "stone"},
+          {"id": "hoe1", "name": "Cuốc gỗ", "price": 6, "era": "stone"},
+          {"id": "hammer1", "name": "Búa gỗ", "price": 8, "era": "stone"},
+          {"id": "axe2", "name": "Rìu đá", "price": 30, "era": "stone"},
+          {"id": "pick2", "name": "Cuốc chim đá", "price": 30, "era": "stone"},
+          {"id": "hoe2", "name": "Cuốc đá", "price": 26, "era": "stone"},
+          {"id": "hammer2", "name": "Búa đá", "price": 30, "era": "stone"},
+          {"id": "bronze_spear3", "name": "Giáo đồng", "price": 90, "era": "ancient"},
+          {"id": "bronze_sword3", "name": "Kiếm đồng", "price": 110, "era": "ancient"},
+          {"id": "bronze_bow3", "name": "Cung đồng", "price": 105, "era": "ancient"},
+          {"id": "bronze_axe3", "name": "Rìu đồng (vũ khí)", "price": 100, "era": "ancient"},
+          {"id": "short_spear4", "name": "Giáo ngắn tuần đinh", "price": 170, "era": "ancient"},
+          {"id": "arming_sword4", "name": "Kiếm thẳng", "price": 230, "era": "ancient"},
+          {"id": "lance4", "name": "Giáo kỵ binh", "price": 200, "era": "ancient"},
+          {"id": "composite_bow4", "name": "Cung ghép", "price": 220, "era": "ancient"},
+          {"id": "bronze3", "name": "Giáp đồng", "price": 130, "era": "ancient"},
+          {"id": "watchman4", "name": "Giáp tuần đinh", "price": 210, "era": "ancient"},
+          {"id": "footman4", "name": "Giáp xích bộ binh", "price": 260, "era": "ancient"},
+          {"id": "archer4", "name": "Giáp da cung thủ", "price": 190, "era": "ancient"},
+          {"id": "rider4", "name": "Giáp da bọc đinh", "price": 240, "era": "ancient"},
+          {"id": "axe3", "name": "Rìu đồng", "price": 85, "era": "ancient"},
+          {"id": "pick3", "name": "Cuốc chim đồng", "price": 85, "era": "ancient"},
+          {"id": "hoe3", "name": "Cuốc đồng", "price": 70, "era": "ancient"},
+          {"id": "hammer3", "name": "Búa đồng", "price": 85, "era": "ancient"},
+          {"id": "axe4", "name": "Rìu sắt", "price": 180, "era": "ancient"},
+          {"id": "pick4", "name": "Cuốc chim sắt", "price": 180, "era": "ancient"},
+          {"id": "hoe4", "name": "Cuốc sắt", "price": 150, "era": "ancient"},
+          {"id": "hammer4", "name": "Búa sắt", "price": 180, "era": "ancient"},
+          {"id": "lot_food", "name": "Thức ăn ×60", "price": 3, "era": "stone", "give": {"food": 60}},
+          {"id": "lot_wood", "name": "Gỗ ×60", "price": 13, "era": "stone", "give": {"wood": 60}},
+          {"id": "lot_stone", "name": "Đá ×50", "price": 11, "era": "stone", "give": {"stone": 50}},
+          {"id": "lot_hide", "name": "Da ×15", "price": 8, "era": "stone", "give": {"hide": 15}},
+          {"id": "lot_bone", "name": "Xương ×20", "price": 6, "era": "stone", "give": {"bone": 20}},
+          {"id": "lot_fat", "name": "Mỡ ×20", "price": 6, "era": "stone", "give": {"fat": 20}},
+          {"id": "lot_feather", "name": "Lông vũ ×20", "price": 2, "era": "stone", "give": {"feather": 20}},
+          {"id": "lot_fiber", "name": "Sợi ×30", "price": 8, "era": "stone", "give": {"fiber": 30}},
+          {"id": "lot_sinew", "name": "Gân ×15", "price": 3, "era": "stone", "give": {"sinew": 15}},
+          {"id": "lot_iron_ore", "name": "Quặng sắt ×60", "price": 11, "era": "ancient", "give": {"iron_ore": 60}},
+          {"id": "lot_copper_ore", "name": "Quặng đồng ×60", "price": 11, "era": "ancient", "give": {"copper_ore": 60}},
+          {"id": "lot_coal", "name": "Than ×60", "price": 13, "era": "ancient", "give": {"coal": 60}},
+          {"id": "lot_iron", "name": "Thỏi sắt ×30", "price": 11, "era": "ancient", "give": {"iron": 30}},
+          {"id": "lot_bronze", "name": "Thỏi đồng ×30", "price": 8, "era": "ancient", "give": {"bronze": 30}},
+          {"id": "lot_steel", "name": "Thép ×15", "price": 8, "era": "ancient", "give": {"steel": 15}},
+          {"id": "lot_leather", "name": "Da thuộc ×40", "price": 15, "era": "ancient", "give": {"leather": 40}},
+          {"id": "lot_cloth", "name": "Vải ×40", "price": 15, "era": "ancient", "give": {"cloth": 40}},
+          {"id": "lot_hardwood", "name": "Gỗ cứng ×50", "price": 18, "era": "ancient", "give": {"hardwood": 50}}
+        ]
+      },
+      "talk": {"hub": "n1", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 3]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"when": "flag.talked==0", "say": [{"tone": ["Chào mọi người! Tôi là {name}, đi buôn từ làng {tribe}.", "Chào. {name} đây, dân buôn làng {tribe}.", "Này. Tôi là {name}, làng {tribe}.", "Tôi là {name}, làng {tribe}. Đừng làm mất thì giờ."]}, {"tone": ["Hàng của tôi toàn đồ tốt, cứ xem thoải mái.", "Tôi đi xa nên mang đủ thứ, kiểu gì cũng có món mấy người cần.", "Hàng đây. Xem đi.", "Tôi không rảnh. Cần thì mua, không thì thôi."]}, {"any": ["Tôi đi qua mấy làng quanh đây rồi mới tới chỗ này.", "Chỗ nào có người ở là tôi ghé.", "Mấy tháng rồi tôi chưa về làng.", "Hàng này tôi gom từ nhiều nơi.", "Mấy làng bên kia núi tôi đi hết rồi."]}, {"any": ["Có vũ khí, đồ nghề, giáp, cả thức ăn với vật liệu. Tôi chỉ lấy vỏ sò.", "Gì cũng có: vũ khí, đồ nghề, giáp, lương thực, vật liệu. Trả bằng vỏ sò, đừng đưa gì khác.", "Tôi bán vũ khí, đồ nghề, giáp, đồ ăn, vật liệu. Chỉ nhận vỏ sò.", "Mua gì cũng được: vũ khí, giáp, đồ nghề, đồ ăn, vật liệu. Nhưng phải là vỏ sò."]}]},
+            {"when": "flag.talked==1 && mood>=1", "say": [{"any": ["Khách như bạn tôi quý. Cứ hỏi, tôi nói thật.", "Nói chuyện dễ chịu thế này tôi bán cũng vui."]}]},
+            {"when": "flag.talked==1 && mood<=-1", "say": [{"any": ["Hỏi gì mà gắt thế...", "Mua bán mà nói chuyện như vậy thì ai muốn bán."]}]},
+            {"when": "flag.talked==1", "say": [{"tone": ["Còn muốn hỏi gì nữa không? Hay xem hàng luôn?", "Hỏi gì nữa không? Không thì xem hàng đi.", "Còn gì nữa? Hỏi nhanh.", "Hỏi hoài. Xem hàng hay không thì nói đi."]}]}
+          ],
+          "choices": [
+            {"text": "Hỏi: hàng này ở đâu ra?", "group": "Hỏi họ", "say": "Hàng này ở đâu ra?", "cond": "flag.asked_goods==0", "effects": [{"flag": "asked_goods"}, {"flag": "talked"}], "then": "goods_ok", "by": {"scam": "goods_scam"}},
+            {"text": "Hỏi: sao giá lại rẻ vậy?", "group": "Hỏi họ", "say": "Sao giá lại rẻ vậy?", "cond": "flag.asked_price==0", "effects": [{"flag": "asked_price"}, {"flag": "talked"}], "then": "price_ok", "by": {"scam": "price_scam"}},
+            {"text": "Hỏi: đi buôn được bao lâu rồi?", "group": "Hỏi họ", "say": "Đi buôn được bao lâu rồi?", "cond": "flag.asked_trade==0", "effects": [{"flag": "asked_trade"}, {"flag": "talked"}], "then": "trade_ok", "by": {"scam": "trade_scam"}},
+            {"text": "Hỏi: cho thử hàng được không?", "group": "Hỏi họ", "say": "Cho thử hàng được không?", "cond": "flag.asked_try==0", "effects": [{"flag": "asked_try"}, {"flag": "talked"}], "then": "try_ok", "by": {"scam": "try_scam"}},
+            {"text": "Xem hàng cho kỹ", "reveals": true, "effects": [{"rel": -1}]},
+            {"text": "Hàng của anh nhìn cũng khá đấy.", "say": "Hàng của anh nhìn cũng khá đấy.", "effects": [{"mood": 1}, {"flag": "talked"}], "then": "@round"},
+            {"text": "Giá thế này mà dám chào à? Tôi không tin.", "say": "Giá thế này mà dám chào à? Tôi không tin.", "effects": [{"mood": -2}, {"flag": "talked"}], "then": "@round"},
+            {"text": "Cho xem hàng.", "say": "Cho xem hàng.", "then": "final"},
+            {"text": "Không mua", "say": "Hôm nay không mua.", "then": "bye"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Khách quý thì tôi bớt giá cho. Xem đi, món nào cũng có phần hời."]},
+            {"when": "mood==1", "say": ["Nghe lọt tai đấy. Giá như mọi khi, nhưng tôi thêm cho chút lời. Xem hàng đi, trả bằng vỏ sò."]},
+            {"when": "mood==0", "say": ["Giá như mọi khi. Muốn xem hàng thì xem, trả bằng vỏ sò."]},
+            {"when": "mood==-1", "say": ["Nói vậy thì tôi hơi chạnh lòng. Giá vẫn như mọi khi: muốn xem hàng thì xem, trả bằng vỏ sò."]},
+            {"when": "mood<=-2", "say": ["Nói chuyện kiểu đó thì hôm nay giá cao hơn. Mua hay không tùy mấy người."]}
+          ],
+          "choices": [
+            {"text": "Xem hàng để mua", "say": "Cho xem hàng.", "then": "shop"},
+            {"text": "Không mua", "say": "Hôm nay không mua.", "then": "bye"}
+          ]
+        },
+        "walkout": {
+          "say": [
+            {"any": [["Mua bán mà gắt như vậy thì thôi.", "Tôi đi chỗ khác."], ["Hừ. Không bán nữa. Mấy người tự lo đi."]]}
+          ]
+        },
+        "goods_ok": {
+          "say": [
+            {"tone": ["Hỏi hay đấy! Hàng này tôi lấy thẳng từ thợ làm ra nó.", "Tôi lấy thẳng từ thợ, không qua trung gian.", "Lấy từ thợ. Đổi trực tiếp.", "Hỏi làm gì? Tôi lấy thẳng từ thợ, thế thôi."]},
+            {"any": ["Đồ đá lấy ở mấy làng gần mỏ, đồ gỗ thì tôi mua của làng rừng.", "Mỗi làng mỗi món. Tôi gom về, món nào tốt mới đem bán.", "Món nào tự tay làm thì tôi nói trước, không giấu.", "Da thì lấy bên đầm lầy, đá thì bên núi. Tôi nhớ từng nơi."]},
+            {"when": "flag.asked_price==1", "say": ["Còn chuyện giá thì như tôi nói rồi đó, lấy tận gốc nên mới vậy."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "goods_scam": {
+          "say": [
+            {"tone": ["À... hàng này hả... hàng xịn lắm, đừng lo.", "Hàng xịn. Của một người quen nhượng lại.", "Người quen cho. Hỏi làm gì.", "Hỏi lắm thế. Mua thì mua, không thì thôi."]},
+            {"any": ["Của một người quen nhượng lại. Mà... người đó giờ không còn bán nữa.", "Nhặt... à không, đổi được ở một chỗ. Chỗ nào thì tôi quên rồi.", "Hàng này tôi mới lấy hôm kia, chưa kịp xem kỹ.", "Đừng hỏi nhiều, mất công. Hàng tốt là được."]},
+            {"when": "flag.asked_price==1", "say": ["Tôi nói rồi, cần bán gấp. Hỏi mãi làm gì."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "price_ok": {
+          "say": [
+            {"tone": ["Tôi lấy lời ít, bán nhanh. Đi buôn mà, hàng nằm lâu là lỗ.", "Lời ít bán nhanh. Hàng nằm lâu thì lỗ.", "Lời ít. Bán nhanh. Thế thôi.", "Rẻ thì mua, hỏi làm gì. Tôi lấy lời ít, bán nhanh."]},
+            {"any": ["Gánh nặng đi đường xa, tôi muốn nhẹ bớt.", "Mấy làng kia giá cũng vậy, cứ đi hỏi.", "Tôi không đội giá lên, vì tôi không phải trả cho ai khác.", "Giá này sát với công làm ra món đồ, không có gì phải nghi."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "price_scam": {
+          "say": [
+            {"tone": ["Rẻ vì... vì tôi cần tiền gấp! Mua nhanh đi kẻo tôi đổi ý.", "Tôi cần tiền gấp nên bán rẻ. Mua nhanh đi.", "Cần tiền gấp. Mua hay không?", "Rẻ còn không vui à? Mua nhanh lên!"]},
+            {"any": ["({He} liếc về phía đường mòn phía sau.)", "({He} xoa tay liên tục, không nhìn vào mắt ai.)", "({He} nuốt nước bọt, mắt đảo sang chỗ khác.)", "({He} vừa nói vừa gói lại hàng, tay thoăn thoắt như sợ ai nhìn thấy.)"]},
+            {"when": "flag.asked_goods==1", "say": ["Hàng tôi nói rồi mà, xịn hết. Sao cứ hỏi mãi?"]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "trade_ok": {
+          "say": [
+            {"tone": ["Cũng mấy mùa rồi. Quen đường lắm, nhắm mắt cũng đi được.", "Được mấy mùa rồi. Quen đường rồi.", "Mấy mùa rồi.", "Lâu rồi. Đừng hỏi mấy chuyện vô ích."]},
+            {"any": ["Hồi đầu tôi chỉ gánh muối, giờ mới dám mang vũ khí với giáp.", "Cha tôi cũng buôn, tôi theo ông từ nhỏ.", "Có năm gặp lũ, mất nguyên gánh hàng. Từ đó tôi cẩn thận hơn.", "Làng {tribe} nhỏ, buôn gần không đủ sống, nên phải đi xa."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "trade_scam": {
+          "say": [
+            {"tone": ["Lâu... lâu lắm rồi. Tôi đi nhiều nơi lắm, kể không xuể.", "Lâu rồi. Đi nhiều nơi, kể không hết.", "Lâu. Hỏi làm gì.", "Lâu rồi. Hỏi nhiều quá."]},
+            {"any": ["Mà làng {tribe} hả? Ờ... nó ở gần cái suối to ấy. Hay là bên kia suối nhỉ?", "Mới đi buôn... mà thôi, lâu lắm rồi, tôi quên.", "Trước kia tôi làm nghề khác, mà làm gì thì quên rồi.", "Hai mùa... hay ba mùa, tôi không nhớ."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "try_ok": {
+          "say": [
+            {"tone": ["Được chứ! Cầm lên thử đi, cứ xem cho kỹ.", "Được. Cầm thử đi.", "Thử đi.", "Thử thì thử, đừng làm hỏng."]},
+            {"any": ["Gậy thì vung thử, cung thì kéo thử, nhưng đừng kéo hết cỡ.", "Món nào có vết nứt tôi chỉ cho xem trước, khỏi cãi nhau.", "Thử xong không ưng thì cứ trả lại, tôi không ép.", "Hàng thật không sợ thử."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "try_scam": {
+          "say": [
+            {"tone": ["Thử... thử à? Hàng này dễ hỏng lắm, đừng sờ vào.", "Hàng quý, dễ hỏng, không cho thử.", "Không thử. Muốn thì mua.", "Thử cái gì mà thử! Mua hay không?"]},
+            {"any": ["Mở gói ra là hỏng hết đấy. Bọc thế này mới giữ được.", "Nhìn thôi, đừng sờ. Sờ vào dính tay là tôi tính tiền.", "Để người khác thử rồi thì ai mua nữa.", "Tôi tin mắt nhìn của mấy người, thử làm gì cho mất công."]},
+            {"when": "flag.asked_goods==1", "say": ["Tôi nói rồi, hàng xịn. Cần gì thử."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "shop": {
+          "shop": true,
+          "say": [
+            {"tone": ["Đây, hàng tôi mang lần này. Món nào cũng mua được, miễn có vỏ sò.", "Hàng lần này đây. Thích món nào thì lấy, trả bằng vỏ sò.", "Hàng đây. Chọn đi.", "Hàng đây. Có vỏ sò thì lấy, không thì đừng đứng chắn đường."]},
+            {"any": ["Xem kỹ rồi hẵng lấy.", "Món nào cũng đáng tiền.", "Chọn nhanh nhanh, tôi còn phải đi tiếp.", "Có gì thắc mắc cứ hỏi."]},
+            {"when": "flag.talked==1", "say": [{"any": ["Hỏi cho rõ rồi mua, vậy mới phải.", "Hỏi nhiều thế chắc rành hàng. Chọn đi."]}]}
+          ],
+          "choices": [
+            {"text": "Xong rồi, cảm ơn", "say": "Thế là đủ rồi.", "then": "thanks"}
+          ]
+        },
+        "thanks": {
+          "say": [
+            {"tone": ["Cảm ơn nhé! Lần sau tôi lại ghé.", "Xong nhé. Hẹn lần sau.", "Ừ. Xong.", "Xong rồi thì tôi đi, còn nhiều chỗ phải tới."]},
+            {"any": ["Có hàng mới tôi mang qua.", "Làm ăn khá nhé.", "Giữ cho kỹ, đồ tốt đấy.", "Hẹn gặp lại."]}
+          ]
+        },
+        "bye": {
+          "say": [
+            {"tone": ["Tiếc ghê. Lần sau ghé tôi cho xem tiếp.", "Không mua thì thôi. Hẹn lần sau.", "Ừ. Thôi.", "Không mua thì đừng đứng đó cản đường."]},
+            {"any": ["Cần gì thì lần sau nói.", "Lần sau có đồ mới tôi mang qua.", "Thôi, tôi đi chỗ khác.", "Mấy làng khác còn đang đợi tôi."]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "newcomers",
+      "fireLevel": [1, 3],
+      "minDay": 1,
+      "weight": 0,
+      "tribes": [],
+      "anywhere": true,
+      "waitDays": 1,
+      "truth": [
+        {"kind": "honest", "w": 6},
+        {"kind": "thief", "w": 1, "scale": {"from": 100, "to": 700, "lo": 0.1, "hi": 1.2}, "act": {"do": "steal", "who": [1, 2], "after": [8, 20], "take": {"pick": [1, 2], "each": [30, 90], "pool": ["food", "wood", "stone", "hide", "bone", "fiber"], "coin": [20, 50]}}}
+      ],
+      "clues": [
+        {"text": "Họ hỏi kho lương của làng nằm ở đâu.", "p": {"honest": 0.1, "thief": 0.7}},
+        {"text": "Hai người trong toán cứ thì thầm, chốc chốc lại liếc vào làng.", "p": {"honest": 0.15, "thief": 0.5}},
+        {"text": "Có một người chẳng nói gì, chỉ nhìn quanh mấy căn nhà.", "p": {"honest": 0.15, "thief": 0.55}},
+        {"text": "Cả toán mệt thật sự, mặt mũi lem luốc.", "p": {"honest": 0.6, "thief": 0.3}},
+        {"text": "Họ hỏi ban đêm ai canh làng.", "p": {"honest": 0.05, "thief": 0.65}},
+        {"text": "Có người hỏi nhỏ làng cất vỏ sò ở đâu.", "p": {"honest": 0.05, "thief": 0.7}},
+        {"text": "Một người lùi ra sau, đứng gần lối ra của làng.", "p": {"honest": 0.1, "thief": 0.55}},
+        {"text": "Họ hỏi làng có mấy người cầm vũ khí.", "p": {"honest": 0.1, "thief": 0.6}},
+        {"text": "Họ cứ đếm xem làng có bao nhiêu người.", "p": {"honest": 0.2, "thief": 0.5}},
+        {"text": "Túi đồ của họ nhỏ xíu, gần như trống không.", "p": {"honest": 0.5, "thief": 0.3}},
+        {"text": "Họ chia nhau miếng cuối cùng, người nhỏ nhất được phần nhiều nhất.", "p": {"honest": 0.6, "thief": 0.1}},
+        {"text": "Họ đứng xa nhà, không dám bước vào làng khi chưa được cho phép.", "p": {"honest": 0.55, "thief": 0.2}},
+        {"text": "Có người cứ sờ vào áo, như giấu thứ gì trong đó.", "p": {"honest": 0.2, "thief": 0.4}},
+        {"text": "Một người ho khan, bước đi nặng nề.", "p": {"honest": 0.5, "thief": 0.15}}
+      ],
+      "party": {"size": [2, 4]},
+      "talk": { "hub": "n1", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 3] },
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            { "when": "flag.talked==0", "say": [
+              { "tone": [
+                "Chào mọi người... tụi tôi không còn chỗ nào để đi nữa.",
+                "Chào. Tụi tôi hết chỗ ở rồi, đang đi tìm chỗ khác.",
+                "Tụi tôi không có chỗ nào để đi.",
+                "Tụi tôi cần chỗ ở. Làng này còn chỗ không?"
+              ] },
+              { "any": [
+                "Làng cũ của tụi tôi bị bỏ rồi.",
+                "Thú ở chỗ cũ hết sạch, tụi tôi phải đi.",
+                "Đi lâu rồi, ngủ ngoài trời mấy đêm nay.",
+                "Mất nhà vì một trận lũ.",
+                "Mùa này đói, chỗ cũ không nuôi nổi nữa."
+              ] },
+              { "tone": [
+                "Cho tụi tôi ở lại làm việc với, tụi tôi chịu khó lắm.",
+                "Cho tụi tôi ở lại làm việc được không? Việc gì cũng làm.",
+                "Nhận tụi tôi đi. Có việc thì tụi tôi làm.",
+                "Còn chỗ thì cho ở. Có việc thì làm, không ăn không đâu."
+              ] }
+            ] },
+            { "when": "flag.talked==1 && mood>=1", "say": [{ "any": ["Các bạn tử tế quá, bọn tôi yên tâm hơn rồi.", "Cảm ơn các bạn đã chịu nghe. Bọn tôi thấy dễ chịu hơn nhiều."] }] },
+            { "when": "flag.talked==1 && mood<=-1", "say": [{ "any": ["Nói nghe lạnh quá...", "Hừ... bọn tôi chỉ xin chỗ nương tựa thôi mà."] }] },
+            { "when": "flag.talked==1", "say": [
+              { "tone": [
+                "Mọi người còn muốn hỏi gì nữa không? Cứ hỏi, tụi tôi nói thật.",
+                "Còn gì muốn hỏi nữa không?",
+                "Còn hỏi gì nữa?",
+                "Hỏi xong chưa? Nhận hay không thì nói đi."
+              ] }
+            ] }
+          ],
+          "choices": [
+                        {"text": "Hỏi: từ đâu tới?", "group": "Hỏi họ", "say": "Từ đâu tới đấy?", "cond": "flag.asked_origin==0", "effects": [{"flag": "asked_origin"}, {"flag": "talked"}], "then": "origin_ok", "by": {"thief": "origin_evasive"}},
+                        {"text": "Hỏi: biết làm nghề gì?", "group": "Hỏi họ", "say": "Biết làm nghề gì?", "cond": "flag.asked_skill==0", "effects": [{"flag": "asked_skill"}, {"flag": "talked"}], "then": "skill_ok", "by": {"thief": "skill_evasive"}},
+                        {"text": "Hỏi: quen nhau thế nào?", "group": "Hỏi họ", "say": "Quen nhau kiểu gì?", "cond": "flag.asked_who==0", "effects": [{"flag": "asked_who"}, {"flag": "talked"}], "then": "who_ok", "by": {"thief": "who_evasive"}},
+                        {"text": "Hỏi: cần gì trước nhất?", "group": "Hỏi họ", "say": "Cần gì trước nhất?", "cond": "flag.asked_need==0", "effects": [{"flag": "asked_need"}, {"flag": "talked"}], "then": "need_ok", "by": {"thief": "need_evasive"}},
+                        {"text": "Quan sát kỹ họ", "reveals": true, "effects": [{"rel": -1}]},
+            {"text": "Trông mệt quá, ngồi xuống nghỉ đã.", "say": "Trông mệt quá, ngồi xuống nghỉ đã.", "effects": [{"mood": 2}, {"flag": "talked"}], "then": "@round"},
+            {"text": "Nói nhanh đi, không có nhiều thì giờ đâu.", "say": "Nói nhanh đi, không có nhiều thì giờ đâu.", "effects": [{"mood": -2}, {"flag": "talked"}], "then": "@round"},
+            {"text": "Tôi quyết rồi.", "say": "Để tụi tôi quyết.", "then": "final"}
+          ]
+        },
+        "origin_ok": {
+          "say": [
+            { "any": [
+              ["Làng tụi tôi bị bầy sói tràn qua, nhà cháy hết.", "Đi mấy ngày mới tới được đây."],
+              ["Năm ngoái làng tôi mất mùa, ai cũng bỏ đi tìm chỗ khác."],
+              ["Nước lũ cuốn cả làng. Ai sống sót thì theo nhau đi."],
+              ["Làng tôi ở dưới thung lũng. Thú đi hết, bẫy chẳng bắt được gì, đói quá phải bỏ đi."],
+              ["Chỗ cũ bị người khác chiếm. Tụi tôi chạy ra được là may."]
+            ] },
+            { "tone": [
+              "Nhà thì hết rồi, chỉ mong có chỗ nào ở lại thôi.",
+              "Giờ chỉ cần có chỗ ở.",
+              "Vậy đó.",
+              "Hỏi hoài chuyện cũ làm gì."
+            ] }
+          ],
+          "choices": [
+            {"text": "Dọc đường có gặp chuyện gì không?", "say": "Dọc đường có gặp chuyện gì không?", "then": "origin_more_ok", "by": {"thief": "origin_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "origin_evasive": {
+          "say": [
+            { "tone": [
+              "Từ... xa lắm. Chuyện cũ rồi, kể làm gì cho buồn.",
+              "Xa lắm. Chuyện cũ rồi, khỏi hỏi.",
+              "Xa. Không có gì để kể.",
+              "Hỏi làm gì. Tụi tôi tới thì tới thôi."
+            ] },
+            { "any": [
+              "(Hai người trong toán nhìn nhau rồi cùng nhìn đi chỗ khác.)",
+              "(Có người trong toán huýt nhẹ một tiếng, rồi ngậm miệng ngay.)",
+              "(Người đứng sau cứ nhìn vào làng, không nghe câu hỏi.)",
+              "(Một người ho khan, đổi chỗ đứng.)"
+            ] },
+            { "any": [
+              "Mà làng này giàu nhỉ? Nhà nào cũng có chỗ phơi thịt.",
+              "Dân làng này ngủ sớm không? Tối đến yên ắng chắc dễ ngủ.",
+              "Cái nhà to kia là chỗ cất đồ ăn à?"
+            ] }
+          ],
+          "choices": [
+            {"text": "Dọc đường có gặp chuyện gì không?", "say": "Dọc đường có gặp chuyện gì không?", "then": "origin_more_ok", "by": {"thief": "origin_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "skill_ok": {
+          "say": [
+            { "tone": [
+              "Tụi tôi làm được nhiều việc lắm, không sợ nặng.",
+              "Tụi tôi làm được nhiều việc.",
+              "Việc gì cũng làm được.",
+              "Cho việc đi rồi biết."
+            ] },
+            { "any": [
+              "Có người đốn gỗ, có người nấu ăn dệt sợi. Có người nhanh chân chạy việc được.",
+              "Đào củ, bắt cá, dựng nhà, chặt củi, tụi tôi đều làm được hết.",
+              "Tụi tôi biết đan rổ, đan lưới, làm bẫy. Đồ nghề thì không có sẵn.",
+              "Người thì quen săn, người quen làm ruộng. Cái gì cũng chia nhau được."
+            ] }
+          ],
+          "choices": [
+            {"text": "Có ai biết săn bắn hay làm đồ nghề không?", "say": "Có ai biết săn bắn hay làm đồ nghề không?", "then": "skill_more_ok", "by": {"thief": "skill_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "skill_evasive": {
+          "say": [
+            { "tone": [
+              "Việc gì cũng được, chỉ cần có chỗ ngủ và cái ăn.",
+              "Gì cũng làm. Có chỗ ngủ và cái ăn là được.",
+              "Gì cũng được.",
+              "Cho việc nhẹ nhàng thì làm. Nặng quá thì khỏi."
+            ] },
+            { "any": [
+              "Mà... kho lương của làng để ở đâu vậy? Biết chỗ để lát bưng đồ cho dễ.",
+              "Làng này đêm có ai canh không? Để tụi tôi biết đường mà ngủ yên.",
+              "Ai giữ vỏ sò của làng thế? Tụi tôi sợ lỡ làm mất thì mang tiếng.",
+              "Tụi tôi cũng quen việc kiểm kho. Kho làng ở đâu để tôi ghé xem?"
+            ] },
+            { "when": "flag.asked_origin==1", "say": [
+              "Hỏi từ đâu tới, hỏi nghề gì, sao không ai hỏi tụi tôi đói chưa?"
+            ] }
+          ],
+          "choices": [
+            {"text": "Có ai biết săn bắn hay làm đồ nghề không?", "say": "Có ai biết săn bắn hay làm đồ nghề không?", "then": "skill_more_ok", "by": {"thief": "skill_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "who_ok": {
+          "say": [
+            { "tone": [
+              "Trong toán ai cũng là họ hàng hoặc láng giềng cũ. Sống chết có nhau.",
+              "Cùng làng cũ cả. Có người là họ hàng.",
+              "Cùng làng. Quen từ nhỏ.",
+              "Cùng làng. Hỏi chi vậy."
+            ] },
+            { "any": [
+              "Có anh em ruột, có hàng xóm cũ. Đi chung từ lúc làng bị bỏ.",
+              "Cùng ăn chung bếp từ hồi nhỏ, coi nhau như ruột thịt.",
+              "Có người là cha con, có người là bạn cũ của cha tôi.",
+              "Mất làng rồi, tụi tôi dựa vào nhau mà đi."
+            ] }
+          ],
+          "choices": [
+            {"text": "Ai đứng đầu nhóm?", "say": "Ai đứng đầu nhóm?", "then": "who_more_ok", "by": {"thief": "who_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "who_evasive": {
+          "say": [
+            { "tone": [
+              "À... quen nhau... trên đường thôi mà, đi chung cho đỡ buồn.",
+              "Quen trên đường. Đi chung cho an toàn.",
+              "Gặp nhau dọc đường. Đi chung.",
+              "Quen nhau thế nào thì liên quan gì tới làng."
+            ] },
+            { "any": [
+              "Đi chung vì ai cũng muốn tìm chỗ nhiều đồ ăn, khỏi lo đói.",
+              "Đi chung đông thì dễ vào làng hơn, đi một mình ai dám.",
+              "Có người quen đi đêm, mắt nhìn trong tối tốt lắm.",
+              "Chung ý thôi. Ai cũng muốn kiếm cho thật nhiều rồi chia nhau."
+            ] }
+          ],
+          "choices": [
+            {"text": "Ai đứng đầu nhóm?", "say": "Ai đứng đầu nhóm?", "then": "who_more_ok", "by": {"thief": "who_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "need_ok": {
+          "say": [
+            { "tone": [
+              "Một chỗ nằm khô ráo và một đống lửa là mừng lắm rồi.",
+              "Chỗ ngủ, lửa với bữa ăn nóng.",
+              "Chỗ ngủ với cái ăn.",
+              "Ăn với ngủ. Có thế thôi."
+            ] },
+            { "any": [
+              "Có người chân đau, cho nằm nghỉ một hai hôm là đi làm được.",
+              "Có người ho mấy hôm nay, cần chỗ ấm.",
+              "Tụi tôi chưa ăn đồ nóng từ lúc rời làng.",
+              "Cho tụi tôi rửa ráy một chút là khỏe lại ngay."
+            ] }
+          ],
+          "choices": [
+            {"text": "Có mang theo gì đáng giá không?", "say": "Có mang theo gì đáng giá không?", "then": "need_more_ok", "by": {"thief": "need_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "need_evasive": {
+          "say": [
+            { "tone": [
+              "Cần... à, ăn ngủ thôi. Việc khác để từ từ.",
+              "Ăn ngủ trước. Còn lại tính sau.",
+              "Ăn. Ngủ. Xem tình hình.",
+              "Liên quan gì tới mấy người."
+            ] },
+            { "any": [
+              "Ngủ chỗ nào xa nhà dân một chút thì tốt, tụi tôi ngáy to lắm.",
+              "Có chỗ ngủ gần kho thì tụi tôi canh giúp cho.",
+              "Đêm nay lính làng đổi ca lúc nào? Tụi tôi tính ngủ đúng giờ.",
+              "Cho tụi tôi ngủ gần lối ra vào, quen rồi, ngủ chỗ kín là mất ngủ."
+            ] }
+          ],
+          "choices": [
+            {"text": "Có mang theo gì đáng giá không?", "say": "Có mang theo gì đáng giá không?", "then": "need_more_ok", "by": {"thief": "need_more_evasive"}},
+            {"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "origin_more_ok": {
+          "say": ["Có. Một đứa bé bị sốt dọc đường, may mà qua khỏi.", "Từ đó bọn tôi không dám đi đêm nữa."],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "origin_more_evasive": {
+          "say": ["Chuyện gì đâu mà có... Đi đường thì gặp ai cũng như ai.", "Này, sao hỏi nhiều thế? Bọn tôi chỉ muốn chỗ ngủ."],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "skill_more_ok": {
+          "say": ["Anh kia săn thỏ rất khéo, chị này biết đan giỏ và làm bẫy.", "Còn đồ nghề thì bọn tôi học nhanh lắm."],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "skill_more_evasive": {
+          "say": ["Săn bắn hả? Ờ... biết chút chút. Làm đồ nghề... cũng được.", "(Hai người trong toán liếc nhìn nhau rồi nhìn đi chỗ khác.)"],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "who_more_ok": {
+          "say": ["Bà cụ kia, bà lớn tuổi nhất, ai cũng nghe lời bà.", "Bà bảo ở đâu thì cả nhóm ở đó."],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "who_more_evasive": {
+          "say": ["Ừ thì... ai cũng như nhau. Không có người đứng đầu.", "Mà làng các bạn có bao nhiêu người? Người đông thì làm gì cũng tiện."],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "need_more_ok": {
+          "say": ["Chẳng có gì đáng giá, chỉ vài cái nồi đất, vài tấm da cũ.", "Tất cả những gì bọn tôi có là đôi tay này."],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "need_more_evasive": {
+          "say": ["Không có gì. Nếu có thì cũng cất kỹ rồi.", "Mà kho của làng có kiên cố không? Ban đêm có ai canh không?"],
+          "choices": [{"text": "Khổ thân. Ngồi xuống đã.", "say": "Khổ thân. Ngồi xuống đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Chuyện đó đâu phải việc của tụi tôi.", "say": "Chuyện đó đâu phải việc của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"}]
+        },
+        "final": {
+          "say": [
+            { "when": "room>=1 && mood>=2", "say": [{ "any": ["Chịu nghe tụi tôi nói là quý lắm rồi. Biết ơn lắm.", "Tử tế quá... tụi tôi không quên đâu."] }, "Nếu được ở lại, tụi tôi xin góp ít lương hái được."] },
+            {"when": "room>=1 && mood==1", "say": ["Cảm ơn đã chịu nghe. Tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."]},
+            {"when": "room>=1 && mood==0", "say": ["Nghe hết rồi đó. Tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."]},
+            {"when": "room>=1 && mood==-1", "say": ["Nói nghe lạnh thật... Nhưng tụi tôi chỉ xin chỗ ở với phần ăn như mọi người."]},
+            { "when": "room>=1 && mood<=-2", "say": [{ "any": ["Hừ... các bạn nói chuyện gắt quá.", "Thôi được, bọn tôi không mong gì nhiều."] }, "Nếu các bạn nhận thì cho bọn tôi ăn trước đã, đói lả cả rồi."] },
+            { "when": "room<1", "say": [{ "any": ["Làng các bạn không còn chỗ cho bọn tôi sao...", "Hết chỗ rồi à? Vậy bọn tôi biết đi đâu bây giờ."] }, "Bọn tôi hiểu. Chỉ mong các bạn đừng đuổi bọn tôi đi tay không."] }
+          ],
+          "choices": [
+            {"text": "Nhận cả đoàn (theo số chỗ còn trống)", "say": "Được, cứ ở lại với tụi tôi.", "cond": "room>=1 && mood>-2", "effects": [{"welcome": 99}, {"give": {"food": 20}, "if": "mood>=2"}], "then": "taken"},
+            {"text": "Nhận cả đoàn, cho ăn trước (12 thức ăn)", "say": "Được, ăn trước đã rồi ở lại.", "cond": "room>=1 && mood<=-2", "cost": {"food": 12}, "effects": [{"welcome": 99}], "then": "taken"},
+            {"text": "Chỉ nhận một người", "say": "Chỉ nhận được một người thôi.", "cond": "room>=1 && party>=2", "effects": [{"welcome": 1}], "then": "one"},
+            {"text": "Làng hết chỗ rồi", "say": "Hết chỗ rồi, không nhét thêm nổi đâu.", "cond": "room<1", "then": "full"},
+            {"text": "Cho họ chút thức ăn rồi tiễn đi (8 thức ăn)", "say": "Làng hết chỗ rồi, nhưng nhận chút thức ăn này mà đi tiếp.", "cond": "room<1", "cost": {"food": 8}, "effects": [{"rel": 1}], "then": "gave_food"},
+            {"text": "Không nhận", "say": "Không nhận thêm người. Đi chỗ khác.", "cond": "room>=1", "then": "no"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -2}],
+          "say": [{ "any": [["Đủ rồi. Bọn tôi không ở nơi bị coi thường.", "Chúng tôi đi."], ["Hừ. Nếu đã vậy thì bọn tôi tự lo lấy thân."]] }]
+        },
+        "taken": {
+          "say": [
+            { "when": "flag.talked==1", "say": [
+              { "tone": [
+                "Cảm ơn đã nghe tụi tôi nói.",
+                "Cảm ơn vì đã chịu nghe.",
+                "Ừ, hỏi xong rồi thì tốt.",
+                "Hỏi xong rồi thì khỏi nghi nữa nhé."
+              ] }
+            ] },
+            { "tone": [
+              "Cảm ơn! Tụi tôi sẽ làm việc chăm chỉ.",
+              "Ừ, cảm ơn. Tụi tôi sẽ làm việc tử tế.",
+              "Được rồi. Có việc gì cứ giao.",
+              "Ừ. Cho ăn cho ngủ thì tụi tôi làm."
+            ] },
+            { "any": [
+              "Chỉ chỗ nằm đi, rồi tụi tôi bắt tay vào việc.",
+              "Tụi tôi khỏe, chỉ cần nghỉ một đêm.",
+              "Việc nặng việc nhẹ gì cũng được."
+            ] }
+          ]
+        },
+        "one": {
+          "say": [
+            { "tone": [
+              "Một người thôi hả... thôi cũng được, cảm ơn. Mấy người còn lại tụi tôi đi tiếp.",
+              "Chỉ nhận một thôi à. Được rồi, còn lại tụi tôi đi tiếp.",
+              "Một người. Ừ. Còn lại đi tiếp.",
+              "Chỉ một người à? Keo thật. Thôi, còn lại đi."
+            ] },
+            { "any": [
+              "Người ở lại sẽ làm việc cho đàng hoàng.",
+              "Hai bên coi như xong.",
+              "Giữ người ấy cho tử tế."
+            ] }
+          ]
+        },
+        "full": {
+          "say": [
+            { "tone": [
+              "Hết chỗ à... ừ, tụi tôi hiểu. Cảm ơn đã nói thật.",
+              "Hết chỗ thì tụi tôi đi chỗ khác.",
+              "Ừ. Đi.",
+              "Hết chỗ mà không nói sớm. Thôi."
+            ] },
+            { "any": [
+              "Tụi tôi thử hỏi làng khác.",
+              "Chắc còn chỗ nào đó.",
+              "Đi tiếp thôi."
+            ] }
+          ]
+        },
+        "gave_food": { "say": [{ "any": ["Cảm ơn các bạn. Chút thức ăn này giúp bọn tôi đi tiếp được vài ngày.", "Các bạn tốt bụng quá. Bọn tôi sẽ nhớ."] }] },
+        "no": {
+          "say": [
+            { "tone": [
+              "Vậy à... thôi tụi tôi đi tiếp.",
+              "Không nhận thì thôi, tụi tôi đi.",
+              "Ừ. Đi.",
+              "Hừ. Đi thì đi."
+            ] },
+            { "any": [
+              "Tụi tôi thử hỏi làng khác.",
+              "Chắc còn chỗ nào đó.",
+              "Đi tiếp thôi."
+            ] }
+          ]
+        }
+      }
+    },
+    {
+      "id": "refugees",
+      "fireLevel": [1, 3],
+      "minDay": 9,
+      "weight": 2,
+      "maxTimes": 2,
+      "cooldownDays": 15,
+      "tribes": ["spring", "swamp"],
+      "relation": [-39, 100],
+      "waitDays": 3,
+      "party": {"size": [3, 3], "hurt": 0.5},
+      "talk": {"hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": ["Cứu tụi tôi với! Có người đang đuổi theo.", "Tụi tôi đang bị người ta đuổi. Cho tụi tôi trốn nhờ.", "Có người đuổi tụi tôi. Cho vào làng đi.", "Có kẻ đuổi sau lưng. Mở đường cho tụi tôi vào."]},
+            {"any": ["Tụi tôi có ba người, hai người bị thương.", "Ba người cả thảy, hai người bị thương.", "Tụi tôi ba người. Hai người đi không vững nữa."]},
+            {"any": ["Họ đông lắm. Tụi tôi chạy từ sáng giờ.", "Họ đuổi tụi tôi từ hôm qua đến giờ.", "Không biết họ còn cách bao xa."]},
+            {"tone": ["Cho tụi tôi ở nhờ với. Tụi tôi làm việc gì cũng được.", "Cho tụi tôi ở lại đi. Có việc tụi tôi làm.", "Nhận tụi tôi đi, không còn chỗ nào khác.", "Nhận hay không thì quyết nhanh đi."]}
+          ],
+          "choices": [
+            {"text": "Ai đuổi mấy người? Đông không?", "say": "Ai đuổi mấy người? Đông không?", "then": "@round"},
+            {"text": "Bình tĩnh, ngồi xuống thở đã.", "say": "Bình tĩnh, ngồi xuống thở đã.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Rắc rối của mấy người, đâu phải của tụi tôi.", "say": "Rắc rối của mấy người, đâu phải của tụi tôi.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Đừng mang họa vào làng này. Đi đi.", "say": "Đừng mang họa vào làng này. Đi đi.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Tôi quyết luôn.", "say": "Tôi quyết luôn.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["Hức... cảm ơn, cảm ơn đã chịu nghe tụi tôi.", "Tử tế quá. Tụi tôi đỡ sợ hơn rồi."]}]},
+            {"when": "mood==0", "say": [{"any": ["Nói nhanh đi, tụi tôi sợ họ tới.", "Tụi tôi không còn nhiều thời gian."]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Nói gì mà phũ vậy... tụi tôi đang chạy trốn đấy.", "Đâu phải ai cũng cứng lòng như bạn."]}]}
+          ],
+          "choices": [
+            {"text": "Hai người bị thương có nặng không?", "say": "Hai người bị thương có nặng không?", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ở đây có lửa, có nước. Cứ yên tâm.", "say": "Ở đây có lửa, có nước. Cứ yên tâm.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Tụi tôi không muốn dính vào chuyện này.", "say": "Tụi tôi không muốn dính vào chuyện này.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Nói mau rồi đi. Đừng ở lâu.", "say": "Nói mau rồi đi. Đừng ở lâu.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Để tụi tôi quyết.", "say": "Để tụi tôi quyết.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Nếu cho tụi tôi ở lại, tụi tôi xin góp chút lương mang theo. Tụi tôi sẽ làm việc hết sức.", "Tụi tôi biết ơn lắm. Chỉ xin một chỗ nằm."]},
+            {"when": "mood==1", "say": ["Cảm ơn đã chịu nghe. Cho tụi tôi ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp."]},
+            {"when": "mood==0", "say": ["Cho tụi tôi ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp."]},
+            {"when": "mood==-1", "say": ["Tụi tôi hiểu, ai cũng khó... Nhưng cho ở nhờ, hoặc ít nhất chút thức ăn để đi tiếp, được không?"]},
+            {"when": "mood<=-2", "say": ["Tụi tôi chẳng mong gì nữa. Cho gì thì cho, không thì thôi."]}
+          ],
+          "choices": [
+            {"text": "Nhận cả ba người ở lại", "say": "Được, cả ba cứ ở lại với tụi tôi.", "cost": {"food": 15}, "effects": [{"rel": 3}, {"deed": "took_refugees"}, {"give": {"food": 10}, "if": "mood>=2"}], "roll": {"p": 0.35, "yes": "in_chased", "no": "in_safe"}},
+            {"text": "Cho chút thức ăn rồi tiễn đi", "say": "Chỉ có chút thức ăn này thôi, cầm lấy mà đi.", "cost": {"food": 6}, "effects": [{"rel": 2}, {"deed": "fed_refugees"}], "then": "gave"},
+            {"text": "Từ chối", "say": "Không giúp được đâu. Đi đi.", "effects": [{"rel": -3}, {"deed": "refused_refugees"}], "then": "refused"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -3}, {"deed": "refused_refugees"}],
+          "say": [
+            {"any": [["Thôi, tụi tôi đi.", "Mà đừng nói với ai là gặp tụi tôi nhé."], ["Hừ. Tụi tôi tự lo lấy thân."]]}
+          ]
+        },
+        "in_safe": {
+          "effects": [{"takeIn": true}],
+          "say": [
+            {"tone": ["Cảm ơn! Cảm ơn nhiều lắm! Việc gì tụi tôi cũng làm.", "Cảm ơn. Tụi tôi sẽ làm việc.", "Ừ. Cảm ơn. Chỉ việc đi.", "Được. Cho tụi tôi chỗ nằm là đủ."]},
+            {"any": ["Hai người bị thương cần nằm nghỉ trước.", "Tụi tôi ăn ít thôi, chỉ cần có chỗ ngủ.", "Mấy người bị thương cần băng vết thương trước."]}
+          ]
+        },
+        "in_chased": {
+          "effects": [{"takeIn": true}, {"schedule": {"script": "pursuers", "days": 2, "sameTribe": true, "priority": 8, "ifStill": "refugees>=1", "maxDelay": 2}}],
+          "say": [
+            {"tone": ["Cảm ơn! Cảm ơn nhiều lắm! Việc gì tụi tôi cũng làm.", "Cảm ơn. Tụi tôi sẽ làm việc.", "Ừ. Cảm ơn. Chỉ việc đi.", "Được. Cho tụi tôi chỗ nằm là đủ."]},
+            {"any": ["(Xa xa trên đường mòn có tiếng người gọi nhau.)", "(Phía đường mòn có tiếng người quát nhau.)", "(Có tiếng cành gãy và tiếng chân người ngoài đường mòn.)", "(Xa xa có bụi bay lên từ đường mòn.)"]}
+          ]
+        },
+        "gave": {
+          "say": [
+            {"tone": ["Cũng được. Cảm ơn cho ăn, tụi tôi đi tiếp.", "Ừ, vậy thôi. Tụi tôi đi đây.", "Có ăn cũng đỡ. Đi.", "Thế thôi hả? Thôi, đi."]},
+            {"any": ["Mong là đi được xa.", "Tụi tôi thử vận may ở chỗ khác.", "Đi nhanh thôi, kẻo họ tới."]}
+          ]
+        },
+        "refused": {
+          "say": [
+            {"tone": ["Vậy à... thôi tụi tôi đi. Mà đừng nói với ai là gặp tụi tôi nhé.", "Ừ. Tụi tôi đi. Đừng nói với ai là thấy tụi tôi.", "Rồi. Có ai hỏi thì đừng nói gặp tụi tôi.", "Hừ. Có ai hỏi thì nhớ là chưa thấy tụi tôi đấy."]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "scout_envoy",
+      "fireLevel": [1, 3],
+      "minDay": 1,
+      "weight": 0,
+      "tribes": [],
+      "waitDays": 2,
+      "truth": [{"kind": "hostile", "w": 1}],
+      "party": {"size": [3, 3], "weapons": ["hatchet", "mace"], "armor": true},
+      "talk": {"hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": ["Bọn ta là tộc Rìu Đá. Thủ lĩnh bảo qua ngó xem làng này ra sao.", "Rìu Đá đây. Thủ lĩnh cử bọn ta qua xem làng này có gì.", "Rìu Đá. Bọn ta qua coi làng.", "Bọn tao Rìu Đá. Thủ lĩnh sai qua coi làng chúng mày."]},
+            {"tone": ["Đừng run, bọn ta chỉ nhìn thôi... bây giờ thì vậy.", "Chỉ nhìn thôi. Tạm thời.", "Nhìn thôi. Chưa đập.", "Nhìn thôi. Bọn tao chưa muốn đập chúng mày. Chưa."]},
+            {"any": ["(Ba người đảo mắt nhìn lính gác, nhìn bẫy, nhìn kho lương.)", "(Một người đếm bước quanh làng, hai người kia nhìn vào nhà kho.)", "(Họ nhìn kỹ từng cái bẫy, từng người lính.)"]}
+          ],
+          "choices": [
+            {"text": "Muốn xem gì? Nói rõ ra.", "say": "Muốn xem gì? Nói rõ ra.", "then": "@round"},
+            {"text": "Đi đường xa mệt rồi, ngồi nghỉ đi.", "say": "Đi đường xa mệt rồi, ngồi nghỉ đi.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đừng ngó nghiêng. Biết thừa các người là ai rồi.", "say": "Đừng ngó nghiêng. Biết thừa các người là ai rồi.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Cút khỏi đây ngay.", "say": "Cút khỏi đây ngay.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Muốn gì thì nói thẳng ra.", "say": "Muốn gì thì nói thẳng ra.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["Hừ, tiếp khách cũng khéo. Thủ lĩnh sẽ thích nghe chuyện này.", "Ừ, bọn làng này mềm hơn ta tưởng."]}]},
+            {"when": "mood==0", "say": [{"any": ["Bọn ta chỉ nhìn, chưa nói gì.", "Hỏi gì thì hỏi nhanh."]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Giọng đó là sao? Bọn ta không tới để bị đuổi như chó.", "Hừ. Thủ lĩnh sẽ biết cái thái độ này của làng bây."]}]}
+          ],
+          "choices": [
+            {"text": "Thủ lĩnh các người là ai? Kể nghe.", "say": "Thủ lĩnh các người là ai? Kể nghe.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Cứ tự nhiên, ở đây không có gì giấu.", "say": "Cứ tự nhiên, ở đây không có gì giấu.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Nhìn xong thì đi cho sớm.", "say": "Nhìn xong thì đi cho sớm.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Lui ra! Đừng để tụi tôi nổi nóng.", "say": "Lui ra! Đừng để tụi tôi nổi nóng.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Muốn gì thì nói thẳng ra.", "say": "Muốn gì thì nói thẳng ra.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Làng này biết điều. Bọn ta nói thẳng được.", "Thủ lĩnh bảo xem xong thì báo. Bây muốn bọn ta xem gì?"]},
+            {"when": "mood==1", "say": ["Làng bây tiếp khách cũng được. Bọn ta chỉ xem thôi. Tiếp hay đuổi, quyết đi."]},
+            {"when": "mood==0", "say": ["Bọn ta qua xem làng thôi. Tiếp hay đuổi, quyết đi."]},
+            {"when": "mood==-1", "say": ["Giọng đó bọn ta nhớ. Nhưng bọn ta chỉ qua xem làng thôi. Tiếp hay đuổi, quyết đi."]},
+            {"when": "mood<=-2", "say": ["Cách nói đó thì thủ lĩnh sẽ không vui đâu.", "Tính sao?"]}
+          ],
+          "choices": [
+            {"text": "Cho họ ăn uống, tiếp đàng hoàng", "say": "Đi xa rồi, vào ăn đã.", "cost": {"food": 12}, "effects": [{"rel": 8}, {"deed": "hosted_scouts"}, {"eventMod": {"powerMul": 0.5}, "if": "mood>=2"}, {"eventMod": {"powerMul": 0.6}, "if": "mood>-2 && mood<2"}, {"eventMod": {"powerMul": 0.75}, "if": "mood<=-2"}], "then": "hosted"},
+            {"text": "Dẫn họ đi xem lính gác và bẫy của làng", "say": "Muốn xem à? Đi theo tôi, xem cho đủ.", "branch": [{"cond": "soldiers>=5", "then": "show_ok"}], "then": "show_weak"},
+            {"text": "Đuổi đi", "say": "Đi đi. Làng này không có gì cho chúng mày xem.", "effects": [{"rel": -5}, {"deed": "drove_off_scouts"}], "then": "driven"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -5}, {"deed": "drove_off_scouts"}, {"eventMod": {"powerMul": 1.15}}],
+          "say": [
+            {"any": [["Được. Thủ lĩnh sẽ biết chuyện này.", "Bọn ta đi."], ["Đuổi hả? Rồi bây sẽ hối hận."]]}
+          ]
+        },
+        "hosted": {
+          "say": [
+            {"tone": ["Ăn cũng ngon. Về bọn ta sẽ nói với thủ lĩnh: làng này nên kết bạn, đừng đập.", "Đồ ăn không tệ. Ta sẽ bảo thủ lĩnh làng này nói chuyện được, khỏi đánh.", "Ăn cũng được. Ta báo lại: làng này nói chuyện được.", "Hừ, cũng được. Tao báo thủ lĩnh là làng này đỡ phải đánh."]},
+            {"any": ["(Họ ăn một lúc lâu, chẳng ai nói gì.)", "(Họ ăn sạch phần của mình rồi đứng dậy.)", "(Một người ợ một tiếng thật to.)"]}
+          ]
+        },
+        "show_ok": {
+          "effects": [{"eventMod": {"shiftDays": 3}}, {"rel": -2}, {"deed": "showed_force"}],
+          "say": [
+            {"tone": ["Chậc... lính nhiều hơn bọn ta tưởng. Về báo thủ lĩnh tính lại.", "Hừ... lính nhiều hơn bọn ta nghĩ. Thủ lĩnh phải tính lại.", "Lính nhiều đấy. Báo lại thủ lĩnh.", "Nhiều lính phết. Về báo thủ lĩnh, đánh không dễ đâu."]},
+            {"any": ["(Họ liếc nhau rồi quay đi, không nói thêm.)", "(Người đi đầu nhìn lại hàng lính thêm một lần nữa.)"]}
+          ]
+        },
+        "show_weak": {
+          "effects": [{"eventMod": {"powerMul": 1.3}}, {"deed": "showed_weakness"}],
+          "say": [
+            {"tone": ["Ra thế... thế là đủ rồi. Cảm ơn đã cho xem nhé.", "Ra vậy. Đủ rồi, cảm ơn nhé.", "Xong. Đủ rồi.", "Có thế thôi hả? Đủ rồi, khỏi xem nữa."]},
+            {"any": ["(Họ nhìn nhau và cười khẽ trước khi đi.)", "(Một người gật đầu với hai người kia, vẻ hài lòng, rồi họ quay đi.)", "(Họ rỉ tai nhau gì đó rồi cười.)"]}
+          ]
+        },
+        "driven": {
+          "say": [
+            {"tone": ["Được thôi. Rồi thủ lĩnh sẽ tới nói chuyện với bây.", "Được. Thủ lĩnh sẽ biết chuyện này.", "Ừ. Rồi sẽ gặp lại.", "Đuổi hả? Rồi bây sẽ hối hận."]},
+            {"any": ["(Họ quay lưng đi chậm rãi, không vội.)", "(Một người nhổ xuống đất trước khi đi.)"]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "extortion",
+      "fireLevel": [2, 3],
+      "minDay": 16,
+      "weight": 2,
+      "maxTimes": 4,
+      "cooldownDays": 8,
+      "tribes": ["axe", "cave"],
+      "relation": [-39, 19],
+      "waitDays": 1,
+      "truth": [{"kind": "hostile", "w": 1}],
+      "party": {"size": [3, 3], "weapons": ["hatchet", "mace"], "armor": true},
+      "talk": { "hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 3] },
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            { "tone": [
+              "Bọn ta tới lấy phần của bọn ta. Nộp vỏ sò với thức ăn đi, khỏi đổ máu.",
+              "Làng ta mạnh, làng mày giàu. Nộp vỏ sò với thức ăn ra đây.",
+              "Nộp vỏ sò với thức ăn. Không nộp thì bọn ta quay lại, đông gấp ba.",
+              "Bọn tao đói, bọn mày có. Nộp vỏ sò với thức ăn, không thì bọn tao vào lấy, đập luôn nhà."
+            ] },
+            { "any": [
+              "Đừng bắt nói hai lần.",
+              "Nộp nhanh thì êm chuyện.",
+              "Nghĩ cho kỹ đi. Lần sau đi đông hơn nhiều.",
+              "Làng nào quanh đây cũng phải nộp, đâu riêng làng này."
+            ] },
+            { "any": [
+              "(Sau lưng {he}, mấy chiến binh siết chặt vũ khí.)",
+              "(Hai người đứng sau {he} nắm chặt rìu, mắt không rời kho lương.)",
+              "(Một người gõ cán chùy vào lòng bàn tay, đều đều.)",
+              "(Mấy chiến binh dàn hàng sau lưng {he}, không ai nói gì.)"
+            ] }
+          ],
+          "effects": [{"mood": -1, "if": "deed.paid_tribute>=2"}, {"mood": -1, "if": "deed.paid_tribute>=4"}],
+          "choices": [
+            {"text": "Muốn gì? Nói cho rõ.", "say": "Muốn gì? Nói cho rõ.", "then": "@round"},
+            {"text": "Làng này cũng khổ, đừng ép quá.", "say": "Làng này cũng khổ, đừng ép quá.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Nhìn hàng lính kia đi. Dám không?", "say": "Nhìn hàng lính kia đi. Dám không?", "effects": [{"mood": -1}, {"mood": 2, "if": "soldiers>=10"}], "then": "@round"},
+            {"text": "Cút đi. Chúng tôi không nộp gì cả.", "say": "Cút đi. Chúng tôi không nộp gì cả.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Nói thẳng đi: các người đòi bao nhiêu?", "say": "Nói thẳng đi: các người đòi bao nhiêu?", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            { "when": "mood>=1", "say": [{ "any": ["Hừ... mày cũng biết điều. Bọn ta chẳng thích đánh nhau.", "Thế mới dễ nói. Bọn ta nghe."] }] },
+            { "when": "mood<=-1", "say": [{ "any": ["Mày ăn nói thế mà dám à? Bọn tao không đùa đâu.", "Hừ. Giọng đó thì đừng mong bọn ta nể."] }] },
+            { "when": "mood==0", "say": [{ "any": ["Hừ. Vậy thì nói nhanh đi.", "Bọn ta không có nhiều thì giờ."] }] }
+          ],
+          "choices": [
+            {"text": "Cho tụi tôi ít thời gian gom đồ.", "say": "Cho tụi tôi ít thời gian gom đồ.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Làng này nghèo. Đòi ít thôi.", "say": "Làng này nghèo. Đòi ít thôi.", "then": "@round"},
+            {"text": "Đánh thì đánh, tụi tôi không sợ.", "say": "Đánh thì đánh, tụi tôi không sợ.", "effects": [{"mood": -1}, {"mood": 2, "if": "soldiers>=10"}], "then": "@round"},
+            {"text": "Đủ rồi! Biến đi.", "say": "Đủ rồi! Biến đi.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Nói điều kiện đi.", "say": "Nói điều kiện đi.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            { "when": "mood>=2", "say": ["Hừ... được, mày biết điều. Bọn ta lấy ít thôi: 30 vỏ sò và 30 thức ăn."] },
+            {"when": "mood==1", "say": ["Hừ, nói vậy còn nghe được. Điều kiện của bọn ta: 55 vỏ sò và 50 thức ăn."]},
+            {"when": "mood==0", "say": ["Điều kiện của bọn ta: 55 vỏ sò và 50 thức ăn."]},
+            {"when": "mood==-1", "say": ["Cứng miệng lắm. Nhưng bọn ta vẫn nói giá: 55 vỏ sò và 50 thức ăn."]},
+            { "when": "mood<=-2", "say": ["Mồm mày gắt quá. Giá lên: 90 vỏ sò và 80 thức ăn."] }
+          ],
+          "choices": [
+            {"text": "Trả 30 vỏ sò và 30 thức ăn", "say": "Cầm đi. Phần của các người đây.", "cond": "mood>=2", "cost": {"coin": 30, "food": 30}, "effects": [{"deed": "paid_tribute"}, {"eventMod": {"shiftDays": 6}}], "then": "paid"},
+            {"text": "Trả 55 vỏ sò và 50 thức ăn", "say": "Cầm đi. Phần của các người đây.", "cond": "mood>-2 && mood<2", "cost": {"coin": 55, "food": 50}, "effects": [{"deed": "paid_tribute"}, {"eventMod": {"shiftDays": 6}}], "then": "paid"},
+            {"text": "Trả 90 vỏ sò và 80 thức ăn", "say": "Cầm đi. Phần của các người đây.", "cond": "mood<=-2", "cost": {"coin": 90, "food": 80}, "effects": [{"deed": "paid_tribute"}, {"eventMod": {"shiftDays": 6}}], "then": "paid"},
+            {"text": "Mặc cả xuống một nửa", "say": "Một nửa thôi. Bấy nhiêu là đủ rồi.", "cond": "mood>=2", "roll": {"p": 0.5, "mood": 0.08, "yes": "haggle_ok_1", "no": "haggle_fail"}},
+            {"text": "Mặc cả xuống một nửa", "say": "Một nửa thôi. Bấy nhiêu là đủ rồi.", "cond": "mood>-2 && mood<2", "roll": {"p": 0.5, "mood": 0.08, "yes": "haggle_ok_2", "no": "haggle_fail"}},
+            {"text": "Mặc cả xuống một nửa", "say": "Một nửa thôi. Bấy nhiêu là đủ rồi.", "cond": "mood<=-2", "roll": {"p": 0.5, "mood": 0.08, "yes": "haggle_ok_3", "no": "haggle_fail"}},
+            {"text": "Dọa lại: chỉ vào hàng lính của làng", "say": "Nhìn cho kỹ. Tụi tôi không dễ bị dọa.", "cond": "soldiers>=4", "branch": [{"cond": "soldiers>=10", "then": "scare_ok"}], "then": "scare_fail"},
+            {"text": "Từ chối", "say": "Không có gì cho các người hết.", "effects": [{"deed": "refused_tribute"}, {"rel": -6}, {"raid": 4}], "then": "refused"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -4}, {"raid": 4}, {"deed": "drove_off_tribute"}],
+          "say": [{ "any": [["Mày dám?! Được lắm!", "Bọn tao quay lại, lần này khỏi nói chuyện."], ["Hừ. Đã vậy thì bọn ta tự lấy."]] }]
+        },
+        "paid": {
+          "say": [
+            { "tone": [
+              "Tốt. Bọn ta nhớ chuyện này. Lần sau cũng đừng để bọn ta chờ.",
+              "Biết điều. Lần sau chuẩn bị sẵn, đừng để bọn ta phải quay lại.",
+              "Được. Đi.",
+              "Biết điều đấy. Lần sau chuẩn bị sẵn, đừng để bọn tao chờ."
+            ] }
+          ]
+        },
+        "haggle_ok_1": {
+          "effects": [{"take": {"coin": 15, "food": 15}}, {"deed": "paid_tribute"}, {"eventMod": {"shiftDays": 3}}],
+          "say": [
+            { "tone": [
+              "Thôi... nửa thì nửa. Nhưng lần sau đừng mong rẻ vậy.",
+              "Hừ... nửa thì nửa. Lần sau không rẻ vậy đâu.",
+              "Nửa. Lần sau thì không.",
+              "Mặc cả hả? Được, nửa thôi. Lần sau mày liệu hồn."
+            ] }
+          ]
+        },
+        "haggle_ok_2": {
+          "effects": [{"take": {"coin": 28, "food": 25}}, {"deed": "paid_tribute"}, {"eventMod": {"shiftDays": 3}}],
+          "say": [
+            { "tone": [
+              "Thôi... nửa thì nửa. Nhưng lần sau đừng mong rẻ vậy.",
+              "Hừ... nửa thì nửa. Lần sau không rẻ vậy đâu.",
+              "Nửa. Lần sau thì không.",
+              "Mặc cả hả? Được, nửa thôi. Lần sau mày liệu hồn."
+            ] }
+          ]
+        },
+        "haggle_ok_3": {
+          "effects": [{"take": {"coin": 45, "food": 40}}, {"deed": "paid_tribute"}, {"eventMod": {"shiftDays": 3}}],
+          "say": [
+            { "tone": [
+              "Thôi... nửa thì nửa. Nhưng lần sau đừng mong rẻ vậy.",
+              "Hừ... nửa thì nửa. Lần sau không rẻ vậy đâu.",
+              "Nửa. Lần sau thì không.",
+              "Mặc cả hả? Được, nửa thôi. Lần sau mày liệu hồn."
+            ] }
+          ]
+        },
+        "haggle_fail": {
+          "effects": [{"rel": -4}, {"eventMod": {"shiftDays": -2}}],
+          "say": [
+            { "tone": [
+              "Mặc cả hả? Không có đâu. Bọn ta sớm quay lại.",
+              "Mặc cả hả? Mày coi thường bọn ta à? Sớm gặp lại thôi.",
+              "Mặc cả cái gì. Sớm gặp lại.",
+              "Mày dám mặc cả với bọn tao? Chờ đấy."
+            ] }
+          ]
+        },
+        "scare_ok": {
+          "effects": [{"rel": -3}, {"deed": "scared_off_tribute"}],
+          "say": [
+            { "tone": [
+              "...Làng này đông lính hơn bọn ta nghĩ. Hôm nay thôi vậy.",
+              "Đông lính phết. Hôm nay thôi vậy.",
+              "Nhiều lính. Thôi.",
+              "Hừ. Hôm nay tha. Chưa hết đâu."
+            ] }
+          ]
+        },
+        "scare_fail": {
+          "effects": [{"rel": -10}, {"deed": "bluff_failed"}, {"raid": 4}],
+          "say": [
+            { "tone": [
+              "Chỉ có thế thôi à? Đừng làm bọn ta cười. Chờ xem.",
+              "Chỉ có chừng đó lính mà dọa bọn ta? Chờ xem.",
+              "Có thế thôi hả. Chờ đấy.",
+              "Mày dọa ai đấy? Chờ mà xem."
+            ] }
+          ]
+        },
+        "refused": {
+          "say": [
+            { "tone": [
+              "Vậy thì bọn ta vào tự lấy.",
+              "Không nộp à? Vậy bọn ta tự lấy.",
+              "Thế thì tự lấy.",
+              "Không nộp thì tụi tao vào lấy, đừng khóc."
+            ] }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ultimatum",
+      "fireLevel": [1, 3],
+      "minDay": 1,
+      "weight": 0,
+      "tribes": [],
+      "waitDays": 1,
+      "truth": [{"kind": "hostile", "w": 1}],
+      "party": {"size": [2, 3], "weapons": ["spear", "hatchet"], "armor": true},
+      "talk": {"hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": ["Thủ lĩnh bọn ta quyết đánh làng này trong mấy ngày tới.", "Thủ lĩnh bọn ta đã quyết: mấy ngày nữa đập làng này.", "Thủ lĩnh bảo đánh làng này. Vài ngày nữa.", "Thủ lĩnh bọn tao quyết đập làng chúng mày rồi. Vài ngày nữa là tới."]},
+            {"any": ["(Họ chống giáo xuống đất, nhìn thẳng vào người gác.)", "(Một người gõ cán giáo xuống đất, đều đều.)", "(Mấy người đứng yên, tay không rời vũ khí.)"]},
+            {"tone": ["Nhưng thủ lĩnh cũng thích đường dễ. Nộp đủ thức ăn thì bọn ta quay về.", "Nhưng thủ lĩnh không muốn tốn người. Nộp đủ thức ăn thì bọn ta rút.", "Nộp đủ thức ăn thì bọn ta rút. Không thì đánh.", "Muốn khỏi bị đập thì nộp đủ thức ăn. Nghe rõ chưa?"]}
+          ],
+          "choices": [
+            {"text": "Thủ lĩnh các người muốn gì ở làng này?", "say": "Thủ lĩnh các người muốn gì ở làng này?", "then": "@round"},
+            {"text": "Có gì thì thương lượng được.", "say": "Có gì thì thương lượng được.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Dọa ai đấy? Làng này không sợ đâu.", "say": "Dọa ai đấy? Làng này không sợ đâu.", "effects": [{"mood": -1}, {"mood": 2, "if": "soldiers>=10"}], "then": "@round"},
+            {"text": "Biến đi. Đừng làm mất thì giờ.", "say": "Biến đi. Đừng làm mất thì giờ.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Nói điều kiện đi.", "say": "Nói điều kiện đi.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["Hừ, biết điều thì dễ nói chuyện. Nghe cho kỹ.", "Thủ lĩnh cũng muốn êm chuyện. Mày nói tiếp đi."]}]},
+            {"when": "mood==0", "say": [{"any": ["Bọn ta không có nhiều thì giờ.", "Nói nhanh."]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Giọng đó là sao? Thủ lĩnh không thích bị coi thường.", "Mày nói thế thì đừng trách bọn ta."]}]}
+          ],
+          "choices": [
+            {"text": "Cho vài ngày chuẩn bị.", "say": "Cho vài ngày chuẩn bị.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Đổ máu làm gì. Nói chuyện đi.", "say": "Đổ máu làm gì. Nói chuyện đi.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đánh thì đánh, tụi tôi không sợ.", "say": "Đánh thì đánh, tụi tôi không sợ.", "effects": [{"mood": -1}, {"mood": 2, "if": "soldiers>=10"}], "then": "@round"},
+            {"text": "Đủ rồi! Về bảo thủ lĩnh bọn mày đừng mơ.", "say": "Đủ rồi! Về bảo thủ lĩnh bọn mày đừng mơ.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Nói điều kiện đi.", "say": "Nói điều kiện đi.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Thủ lĩnh bảo mày biết điều. Nộp ít thôi cũng được.", "Rút hẳn hay hoãn vài ngày đều được, giá dễ chịu."]},
+            {"when": "mood==1", "say": ["Làng này không dễ nuốt, thủ lĩnh biết. Vì thế mới chịu nhận thức ăn thay vì đánh. Rút hẳn hay hoãn vài ngày? Giá thế này."]},
+            {"when": "mood==0", "say": ["Muốn rút hẳn hay hoãn vài ngày? Giá thế này."]},
+            {"when": "mood==-1", "say": ["Cứng miệng đấy. Nhưng thủ lĩnh vẫn cho mày chọn: rút hẳn hay hoãn vài ngày? Giá thế này."]},
+            {"when": "mood<=-2", "say": ["Mồm mày gắt quá. Giá lên cao hơn, đừng trách."]}
+          ],
+          "choices": [
+            {"text": "Nộp thức ăn để họ rút hẳn", "say": "Đây, nhận lấy và quay về đi.", "effects": [{"eventMod": {"cancel": true}}, {"deed": "bought_peace"}, {"rel": 2}], "then": "bought", "cond": "mood>=2", "cost": {"food": 20}},
+            {"text": "Nộp thức ăn để họ rút hẳn", "say": "Đây, nhận lấy và quay về đi.", "effects": [{"eventMod": {"cancel": true}}, {"deed": "bought_peace"}, {"rel": 2}], "then": "bought", "cond": "mood>-2 && mood<2", "cost": {"food": 25}},
+            {"text": "Nộp thức ăn để họ rút hẳn", "say": "Đây, nhận lấy và quay về đi.", "effects": [{"eventMod": {"cancel": true}}, {"deed": "bought_peace"}, {"rel": 2}], "then": "bought", "cond": "mood<=-2", "cost": {"food": 35}},
+            {"text": "Nộp thức ăn để họ hoãn vài ngày", "say": "Lương thực đây. Hoãn mấy ngày đi.", "effects": [{"eventMod": {"shiftDays": 3}}, {"deed": "bought_time"}], "then": "delayed", "cond": "mood>=2", "cost": {"food": 8}},
+            {"text": "Nộp thức ăn để họ hoãn vài ngày", "say": "Lương thực đây. Hoãn mấy ngày đi.", "effects": [{"eventMod": {"shiftDays": 3}}, {"deed": "bought_time"}], "then": "delayed", "cond": "mood>-2 && mood<2", "cost": {"food": 10}},
+            {"text": "Nộp thức ăn để họ hoãn vài ngày", "say": "Lương thực đây. Hoãn mấy ngày đi.", "effects": [{"eventMod": {"shiftDays": 3}}, {"deed": "bought_time"}], "then": "delayed", "cond": "mood<=-2", "cost": {"food": 14}},
+            {"text": "Cứ tới. Tụi tôi chờ", "say": "Tới đi. Tụi tôi chờ.", "effects": [{"rel": -3}, {"deed": "defied_ultimatum"}], "then": "defied"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -3}, {"deed": "defied_ultimatum"}],
+          "say": [
+            {"any": [["Vậy thì gặp nhau ở chiến trường."], ["Đã thế thì đừng chạy khi bọn ta tới."]]}
+          ]
+        },
+        "bought": {
+          "say": [
+            {"tone": ["Thủ lĩnh sẽ vừa lòng. Bọn ta không quay lại nữa.", "Thủ lĩnh sẽ hài lòng. Bọn ta sẽ không đến nữa.", "Được. Không đến nữa.", "Biết điều. Bọn tao không đến nữa. Lần này."]}
+          ]
+        },
+        "delayed": {
+          "say": [
+            {"tone": ["Vậy thì vài ngày nữa. Chuẩn bị cho kỹ.", "Vậy hoãn vài ngày. Chuẩn bị cho kỹ.", "Vài ngày nữa. Chuẩn bị đi.", "Hoãn vài ngày thôi. Rồi bọn tao vào."]}
+          ]
+        },
+        "defied": {
+          "say": [
+            {"tone": ["Vậy thì gặp nhau ở chỗ đánh nhau.", "Vậy gặp nhau khi đánh.", "Được. Gặp ở chiến trường.", "Chờ đấy. Bọn tao tới thì đừng chạy."]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "thief_caught",
+      "fireLevel": [1, 3],
+      "minDay": 1,
+      "weight": 0,
+      "tribes": [],
+      "waitDays": 1,
+      "talk": {"hub": "r2", "final": "final", "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": ["Tha cho tôi! Tôi đói quá nên mới lấy. Đồ lấy được tôi trả hết rồi.", "Tôi chỉ đói quá thôi. Đồ lấy tôi trả lại hết rồi.", "Đồ tôi trả lại rồi. Còn muốn gì nữa?", "Trả hết rồi còn gì! Đừng làm quá lên."]},
+            {"any": ["Tôi thề không làm nữa.", "Tôi không dám nữa đâu.", "Lần này thôi, tôi hứa.", "Từ giờ tôi không đụng vào đồ ai nữa."]}
+          ],
+          "choices": [
+            {"text": "Sao mày lấy đồ của tụi tôi?", "say": "Sao mày lấy đồ của tụi tôi?", "then": "@round"},
+            {"text": "Đói thì phải nói, đừng trộm.", "say": "Đói thì phải nói, đừng trộm.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đồ ăn trộm! Đáng bị đánh lắm.", "say": "Đồ ăn trộm! Đáng bị đánh lắm.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Trả lại rồi thì xong chắc?", "say": "Trả lại rồi thì xong chắc?", "effects": [{"mood": -1}], "then": "@round"},
+            {"text": "Tôi quyết rồi.", "say": "Tôi quyết rồi.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["...Cảm ơn đã chịu nghe tôi. Tôi biết mình sai.", "Tôi thật lòng xin lỗi."]}]},
+            {"when": "mood==0", "say": [{"any": ["Tôi nói hết rồi. Còn gì muốn hỏi nữa?"]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Muốn làm gì thì làm. Tôi không sợ.", "Hừ. Đánh đi nếu muốn."]}]}
+          ],
+          "choices": [
+            {"text": "Nhà mày còn ai không?", "say": "Nhà mày còn ai không?", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Thật lòng thì tôi nghe.", "say": "Thật lòng thì tôi nghe.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Mày nghĩ ai tin mày?", "say": "Mày nghĩ ai tin mày?", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Tôi quyết rồi.", "say": "Tôi quyết rồi.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Tôi thề từ nay không đụng vào đồ ai nữa. Cho tôi làm việc đền lại.", "Xin tha cho tôi, tôi sẽ nhớ ơn này."]},
+            {"when": "mood==1", "say": ["Cảm ơn đã nghe. Tôi đã trả lại hết. Các người định làm gì tôi?"]},
+            {"when": "mood==0", "say": ["Tôi đã trả lại hết. Các người định làm gì tôi?"]},
+            {"when": "mood==-1", "say": ["Muốn mắng thì mắng... Tôi đã trả lại hết rồi. Các người định làm gì tôi?"]},
+            {"when": "mood<=-2", "say": ["Hừ. Muốn phạt thì phạt, tôi không xin xỏ ai đâu."]}
+          ],
+          "choices": [
+            {"text": "Phạt: đuổi đi, làng hắn sẽ biết", "say": "Cút đi. Về nói với làng mày: làng này không dễ bị trộm.", "effects": [{"rel": -4}, {"deed": "punished_thief"}], "then": "punished"},
+            {"text": "Tha cho đi", "say": "Lần này tha. Đừng bao giờ quay lại nữa.", "effects": [{"rel": 3}, {"deed": "pardoned_thief"}], "then": "pardoned"},
+            {"text": "Cho ở lại làm dân, làm việc để chuộc lỗi", "say": "Ở lại làm việc để chuộc lỗi đi.", "roll": {"p": 0.3, "yes": "again", "no": "reformed", "mood": -0.06}}
+          ]
+        },
+        "punished": {
+          "say": [
+            {"tone": ["...Tôi hiểu. Tôi đi.", "Được. Tôi đi. Đừng đuổi theo.", "Ừ. Đi.", "Rồi, đi. Đừng tưởng tôi quên."]}
+          ]
+        },
+        "pardoned": {
+          "say": [
+            {"tone": ["Cảm ơn! Tôi nhớ ơn này.", "Cảm ơn. Tôi sẽ không quên.", "Ừ... cảm ơn.", "Hừ, được. Coi như tôi nợ."]}
+          ]
+        },
+        "reformed": {
+          "effects": [{"join": true}, {"deed": "took_in_thief"}],
+          "say": [
+            {"tone": ["Thật hả? Tôi sẽ làm việc thật chăm. Cảm ơn.", "Thật à? Được, tôi sẽ làm việc chăm chỉ.", "Ở lại thì ở. Tôi làm.", "Được. Tôi làm là được chứ gì."]},
+            {"any": ["Việc nặng cứ giao cho tôi.", "Tôi sẽ làm cho ra làm.", "Tôi sẽ không để mọi người phải hối hận."]}
+          ]
+        },
+        "again": {
+          "effects": [{"join": true}, {"take": {"food": 25}}, {"deed": "thief_again"}],
+          "say": [
+            {"tone": ["Thật hả? Tôi sẽ làm việc thật chăm. Cảm ơn.", "Thật à? Được, tôi sẽ làm việc chăm chỉ.", "Ở lại thì ở. Tôi làm.", "Được. Tôi làm là được chứ gì."]},
+            {"any": ["(Sáng hôm sau, kho lương lại vơi đi một ít...)", "(Qua một đêm, kho lương hụt đi thấy rõ...)", "(Đến sáng, mấy giỏ thức ăn nhẹ hẳn đi...)"]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "travelers",
+      "fireLevel": [2, 3],
+      "minDay": 14,
+      "weight": 2,
+      "maxTimes": 3,
+      "cooldownDays": 14,
+      "tribes": ["swamp", "spring"],
+      "relation": [-39, 100],
+      "waitDays": 2,
+      "truth": [{"kind": "honest", "w": 5}, {"kind": "thief", "w": 2, "act": {"do": "steal", "who": [1, 2], "after": [8, 20], "take": {"pick": [1, 2], "each": [30, 90], "pool": ["food", "wood", "stone", "hide", "bone", "fiber"], "coin": [20, 50]}}}, {"kind": "kidnapper", "w": 2, "act": {"do": "kidnap", "who": [1, 2], "after": [10, 25]}}],
+      "clues": [
+        {"text": "{He} cứ đảo mắt nhìn dân đang làm việc, như đếm từng người.", "p": {"honest": 0.25, "thief": 0.15, "kidnapper": 0.7}},
+        {"text": "Một người trong toán giấu cuộn dây thừng dưới áo.", "p": {"honest": 0.05, "thief": 0.1, "kidnapper": 0.6}},
+        {"text": "Họ hỏi kho lương của làng nằm ở đâu.", "p": {"honest": 0.1, "thief": 0.7, "kidnapper": 0.1}},
+        {"text": "Hai người trong toán cứ thì thầm, chốc chốc lại liếc vào làng.", "p": {"honest": 0.15, "thief": 0.5, "kidnapper": 0.5}},
+        {"text": "Cả toán mệt thật sự, giày rách nát.", "p": {"honest": 0.6, "thief": 0.3, "kidnapper": 0.3}},
+        {"text": "Họ hỏi làng có nhiều trẻ con không.", "p": {"honest": 0.05, "thief": 0.1, "kidnapper": 0.7}},
+        {"text": "Họ hỏi ban đêm làng có ai canh không.", "p": {"honest": 0.1, "thief": 0.65, "kidnapper": 0.5}},
+        {"text": "Một người đứng tách ra, canh chừng lối ra khỏi làng.", "p": {"honest": 0.1, "thief": 0.3, "kidnapper": 0.65}},
+        {"text": "Một người cầm túi vải to, bên trong trống không.", "p": {"honest": 0.1, "thief": 0.5, "kidnapper": 0.2}},
+        {"text": "Họ chia nhau miếng thịt khô cuối cùng, người nhỏ nhất được phần nhiều nhất.", "p": {"honest": 0.6, "thief": 0.1, "kidnapper": 0.05}},
+        {"text": "Vừa được ngồi là mấy người trong toán ngả lưng thở dốc.", "p": {"honest": 0.65, "thief": 0.25, "kidnapper": 0.2}},
+        {"text": "Họ hỏi đường tới làng kế bên, nói muốn tới đó trước tối.", "p": {"honest": 0.5, "thief": 0.2, "kidnapper": 0.15}},
+        {"text": "Người đi đầu cười rất tươi nhưng mắt không cười.", "p": {"honest": 0.1, "thief": 0.2, "kidnapper": 0.5}},
+        {"text": "Một người cứ sờ cán dao đá bên hông.", "p": {"honest": 0.1, "thief": 0.4, "kidnapper": 0.5}},
+        {"text": "Họ nhìn chằm chằm vào chỗ phơi thịt và chỗ cất hạt.", "p": {"honest": 0.2, "thief": 0.65, "kidnapper": 0.1}},
+        {"text": "Họ hỏi ra suối hay ra rừng có ai phải đi một mình không.", "p": {"honest": 0.05, "thief": 0.05, "kidnapper": 0.65}}
+      ],
+      "party": {"size": [4, 5]},
+      "talk": {"hub": "n1", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 3]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"when": "flag.talked==0", "say": [{"tone": ["Chào mọi người! Tụi tôi là dân đi đường, qua vùng này mấy ngày rồi.", "Chào. Tụi tôi chỉ đi ngang qua vùng này.", "Tụi tôi đi ngang qua. Đi mấy ngày rồi.", "Tụi tôi đi ngang qua, không kiếm chuyện đâu."]}, {"any": ["Chân rã rời hết rồi.", "Giày rách, bụng đói.", "Đi từ sáng đến giờ chưa ngồi lần nào.", "Đêm qua ngủ ngoài trời, lạnh lắm.", "Đường xa quá, tụi tôi mệt rồi."]}, {"tone": ["Cho tụi tôi nghỉ chân, xin bữa ăn được không?", "Cho tụi tôi ngồi nghỉ một lát với chút gì ăn được không?", "Cho nghỉ chân với ít đồ ăn đi.", "Cho tụi tôi nghỉ chân, có gì ăn thì đưa. Xong là đi."]}]},
+            {"when": "flag.talked==1 && mood>=1", "say": [{"any": ["Được đấy. Tụi tôi yên tâm hơn rồi.", "Cảm ơn đã nghe tụi tôi nói. Tụi tôi chỉ là dân đi đường thôi."]}]},
+            {"when": "flag.talked==1 && mood<=-1", "say": [{"any": ["Hỏi gì mà lạnh lùng thế...", "Tụi tôi chỉ xin nghỉ chân, đâu có làm gì."]}]},
+            {"when": "flag.talked==1", "say": [{"tone": ["Mọi người còn muốn hỏi gì nữa không? Hay cho tụi tôi nghỉ chân?", "Còn hỏi gì nữa không? Hay cho nghỉ chân?", "Còn gì nữa? Cho nghỉ hay không?", "Hỏi hoài. Cho nghỉ chân hay không thì nói đi."]}]}
+          ],
+          "choices": [
+            {"text": "Hỏi: từ đâu tới?", "group": "Hỏi họ", "say": "Từ đâu tới đấy?", "cond": "flag.asked_origin==0", "effects": [{"flag": "asked_origin"}, {"flag": "talked"}], "then": "origin_ok", "by": {"thief": "origin_thief", "kidnapper": "origin_kidnapper"}},
+            {"text": "Hỏi: định đi đâu?", "group": "Hỏi họ", "say": "Định đi đâu đấy?", "cond": "flag.asked_dest==0", "effects": [{"flag": "asked_dest"}, {"flag": "talked"}], "then": "dest_ok", "by": {"thief": "dest_thief", "kidnapper": "dest_kidnapper"}},
+            {"text": "Hỏi: trong túi có gì?", "group": "Hỏi họ", "say": "Trong túi có gì?", "cond": "flag.asked_carry==0", "effects": [{"flag": "asked_carry"}, {"flag": "talked"}], "then": "carry_ok", "by": {"thief": "carry_thief", "kidnapper": "carry_kidnapper"}},
+            {"text": "Hỏi: có quen ai quanh đây không?", "group": "Hỏi họ", "say": "Quanh đây có quen ai không?", "cond": "flag.asked_friends==0", "effects": [{"flag": "asked_friends"}, {"flag": "talked"}], "then": "friends_ok", "by": {"thief": "friends_thief", "kidnapper": "friends_kidnapper"}},
+            {"text": "Quan sát kỹ họ", "reveals": true, "effects": [{"rel": -1}]},
+            {"text": "Trông mệt quá, ngồi xuống nghỉ đã.", "say": "Trông mệt quá, ngồi xuống nghỉ đã.", "effects": [{"mood": 2}, {"flag": "talked"}], "then": "@round"},
+            {"text": "Nói nhanh lên, không có nhiều thì giờ đâu.", "say": "Nói nhanh lên, không có nhiều thì giờ đâu.", "effects": [{"mood": -2}, {"flag": "talked"}], "then": "@round"},
+            {"text": "Tôi quyết rồi.", "say": "Để tụi tôi quyết.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Chịu nghe là quý rồi. Tụi tôi chỉ xin nghỉ chân, có gì ăn thì ăn."]},
+            {"when": "mood==1", "say": ["Cảm ơn đã chịu nghe. Tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
+            {"when": "mood==0", "say": ["Tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
+            {"when": "mood==-1", "say": ["Nói nghe lạnh thật... Nhưng tụi tôi chỉ xin nghỉ chân với bữa ăn thôi. Tính sao?"]},
+            {"when": "mood<=-2", "say": ["Hừ... nói gắt vậy chắc không tiếp rồi. Tụi tôi cũng không mong nhiều."]}
+          ],
+          "choices": [
+            {"text": "Cho cả toán vào làng nghỉ chân, cho ăn", "say": "Vào làng nghỉ chân đi, có cái ăn.", "cost": {"food": 15}, "effects": [{"rel": 5}, {"deed": "hosted_travelers"}, {"host": true}, {"rel": 3, "if": "mood>=2"}], "then": "welcome"},
+            {"text": "Cho chút thức ăn rồi tiễn đi", "say": "Chỉ có chút thức ăn này thôi, cầm lấy mà đi.", "cost": {"food": 8}, "effects": [{"rel": 1}], "then": "gave"},
+            {"text": "Không tiếp", "say": "Không tiếp. Đi tiếp đi.", "then": "bye"}
+          ]
+        },
+        "walkout": {
+          "say": [
+            {"any": [["Thôi, tụi tôi đi. Không cần ai tiếp."], ["Hừ. Tụi tôi tìm làng khác."]]}
+          ]
+        },
+        "origin_ok": {
+          "say": [
+            {"any": ["Từ bên kia dãy núi. Đi mất mấy ngày mới tới.", "Từ làng ven đầm lầy, theo bờ suối đi lên.", "Tụi tôi từ phía đông, qua hai cái suối rồi mới tới đây.", "Từ mấy làng phía nam. Chỗ đó mất mùa nên tụi tôi đi."]},
+            {"tone": ["May mà đi suốt không gặp thú dữ.", "Đường dài nhưng không gặp chuyện gì.", "Đi suốt, không gặp gì.", "Đường dài, hỏi nhiều mệt thêm."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "origin_thief": {
+          "say": [
+            {"tone": ["Đường xa... kể ra cũng chẳng ai biết đâu.", "Xa lắm. Kể ra cũng không ai biết.", "Xa. Không cần biết.", "Biết làm gì. Cho ăn thì cho đi."]},
+            {"any": ["Quan trọng là bây giờ tụi tôi đói, mà làng này trông khá giả.", "Quanh đây chắc không có mấy người lạ vào ra thường nhỉ?", "Mấy nhà phơi thịt kia chắc ăn không hết đâu."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "origin_kidnapper": {
+          "say": [
+            {"tone": ["Ờ... mấy làng quanh đây thôi, nói tên cũng không ai biết.", "Mấy làng quanh đây thôi.", "Quanh đây.", "Quanh đây. Hỏi chi vậy."]},
+            {"any": ["Mà dân làng này đông nhỉ? Ai cũng làm việc ngoài đồng hết à?", "Trẻ con làng này đâu hết rồi? Sao không thấy chạy quanh?", "Dân làng thường đi làm xa hay ở gần quanh đây thôi?", "Ngoài đồng kia là mấy người làm một mình à?"]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "dest_ok": {
+          "say": [
+            {"any": ["Tụi tôi đi tìm họ hàng ở phía nam. Nghe nói bên đó đất tốt.", "Tụi tôi đi lên bắc, định xin vào một làng thợ làm đồ đá.", "Có người quen ở làng bên kia suối đang chờ. Tới đó là xong.", "Tụi tôi chưa chắc, nhưng đang nhắm vùng gần mỏ đá để kiếm việc."]},
+            {"tone": ["Nghỉ một lát là tụi tôi đi liền, không làm phiền lâu.", "Nghỉ chút rồi đi.", "Nghỉ xong là đi.", "Khỏi lo, đi liền."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "dest_thief": {
+          "say": [
+            {"tone": ["Chưa biết nữa. Tùy chỗ nào dễ kiếm sống.", "Chưa biết. Chỗ nào dễ sống thì tới.", "Chưa biết.", "Chỗ nào có đồ ăn thì tới."]},
+            {"any": ["Làng các bạn trông khá giả đấy, ở lại vài ngày chắc cũng được.", "Hay là ở lại đây vài hôm. Làng này đêm có ai thức không?", "Ở đây thịt khô nhiều thật. Cất ở đâu mà ngon mắt vậy?"]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "dest_kidnapper": {
+          "say": [
+            {"tone": ["Đi đâu cũng được. Chỉ cần có người dẫn đường.", "Đi đâu cũng được, miễn có người dẫn đường.", "Đâu cũng được.", "Đi đâu thì liên quan gì."]},
+            {"any": ["Tay chân ai trong toán cũng khỏe. Ở đây có ai giỏi chỉ đường không nhỉ?", "Làng này có ai hay đi một mình ra suối hay ra rừng không? Hỏi để biết đường mà tránh.", "Có ai trong làng rành đường lắm, nhờ dẫn một đoạn được không?"]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "carry_ok": {
+          "say": [
+            {"tone": ["Có gì đâu mà giấu. Mở ra xem cũng được.", "Đồ lặt vặt thôi. Xem được.", "Đồ cũ thôi. Xem đi.", "Có gì mà xem. Toàn đồ cũ."]},
+            {"any": ["Da thú, chút muối, mấy củ khô, với con dao đá cùn.", "Mấy cái bát gỗ, ít sợi dây, với nắm hạt giống.", "Chăn cũ, đá đánh lửa, nửa miếng thịt khô.", "Toàn đồ lặt vặt để ngủ đường: da, lá khô, dây."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "carry_thief": {
+          "say": [
+            {"tone": ["Đồ lặt vặt thôi, không có gì đáng giá.", "Đồ lặt vặt. Không có gì đáng.", "Lặt vặt.", "Không có gì. Đừng sờ vào."]},
+            {"any": ["Túi còn trống nhiều, nhà nào cho gì thì bỏ vào.", "Để trống cho gọn, khi nào có đồ thì lấp đầy.", "Mấy cái túi này to vì tụi tôi hay nhặt đồ dọc đường.", "Có nhà nào cho tụi tôi mượn cái giỏ không? Túi này chật lắm."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "carry_kidnapper": {
+          "say": [
+            {"tone": ["Toàn đồ đi đường thôi, có gì đâu.", "Đồ đi đường thôi.", "Đồ đi đường.", "Hỏi làm gì."]},
+            {"any": ["Dây thừng nhiều chút, để buộc đồ khi gánh nặng.", "Tụi tôi hay mang dây dài, lỡ gặp thú còn có cái mà buộc... đồ.", "Vài cuộn dây. Dây để buộc hàng thôi, đừng nghĩ nhiều.", "Dây da, dây gai, đủ cả. Buộc cái gì cũng chắc."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "friends_ok": {
+          "say": [
+            {"tone": ["Có chứ! Họ hàng tụi tôi ở làng kế bên, ai cũng biết tụi tôi.", "Có người quen ở làng kế bên.", "Có. Làng kế bên.", "Có, nên khỏi lo tụi tôi làm bậy."]},
+            {"any": ["Hỏi tên là biết, họ ở bên kia suối.", "Ông cậu tôi làm thợ đá ở đó, hỏi ai cũng biết.", "Nếu không tin thì cứ cử người đi hỏi, tụi tôi không ngại.", "Tụi tôi định ghé thăm họ sau khi nghỉ ở đây."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "friends_thief": {
+          "say": [
+            {"tone": ["Không quen ai... nên mới phải xin ở nhờ như thế này.", "Không quen ai quanh đây.", "Không.", "Không. Cần gì quen."]},
+            {"any": ["Cũng tốt, không ai biết tụi tôi, khỏi bị làm phiền.", "Có tới hay đi thì cũng không ai hỏi han gì. Tiện thật.", "Không ai biết, nên có chuyện gì thì cũng không ai nhớ tụi tôi."]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "friends_kidnapper": {
+          "say": [
+            {"tone": ["Không có, tụi tôi chỉ đi ngang qua thôi.", "Không. Đi ngang qua thôi.", "Không có.", "Không. Liên quan gì."]},
+            {"any": ["Nghe nói làng này nhiều người làm việc giỏi lắm. Chắc đông lắm nhỉ?", "Không ai quen thì cũng chẳng ai tìm. Đi cho nhẹ nhõm.", "Nghe nói làng này có nhiều người hay đi làm xa nhà, đúng không?"]}
+          ],
+          "choices": [
+            {"text": "Ừ, nói vậy nghe được.", "say": "Ừ, nói vậy nghe được.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Ừ, biết rồi.", "say": "Ừ, biết rồi.", "then": "@round"},
+            {"text": "Nghe cứ như đang lừa người.", "say": "Nghe cứ như đang lừa người.", "effects": [{"mood": -2}], "then": "@round"}
+          ]
+        },
+        "welcome": {
+          "say": [
+            {"when": "flag.talked==1", "say": [{"tone": ["Cảm ơn đã chịu nghe tụi tôi.", "Cảm ơn vì đã nghe.", "Hỏi xong rồi thì tốt.", "Hỏi cũng đã đủ rồi nhỉ."]}]},
+            {"tone": ["Cảm ơn mọi người đã đón tiếp! Tụi tôi nghỉ một lát rồi đi.", "Cảm ơn. Tụi tôi nghỉ một lát rồi đi.", "Được. Nghỉ chút rồi đi.", "Ừ. Nghỉ xong là đi."]},
+            {"any": ["Chỗ này yên ổn thật.", "Có lửa ấm thế này là tốt rồi.", "Ngồi một lát là đỡ nhiều."]}
+          ]
+        },
+        "gave": {
+          "say": [
+            {"tone": ["Cảm ơn. Tụi tôi đi tiếp ngay.", "Cảm ơn. Đi tiếp thôi.", "Ừ. Đi.", "Có chút đồ ăn thì đỡ. Đi."]}
+          ]
+        },
+        "bye": {
+          "say": [
+            {"tone": ["Tiếc thật. Vậy tụi tôi đi tiếp.", "Không tiếp thì thôi. Tụi tôi đi.", "Ừ. Đi.", "Hừ. Đi thì đi."]},
+            {"any": ["Tụi tôi thử hỏi làng khác.", "Chắc còn chỗ nào đó cho nghỉ.", "Đi tiếp thôi."]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "ransom",
+      "fireLevel": [1, 3],
+      "minDay": 1,
+      "weight": 0,
+      "tribes": [],
+      "waitDays": 2,
+      "truth": [{"kind": "hostile", "w": 1}],
+      "party": {"size": [2, 3], "weapons": ["spear"], "armor": false},
+      "talk": {"hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": ["Người của làng này còn sống. Đang nằm ở chỗ bọn ta.", "Người của làng mày còn sống, đang ở chỗ bọn ta.", "Người của mày còn sống. Bọn ta giữ.", "Người của bọn mày còn sống. Bọn tao giữ."]},
+            {"tone": ["Muốn nhận về thì mang vỏ sò với thức ăn tới. Không thì... đừng trách bọn ta.", "Muốn chuộc thì mang vỏ sò và thức ăn tới. Không thì đừng trách.", "Mang vỏ sò với thức ăn tới thì chuộc. Không thì thôi.", "Muốn lấy lại thì mang vỏ sò với thức ăn tới. Không thì bọn tao giữ luôn."]}
+          ],
+          "choices": [
+            {"text": "Người của tụi tôi còn lành lặn không?", "say": "Người của tụi tôi còn lành lặn không?", "then": "@round"},
+            {"text": "Thương lượng đi. Đừng đụng vào họ.", "say": "Thương lượng đi. Đừng đụng vào họ.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Thả họ ra, không thì bọn mày hối hận.", "say": "Thả họ ra, không thì bọn mày hối hận.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Một vỏ sò cũng không có cho bọn mày.", "say": "Một vỏ sò cũng không có cho bọn mày.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Nói giá đi.", "say": "Nói giá đi.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["Hừ... nói chuyện cũng biết điều. Người của mày vẫn lành lặn.", "Bọn ta cũng không muốn làm hại ai, nếu giá hợp lý."]}]},
+            {"when": "mood==0", "say": [{"any": ["Muốn chuộc thì nói nhanh.", "Bọn ta không có thì giờ."]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Mày gắt vậy thì người của mày chịu thiệt đấy.", "Hừ. Giọng đó thì bọn ta tăng giá."]}]}
+          ],
+          "choices": [
+            {"text": "Cho nhìn mặt họ một cái đã.", "say": "Cho nhìn mặt họ một cái đã.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Sẽ trả. Cho thời gian.", "say": "Sẽ trả. Cho thời gian.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đừng mong tao sợ.", "say": "Đừng mong tao sợ.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Thôi đủ. Không bàn nữa.", "say": "Thôi đủ. Không bàn nữa.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Nói giá đi.", "say": "Nói giá đi.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Được, bọn ta lấy ít thôi: 70 vỏ sò và 40 thức ăn, người của mày về làng."]},
+            {"when": "mood==1", "say": ["Nói vậy thì bọn ta dễ chịu. Giá của bọn ta: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
+            {"when": "mood==0", "say": ["Giá của bọn ta: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
+            {"when": "mood==-1", "say": ["Mày gắt đấy. Nhưng bọn ta vẫn giữ giá: 100 vỏ sò và 60 thức ăn. Trả đủ thì thả người."]},
+            {"when": "mood<=-2", "say": ["Giờ giá khác rồi: 150 vỏ sò và 90 thức ăn. Mày tự chuốc lấy."]}
+          ],
+          "choices": [
+            {"text": "Trả chuộc: 70 vỏ sò và 40 thức ăn (họ nể bạn)", "say": "Được. Trả đủ thì thả người.", "cond": "captives>=1 && mood>=2", "cost": {"coin": 70, "food": 40}, "effects": [{"ransom": true}, {"deed": "paid_ransom"}], "then": "freed"},
+            {"text": "Trả chuộc: 100 vỏ sò và 60 thức ăn", "say": "Được. Trả đủ thì thả người.", "cond": "captives>=1 && mood>-2 && mood<2", "cost": {"coin": 100, "food": 60}, "effects": [{"ransom": true}, {"deed": "paid_ransom"}], "then": "freed"},
+            {"text": "Trả chuộc: 150 vỏ sò và 90 thức ăn (họ ép giá)", "say": "Được. Trả đủ thì thả người.", "cond": "captives>=1 && mood<=-2", "cost": {"coin": 150, "food": 90}, "effects": [{"ransom": true}, {"deed": "paid_ransom"}], "then": "freed"},
+            {"text": "Không trả", "say": "Không trả một vỏ sò nào hết.", "effects": [{"deed": "refused_ransom"}, {"rel": -6}], "then": "refused"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"deed": "refused_ransom"}, {"rel": -6}],
+          "say": [
+            {"any": [["Vậy thì người đó ở lại làng bọn ta. Mãi mãi."], ["Hừ. Không bàn nữa thì thôi. Đừng tìm bọn ta."]]}
+          ]
+        },
+        "freed": {
+          "say": [
+            {"tone": ["Hợp lý. Người của làng đây. Đừng đi tìm bọn ta nữa.", "Hợp lý. Người của mày đây. Đừng đi tìm bọn ta nữa.", "Được. Nhận người đi. Đừng tìm bọn ta nữa.", "Biết điều đấy. Nhận đi. Đừng tìm bọn tao nữa."]}
+          ]
+        },
+        "refused": {
+          "say": [
+            {"tone": ["Vậy thì người đó sẽ ở lại làng bọn tôi. Mãi mãi.", "Vậy người đó ở lại làng bọn ta. Mãi mãi.", "Không trả thì người đó ở lại. Mãi mãi.", "Không trả thì tụi tao giữ luôn. Mãi mãi."]}
+          ]
+        }
+      }
+    },
+    {
+      "id": "pursuers",
+      "fireLevel": [1, 3],
+      "minDay": 1,
+      "weight": 0,
+      "tribes": [],
+      "truth": [{"kind": "hostile", "w": 1}],
+      "party": {"size": [3, 4], "weapons": ["spear", "club"], "armor": true},
+      "talk": {"hub": "r2", "final": "final", "walkout": "walkout", "below": -3, "rounds": [1, 2]},
+      "start": "n1",
+      "nodes": {
+        "n1": {
+          "say": [
+            {"tone": ["Bọn ta lần theo dấu chân tới đây. Có mấy đứa chạy trốn vừa vào làng này, đúng không?", "Dấu chân dẫn tới tận đây. Mấy đứa chạy trốn vừa chui vào làng này, đúng không?", "Dấu chân dẫn tới đây. Bọn trốn chạy chui vào làng này, đúng không?", "Dấu chân dẫn tới đây. Bọn chạy trốn đang núp trong làng bây, đúng không?"]},
+            {"tone": ["Giao ra. Không thì đừng trách bọn ta.", "Giao chúng ra. Không thì đừng trách.", "Giao ra. Không thì bọn ta tự vào lấy.", "Giao ra ngay, không thì bọn tao tự vào lôi ra."]},
+            {"any": ["(Mấy người đứng chắn đường, mắt đảo vào trong làng.)", "(Một người cúi xuống nhìn dấu chân rồi ngẩng lên nhìn thẳng vào làng.)", "(Họ siết chặt vũ khí, chờ câu trả lời.)"]}
+          ],
+          "choices": [
+            {"text": "Các người đuổi theo ai? Họ đã làm gì?", "say": "Các người đuổi theo ai? Họ đã làm gì?", "then": "@round"},
+            {"text": "Bình tĩnh. Nói rõ chuyện đã.", "say": "Bình tĩnh. Nói rõ chuyện đã.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đây là đất làng tôi. Bớt lớn tiếng.", "say": "Đây là đất làng tôi. Bớt lớn tiếng.", "effects": [{"mood": -1}], "then": "@round"},
+            {"text": "Cút đi. Không có ai ở đây cả.", "say": "Cút đi. Không có ai ở đây cả.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Các người muốn gì? Nói đi.", "say": "Các người muốn gì? Nói đi.", "then": "final"}
+          ]
+        },
+        "r2": {
+          "say": [
+            {"when": "mood>=1", "say": [{"any": ["Hừ... mày cũng biết lý. Bọn ta chỉ muốn lấy lại người.", "Được, bọn ta nghe."]}]},
+            {"when": "mood==0", "say": [{"any": ["Bọn ta lần theo dấu từ sáng. Nói nhanh.", "Đừng vòng vo."]}]},
+            {"when": "mood<=-1", "say": [{"any": ["Giọng đó thì bọn ta tự vào lục.", "Mày giấu chúng chứ gì?"]}]}
+          ],
+          "choices": [
+            {"text": "Họ là ai? Nói cho rõ.", "say": "Họ là ai? Nói cho rõ.", "effects": [{"mood": 1}], "then": "@round"},
+            {"text": "Hạ vũ khí xuống. Nói chuyện đàng hoàng.", "say": "Hạ vũ khí xuống. Nói chuyện đàng hoàng.", "effects": [{"mood": 2}], "then": "@round"},
+            {"text": "Đừng làm loạn trước cổng làng.", "say": "Đừng làm loạn trước cổng làng.", "effects": [{"mood": -2}], "then": "@round"},
+            {"text": "Quay về đi! Không có gì để bàn.", "say": "Quay về đi! Không có gì để bàn.", "effects": [{"mood": -3}], "then": "@round"},
+            {"text": "Các người muốn gì? Nói đi.", "say": "Các người muốn gì? Nói đi.", "then": "final"}
+          ]
+        },
+        "final": {
+          "say": [
+            {"when": "mood>=2", "say": ["Thôi được, mày biết điều. Giao người ra, hoặc nộp ít lương thực cũng được."]},
+            {"when": "mood==1", "say": ["Nói lý thế thì bọn ta nghe. Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
+            {"when": "mood==0", "say": ["Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
+            {"when": "mood==-1", "say": ["Đừng lên giọng với bọn ta. Giao họ ra. Hoặc nộp lương thực, bọn ta sẽ rút."]},
+            {"when": "mood<=-2", "say": ["Mồm mày gắt quá. Giao ra, hoặc nộp nhiều hơn, không thì bọn ta tự vào."]}
+          ],
+          "choices": [
+            {"text": "Giao họ ra", "say": "Được... giao cho các người.", "cond": "refugees>=1", "effects": [{"handOver": true}, {"rel": 5}, {"deed": "handed_over"}, {"rel": 2, "if": "mood>=2"}], "then": "handed"},
+            {"text": "Trả 10 thức ăn để họ rút lui (họ dễ nói chuyện)", "say": "Lấy lương thực này và rút đi.", "cost": {"food": 10}, "effects": [{"deed": "paid_pursuers"}], "then": "paid", "cond": "mood>=2"},
+            {"text": "Trả 15 thức ăn để họ rút lui", "say": "Lấy lương thực này và rút đi.", "cost": {"food": 15}, "effects": [{"deed": "paid_pursuers"}], "then": "paid", "cond": "mood>-2 && mood<2"},
+            {"text": "Trả 25 thức ăn để họ rút lui (họ đòi nhiều hơn)", "say": "Lấy lương thực này và rút đi.", "cost": {"food": 25}, "effects": [{"deed": "paid_pursuers"}], "then": "paid", "cond": "mood<=-2"},
+            {"text": "Không giao. Họ là người của làng", "say": "Không. Họ ở đây là người của làng tôi.", "effects": [{"rel": -12}, {"deed": "defied_pursuers"}, {"raid": 4}], "then": "defied"}
+          ]
+        },
+        "walkout": {
+          "effects": [{"rel": -12}, {"deed": "defied_pursuers"}, {"raid": 4}],
+          "say": [
+            {"any": [["Vậy thì đừng hối hận. Bọn ta quay lại."], ["Đã vậy thì bọn ta tự vào lấy."]]}
+          ]
+        },
+        "handed": {
+          "say": [
+            {"tone": ["Tốt. Vậy mới phải đạo.", "Tốt. Thế mới phải.", "Được. Đi.", "Biết điều. Đáng lẽ phải vậy từ đầu."]}
+          ]
+        },
+        "paid": {
+          "say": [
+            {"tone": ["Thôi được... lần này thôi. Đi!", "Hừ... lần này thôi. Đi!", "Lần này thôi.", "Lần này thôi. Lần sau đừng có may."]}
+          ]
+        },
+        "defied": {
+          "say": [
+            {"tone": ["Vậy thì đừng hối hận. Bọn ta sẽ quay lại.", "Vậy đừng hối hận. Bọn ta sẽ quay lại.", "Rồi sẽ quay lại.", "Đừng có khóc. Bọn tao quay lại sớm thôi."]}
+          ]
+        }
+      }
+    }
+  ]
+}

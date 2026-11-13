@@ -1,5 +1,5 @@
 /**
- * The quick war of the stone age (data/war.json `advanced` off): in place of the war plan the Lều họp chiến lists the villages somebody has seen,
+ * The quick war of the stone age (before the medieval era): in place of the war plan the Lều họp chiến lists the villages somebody has seen,
  * each with a button "Đánh". It sends the whole army (every soldier of the camps of foot, throwers and riders; the guards and the men of the towers stay)
  * straight at the village as one squad of each arm, the war goes on as ever (fighting, falling back, going home) but the army is not slowed and eats little.
  */
@@ -22,14 +22,16 @@ export function army(sim: Sim): Villager[] {
 
 /** Send the army at a village that has been found. Returns an error or null. */
 export function quickAttack(sim: Sim, tribeId: string): string | null {
+  if (sim.era === 'ancient') return 'Thời Trung cổ đánh bằng Lều họp chiến, không còn đánh nhanh'; // the quick war is of the stone age only
   if (warPlan(sim)) return 'Đang có chiến tranh';
   const attacked = sim.attackReason();
   if (attacked) return `Làng đang bị tấn công (${attacked.toLowerCase()}): không thể đi đánh`;
   const t = tribeOf(sim, tribeId as never);
   if (!t || t.state !== 'free') return 'Làng này không còn là kẻ địch';
   if (!sim.isFound(tribeId)) return 'Chưa phát hiện làng này';
+  if (!army(sim).length) return 'Chưa có lính nào ra trận: tuyển lính ở các trại';
+  sim.summonAllies(t); // the villages that stand by us send their soldiers, who go with the army
   const men = army(sim);
-  if (!men.length) return 'Chưa có lính nào ra trận: tuyển lính ở các trại';
   // a clean start: the squads and the plan of the last quick war are gone
   for (const p of sim.plans.filter((x) => x.quick && x.status !== 'running')) sim.plans.splice(sim.plans.indexOf(p), 1);
   for (const v of men) { sim.leaveSquad([v.id]); }
@@ -52,13 +54,14 @@ export function quickAttack(sim: Sim, tribeId: string): string | null {
 
 /** The war is over: the squads of a quick war are let go, and the soldiers go back to their camps. */
 export function cleanup(sim: Sim): void {
+  sim.dismissAllies();
   for (const p of sim.plans) {
     if (!p.quick || p.status === 'running') continue;
     for (const m of [...p.missions]) {
       const s = sim.squadById(m.squad); if (!s) continue;
       const ids = [...s.ids];
       disbandSquad(sim, s.id);
-      for (const id of ids) { const v = sim.byId.get(id); if (v && v.job === 'fight') { sim.clearCombat(v); v.recall = true; } }
+      for (const id of ids) { const v = sim.byId.get(id); if (v && v.job === 'fight' && !v.ally) { sim.clearCombat(v); v.recall = true; } }
     }
   }
 }

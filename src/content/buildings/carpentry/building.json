@@ -1,0 +1,63 @@
+{
+ "kind": "carpentry",
+ "name": "Xưởng mộc",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 4,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Bãi đốt than và cưa hố",
+    "cost": {
+     "wood": 135,
+     "stone": 60
+    },
+    "buildTime": 300,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 420,
+    "sight": 0
+   },
+   {
+    "name": "Nhà gỗ khung lộ",
+    "cost": {
+     "wood": 225,
+     "stone": 135,
+     "iron": 8,
+     "coal": 6
+    },
+    "buildTime": 460,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 3,
+    "hp": 620,
+    "sight": 0
+   },
+   {
+    "name": "Xưởng cưa nước",
+    "cost": {
+     "wood": 300,
+     "stone": 270,
+     "iron": 20,
+     "hardwood": 15,
+     "steel": 6
+    },
+    "buildTime": 680,
+    "cap": 0,
+    "craftSpeed": 1.5,
+    "slots": 4,
+    "hp": 880,
+    "sight": 0
+   }
+  ]
+ }
+}

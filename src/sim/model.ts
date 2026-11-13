@@ -8,13 +8,15 @@ import { Recipe, ToolSet } from './tools';
 import { Team } from './combat';
 
 export type Sex = 'm' | 'f';
+/** A village we took (adopted or wiped out) and what it gave for good: if it is taken back, this is what we lose. */
+export interface Conquest { id: string; tier: string; pop: number; slots: number; yieldPct: number; day: number }
 export type Facing = 'front' | 'back' | 'right' | 'left';
 export type Phase = 'idle' | 'move' | 'goNode' | 'work' | 'goStore' | 'wait' | 'goSite' | 'build' | 'goShop' | 'craft' | 'goEquip' | 'goHome' | 'sleep' | 'goStaff' | 'inside' | 'goOrder' | 'fight' | 'flee' | 'down' | 'goCarcass' | 'skin' | 'rescue';
 export interface Look { sex: Sex; skin: string; hair: string; hide: string; pants: string }
 export interface Skill { xp: number; level: number }
 export interface LogLine { t: number; text: string }
 /** Công cụ đang hiện trong tay (để vẽ). */
-export interface Hold { kind: string; tier: number }
+export interface Hold { kind: string; tier: number; shield?: string }
 /** What a unit is attacking: another unit (player or tribe) or an animal. */
 export interface Target { kind: 'unit' | 'animal'; id: number }
 export type Shift = 'day' | 'night' | 'both';
@@ -54,6 +56,8 @@ export interface FoeAI {
   wander: number;          // seconds until the next stroll
   goal: { x: number; y: number } | null;
   raid: number;            // id of the raid party (0 = none)
+  /** A visitor sent to the gate (encounters.ts): the id of the visit. A guest is no enemy: the brain of the tribe leaves him alone and nobody picks him as a target on his own (a direct order of the player still reaches him). */
+  guest?: number;
   /** What he is busy with besides strolling (src/sim/tribework.ts): gathering at a node, hunting, patrolling or scouting. */
   life?: { kind: 'gather' | 'hunt' | 'patrol' | 'scout'; idx?: number; job?: string; state?: 'go' | 'work'; units?: number; id?: number; stops?: Array<[number, number]>; i?: number; t?: number };
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
@@ -94,16 +98,19 @@ export interface Villager {
   potential: Record<WorkJob, number>;
   skill: Record<WorkJob, Skill>;
   tools: ToolSet;
+  /** A miner of the Mỏ: the ores he may work, chosen by the player (undefined: every one). */
+  ores?: Res[];
   job: Job;
   /** The arm of a soldier (job 'fight'): chosen by the camp that took him on. */
   arm: SoldierArm;
+  /** The rank of a soldier of a camp (ranks.json, 1 to 6): his strength, his food and the weapon he carries follow it. 1 for everyone else. */
+  rank: number;
   phase: Phase;
   slot: number;     // chỗ đứng đã giữ bên cạnh nguồn: 1 = trái, 2 = phải, 0 = chưa giữ
   target: number;   // chỉ số ô nguồn hoặc id công trình đang nhắm
   post: number;     // id Ruộng mà người chơi giao cho làm (nghề Hái lượm); -1 nếu không
   prefer: number;   // mục tiêu người chơi chỉ định (-1 nếu không)
   progress: number;
-  frac: number;     // phần lẻ của sản lượng chưa nhận
   timer: number;
   order: string | null; // đơn chế tác đang làm
   carry: { res: Res; amount: number } | null;
@@ -127,6 +134,8 @@ export interface Villager {
   atkCd: number;          // seconds until the next blow
   down: number;           // seconds left lying wounded (0 = on feet)
   rescue: number;         // seconds an ally has been tending this wounded unit
+  /** A soldier lent by a village that stands by us for the length of one war (tribes.summonAllies): he goes when it is over (`leaving`), out of the camera's sight, and is no more. */
+  ally?: { tribe: string; leaving: boolean; since: number };
   fleeT: number;          // seconds left running away
   calm: number;           // seconds since the last threat was near
   loot: number;           // carcass id being skinned (-1 none)
@@ -160,7 +169,7 @@ export interface Villager {
   /** Wear of the weapon and the armour in hand: which piece it was counted for, hits left, and whether it is broken (useless until mended). */
   /** The squad (đội) this soldier belongs to, -1 for none. */
   squad: number;
-  /** The beast he rides, given from the stable (null for none). The riders of the Trại kỵ thú ride the beast of their camp without one: see `sim.mountOf`. */
+  /** The beast he rides, given from the stable (null for none). The riders of the Trại lính kỵ ride the beast of their camp without one: see `sim.mountOf`. */
   mount: MountKind | null;
   /** A soldier of the Trại lính gác: he keeps a post of his own (`guardAt`) and comes back to it after each fight. */
   guard: boolean;
@@ -171,6 +180,8 @@ export interface Villager {
   /** Ordered home by the player ("Cho quân về"): he drops the fight he is in and goes to his camp, and takes up nothing else on the way. */
   recall?: boolean;
   guardAt: { x: number; y: number } | null;
+  /** The gate (building id) he is a guard of: he stands just inside it, opens and shuts it, and goes out to stop strangers who come to it (defense.ts, encounters.ts). */
+  gate?: number;
   /** Stars (1 to 5) and the personal factor of each of the eight stats (data/stats.json); absent in a save from before, which counts as all 1. */
   stars: number;
   fac: Record<StatId, number>;
@@ -262,7 +273,7 @@ export type MissionState = 'idle' | 'wait' | 'march' | 'blocked' | 'engaged' | '
 /** Something in the way on the ground: a tree, rock or bush (soldiers can clear them), the sea, a work of ours (they cannot), a work of the enemy (they break it as a target). x,y is a tile, or the corner of a work. */
 export interface Obstacle { kind: 'tree' | 'rock' | 'bush' | 'water' | 'ours' | 'enemy' | 'wall'; x: number; y: number; label: string; clear: boolean; tribe?: string }
 /** The thing a soldier is breaking down: a tree, rock or bush (x,y the tile), or a work of an enemy village (x,y its corner). */
-export interface Breaking { kind: 'node' | 'prop'; x: number; y: number; tribe?: string }
+export interface Breaking { kind: 'node' | 'prop'; x: number; y: number; tribe?: string; /** the player gave this order: an enemy near does not turn him from it */ ordered?: boolean; /** the ordered target he returns to once the wall in his way is down */ then?: Breaking }
 /** What an arrow points at, chosen by pressing it on the enemy map: one of the village's works (x,y its corner), or a man (the chief when `leader`; x,y where the map showed him). `at` is where the head of the arrow is drawn. */
 export interface MissionTarget { kind: 'prop' | 'person'; x: number; y: number; at: Pt; label: string; leader: boolean }
 /** A squad that stopped because the way ahead along its arrow is shut. */
@@ -305,6 +316,8 @@ export interface ArmCount { foot: number; archer: number; cavalry: number }
 export interface WarStats {
   startDay: number; fought: boolean;
   sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  /** Enemies we killed, and the words of the war (what happened, in order). */
+  foeDead: number; notes: string[];
   /** The goods the supply soldiers set out with and brought back (food, wood and hide for the tents). */
   loaded: { food: number; wood: number; hide: number }; returned: { food: number; wood: number; hide: number };
   loot: Partial<Record<Res, number>>;
@@ -313,15 +326,19 @@ export interface WarStats {
 export interface WarRecord {
   id: number; tribe: string; name: string; mapLevel: number; startDay: number; endDay: number; days: number;
   result: 'won' | 'lost' | 'off'; squads: number;
-  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number;
+  sent: ArmCount; dead: ArmCount; supplySent: number; supplyDead: number; foeDead: number; notes: string[]; sample?: boolean;
   spent: { food: number; wood: number; hide: number }; loot: Partial<Record<Res, number>>;
 }
 export interface Plan {
   id: number; kind: 'attack' | 'defense'; tribe: string | null;
   /** Made by the simple "Đánh" of the Lều họp chiến (the stone age): the whole army, one squad of each arm, straight at the village. */
   quick?: boolean;
+  /** Made by the player's own orders on soldiers (warskirmish.ts): a war with no squads or arrows. Only these soldiers take part, with no march rules (no hunger, tiredness, slow or tents). `idleSince`: the last time one of them was fighting or under an attack order. */
+  skirmish?: { ids: number[]; idleSince: number };
   missions: Mission[]; cards: Card[];
   status: 'draft' | 'running' | 'done';
+  /** When the order to pull out was given (a retreat or a recall): from it the grace of data/war.json "retreat" counts. */
+  withdrawnAt?: number;
   /**
    * Where a running attack is. `assemble`: the squads walk to the cells drawn for them; `ready`: they stand there and wait for the player to
    * decide to fight or fall back; `fight`: the missions are carried out; `retreat`: a fight is being broken off, each squad falling back by the way drawn for it;
@@ -366,17 +383,28 @@ export interface Forecast {
   facts: Array<[string, string]>;
 }
 /** What happened in the fight that is on (or was last): the base of the campaign log. */
-export interface BattleState { on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[] }
+/** The fight that is on at the village (raiders, or a pack of beasts), in numbers; it becomes a `BattleRecord` when it is over. */
+export interface BattleState {
+  on: boolean; since: number; quiet: number; ourDead: number; foeDead: number; breaches: number; shots: number; notes: string[];
+  /** 'raid': a village attacks; 'beasts': a pack. `name`: who. `peak`: the most enemies on the field at once. */
+  kind: 'raid' | 'beasts'; name: string; startDay: number; night: boolean; peak: number;
+  ourDeadArm: ArmCount; civDead: number; dmgDealt: number; dmgTaken: number;
+}
+/** One fight at the village in the log of the Lều họp chiến (the defence: a raid or a pack of beasts). The attacks we make are `WarRecord`s. */
+export interface BattleRecord {
+  id: number; kind: 'defense' | 'beasts'; name: string; startDay: number; endDay: number; night: boolean; minutes: number; peak: number;
+  ourDead: number; foeDead: number; ourDeadArm: ArmCount; civDead: number; breaches: number; shots: number; dmgDealt: number; dmgTaken: number; notes: string[];
+  /** Made by the dev menu to look at the log: it can be cleared again. */
+  sample?: boolean;
+}
 
-export const NAMES_M = ['Bo', 'Rô', 'Gia', 'Mun', 'Lô', 'Tù', 'Đa'];
-export const NAMES_F = ['Tia', 'Noa', 'Ma', 'Pa', 'Kê', 'Ly', 'Sa'];
 export const HAIR = ['#4a2e1a', '#2b1b10', '#6b3f1d', '#c98a3a', '#7a5a3a'];
 export const SKIN = ['#d9a371', '#e8c4a0', '#c58a5c', '#b87850'];
-export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food' };
+export const NODE_JOB: Record<NodeKind, WorkJob> = { tree: 'wood', rock: 'stone', bush: 'food', ore: 'mine' };
 export const STAT_KEYS = ['vit', 'str', 'agi', 'sta'] as const;
 export const XP_MULT = [0, 1, 1.5, 2];
 /** Khoảng cách ngang (ô) từ tâm vật thể tới chỗ dân đứng khi làm. */
-export const REACH: Record<NodeKind, number> = { tree: 0.55, rock: 0.62, bush: 0.5 };
+export const REACH: Record<NodeKind, number> = { tree: 0.55, rock: 0.62, bush: 0.5, ore: 0.62 };
 export const LEFT = 1, RIGHT = 2;
 
 export interface PlaceResult { ok: boolean; reason?: string; building?: Building }
@@ -399,7 +427,25 @@ export interface Notice {
   /** A building to go to for it (the screen opens it), with the word for the button. */
   action?: { building: string; label: string };
   /** A command the notice carries as a button: the screen runs it. */
-  command?: { kind: 'withdraw'; label: string };
+  command?: { kind: 'withdraw'; label: string } | { kind: 'meet'; label: string; id: number };
+  /** Where the camera goes for this notice (tiles), with the command above. */
+  focus?: { x: number; y: number };
   /** The people the notice is about: the screen can open their details so the player can change what they do. */
   people?: number[];
+}
+
+// ---------------------------------------------------------------- the march of the medieval age (legion.ts)
+/** A military zone drawn at the Bãi tập: a square of ground cleared of resources and animals, where nothing grows back and nothing may be built. */
+export interface MilZone { id: number; x: number; y: number; w: number; h: number }
+/** A square of the zone where one arm of the army stands (x, y: its top-left tile). */
+export interface MilCell { id: number; zone: number; x: number; y: number; arm: 'foot' | 'archer' | 'cavalry' }
+/**
+ * The army gathered from the cells, marching as one block. Each soldier keeps his place (`slots`: offset from the centre) and the block never turns; `theta` is only the way the soldiers face
+ * (`theta0` is unused, kept for old saves). The centre walks the `path` at `speed`, the median of the speeds of the soldiers.
+ */
+export interface Legion {
+  on: boolean; assembling: boolean; since: number; clock: number;
+  cx: number; cy: number; theta: number; theta0: number; speed: number;
+  path: Array<[number, number]>;
+  slots: Record<string, { dx: number; dy: number }>;
 }

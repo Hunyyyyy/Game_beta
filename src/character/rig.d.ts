@@ -19,7 +19,7 @@ export const FH: number;
 export const PADX: number;
 export const PADT: number;
 export function cropToBody(px: Uint8ClampedArray): Uint8ClampedArray;
-export function renderFrame(anims: AnimTable, name: string, idx: number, view: View, look: Look, carryKind?: string, tool?: { kind?: string; tier?: number }, armor?: string | null, extra?: { torch?: number }): Uint8ClampedArray;
+export function renderFrame(anims: AnimTable, name: string, idx: number, view: View, look: Look, carryKind?: string, tool?: { kind?: string; tier?: number; shield?: string }, armor?: string | null, extra?: { torch?: number }): Uint8ClampedArray;
 export function defaultAnims(): AnimTable;
 export function formatAnims(anims: AnimTable): string;
 export const HAND_Y: number;

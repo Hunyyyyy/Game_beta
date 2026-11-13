@@ -1,0 +1,117 @@
+{
+ "_note": "Các nhà chế biến của thời Trung cổ (Lò luyện, Xưởng mộc, Xưởng thuộc da và dệt): mỗi nhà có công thức riêng. in: nguyên liệu trừ khi đặt đơn (hủy thì trả lại); out: sản phẩm vào kho vật liệu; time: giây với một thợ trung bình ở tốc độ 1; level: cấp nhà cần có. maxQueue: số đơn tối đa mỗi nhà. startKit: tặng một lần khi bước sang Trung cổ.",
+ "maxQueue": 8,
+ "startKit": {
+  "iron": 10,
+  "coal": 10
+ },
+ "houses": {
+  "smelter": [
+   {
+    "id": "iron",
+    "name": "Thỏi sắt",
+    "in": {
+     "iron_ore": 3,
+     "coal": 1
+    },
+    "out": {
+     "iron": 1
+    },
+    "time": 30,
+    "level": 1
+   },
+   {
+    "id": "bronze",
+    "name": "Thỏi đồng",
+    "in": {
+     "copper_ore": 3,
+     "coal": 1
+    },
+    "out": {
+     "bronze": 1
+    },
+    "time": 40,
+    "level": 1
+   },
+   {
+    "id": "steel",
+    "name": "Thép",
+    "in": {
+     "iron": 2,
+     "coal": 1
+    },
+    "out": {
+     "steel": 1
+    },
+    "time": 60,
+    "level": 2
+   },
+   {
+    "id": "fine_steel",
+    "name": "Thép cao cấp",
+    "in": {
+     "rare_ore": 2,
+     "coal": 2,
+     "iron": 1
+    },
+    "out": {
+     "fine_steel": 1
+    },
+    "time": 120,
+    "level": 3
+   }
+  ],
+  "carpentry": [
+   {
+    "id": "hardwood",
+    "name": "Gỗ cứng",
+    "in": {
+     "wood": 3
+    },
+    "out": {
+     "hardwood": 1
+    },
+    "time": 40,
+    "level": 1
+   },
+   {
+    "id": "charcoal",
+    "name": "Than củi",
+    "in": {
+     "wood": 4
+    },
+    "out": {
+     "coal": 1
+    },
+    "time": 30,
+    "level": 1
+   }
+  ],
+  "tannery": [
+   {
+    "id": "leather",
+    "name": "Da thuộc",
+    "in": {
+     "hide": 2
+    },
+    "out": {
+     "leather": 1
+    },
+    "time": 30,
+    "level": 1
+   },
+   {
+    "id": "cloth",
+    "name": "Vải",
+    "in": {
+     "fiber": 3
+    },
+    "out": {
+     "cloth": 1
+    },
+    "time": 30,
+    "level": 1
+   }
+  ]
+ }
+}

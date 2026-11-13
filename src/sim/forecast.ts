@@ -7,7 +7,7 @@ import { ARMORS, cycleOf, maxHpOf, RULES, WEAPONS } from './combat';
 import { marchOfPlan } from './warmarch';
 import { packPlan } from './warsupply';
 import { tentCost, tentCount } from './wartent';
-import type { DmgType } from './combat';
+import type { ArmorDef } from './combat';
 import { Arm, BEATS } from './formations';
 import type { Sim } from './sim';
 import type { Forecast, Plan, Villager } from './model';
@@ -17,10 +17,13 @@ const SPREAD = [0.4, 0.35, 0.2, 0.1];
 /** A stand-in soldier of the enemy: what a typical man of his tribe is (the stats of a villager are 3 to 10, the average about 6.5). */
 const AVERAGE_STAT = 6.5;
 
+/** The share of a blow an armour turns aside, on top of an unarmoured person's own defence (about what the stat gives: d / (d + k)). */
+function armorShare(a: ArmorDef | null, ranged: boolean): number { const d = 20 + (a ? (ranged ? a.defr : a.defm) : 0); return d / (d + 100); }
+
 /** Damage a second of a fighter with a weapon, against someone wearing `armor`. */
-function dps(weapon: string | null, str: number, agi: number, armor: Record<DmgType, number> | null): number {
+function dps(weapon: string | null, str: number, agi: number, armor: ArmorDef | null): number {
   const w = WEAPONS[weapon ?? 'fist'] ?? WEAPONS.fist, base = w.damage + RULES.strengthDamage * str;
-  return (base * (1 - (armor ? armor[w.type] : 0))) / cycleOf(w.cycle, agi);
+  return (base * (1 - armorShare(armor, !!w.ranged))) / cycleOf(w.cycle, agi);
 }
 
 const armOf = (sim: Sim, v: Villager): Arm => sim.armOf(v);
@@ -39,7 +42,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
 
   // ---- our side: the squads in the plan, each worth what it is ordered to do
   const enemyArmor = t.def.armor ? ARMORS.hide : null;
-  const enemyWeapons = t.def.weapons, enemyType = (WEAPONS[enemyWeapons[0]] ?? WEAPONS.fist).type;
+  const enemyWeapons = t.def.weapons, enemyRanged = !!(WEAPONS[enemyWeapons[0]] ?? WEAPONS.fist).ranged;
   let strength = 0, count = 0, hurt = 0, bare = 0, unarmored = 0;
   const arms: Record<Arm, number> = { foot: 0, archer: 0, cavalry: 0 };
   const perSquad: Array<{ name: string; n: number; worth: number; arms: Record<Arm, number> }> = [];
@@ -48,7 +51,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
     const us = sim.squadUnits(s), w = STANCE_WEIGHT[m.stance], sa: Record<Arm, number> = { foot: 0, archer: 0, cavalry: 0 };
     let worth = 0;
     for (const v of us) {
-      const armor = v.armor ? ARMORS[v.armor] ?? null : null, hp = v.health / (1 - (armor ? armor[enemyType] : 0));
+      const armor = v.armor ? ARMORS[v.armor] ?? null : null, hp = v.health / (1 - armorShare(armor, enemyRanged));
       const unit = Math.sqrt(dps(v.weapon, v.stats.str, v.stats.agi, enemyArmor) * hp);
       worth += unit * w; count++; sa[armOf(sim, v)]++; arms[armOf(sim, v)]++;
       if (v.health < 0.6 * v.maxHealth) hurt++;
@@ -94,7 +97,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
   const home = sim.villagers.filter((v) => v.job === 'fight' && v.health > 0 && !plan.missions.some((m) => sim.squadById(m.squad)?.ids.includes(v.id))).length;
   if (home < 3) w.push(`Chỉ ${home} lính ở lại giữ làng`);
   const pk = packPlan(sim, plan);
-  if (sim.advanced) { if (!pk.sup) w.push('Không có lính hậu cần: quân sẽ đói'); else if (pk.days < plan.carryDays - 0.05) w.push(`Lương chỉ đủ ${pk.days.toFixed(1)} ngày`); }
+  if (sim.era === 'ancient') { if (!pk.sup) w.push('Không có lính hậu cần: quân sẽ đói'); else if (pk.days < plan.carryDays - 0.05) w.push(`Lương chỉ đủ ${pk.days.toFixed(1)} ngày`); }
 
   // ---- what is at stake
   out.win = [`Địch hết lính, lửa tắt, công trình sập → dân xin hàng`, 'Lấy kho lương của địch', `Mất khoảng ${pct(lossIfWin)} quân`];
@@ -116,7 +119,7 @@ export function forecastPlan(sim: Sim, plan: Plan): Forecast {
     if (longest > 0) out.facts.push(['Đường đi', `~${Math.max(1, Math.round(longest / 60))} phút`]);
   }
   if (mr.soldiers) out.facts.push(['Đi chậm', pct(mr.slow)]);
-  if (sim.advanced && pk.sup) out.facts.push(['Lương', `${pk.days.toFixed(1)} ngày`]);
-  if (sim.advanced && nTents) out.facts.push(['Lều', `${nTents} × ${tc.wood} gỗ, ${tc.hide} da`]);
+  if (sim.era === 'ancient' && pk.sup) out.facts.push(['Lương', `${pk.days.toFixed(1)} ngày`]);
+  if (sim.era === 'ancient' && nTents) out.facts.push(['Lều', `${nTents} × ${tc.wood} gỗ, ${tc.hide} da`]);
   return out;
 }

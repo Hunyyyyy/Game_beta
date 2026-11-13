@@ -11,6 +11,12 @@
  "requires": [
   "builder"
  ],
+ "limit": [
+  1,
+  2,
+  3,
+  4
+ ],
  "levels": {
   "stone": [
    {
@@ -19,7 +25,7 @@
      "wood": 10
     },
     "buildTime": 50,
-    "cap": 100,
+    "cap": 200,
     "craftSpeed": 1,
     "slots": 0,
     "hp": 180,
@@ -31,7 +37,7 @@
      "wood": 35
     },
     "buildTime": 90,
-    "cap": 250,
+    "cap": 500,
     "craftSpeed": 1,
     "slots": 0,
     "hp": 270,
@@ -40,27 +46,31 @@
    {
     "name": "Đá",
     "cost": {
-     "wood": 40,
-     "stone": 20
+     "wood": 43,
+     "stone": 24
     },
-    "buildTime": 140,
-    "cap": 500,
+    "buildTime": 179,
+    "cap": 1500,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 360,
+    "hp": 405,
     "sight": 0
-   },
+   }
+  ],
+  "ancient": [
    {
-    "name": "Đá gia cố",
+    "name": "Gạch ngói (trung cổ)",
     "cost": {
-     "wood": 46,
-     "stone": 28
+     "wood": 83,
+     "stone": 51,
+     "iron": 15,
+     "hardwood": 14
     },
-    "buildTime": 218,
-    "cap": 1000,
-    "craftSpeed": 1,
+    "buildTime": 327,
+    "cap": 1500,
+    "craftSpeed": 1.25,
     "slots": 0,
-    "hp": 450,
+    "hp": 675,
     "sight": 0
    }
   ]

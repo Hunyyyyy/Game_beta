@@ -1,7 +1,7 @@
-import { DAY_LENGTH } from '../sim/constants';
 import type { Villager } from '../sim/model';
 import { h, hint } from './dom';
 import { dlg } from './gamedialog';
+import { progressStrip } from './housebox';
 import { detailButton, personTile } from './people';
 import { RolePane } from './rolepane';
 import { resIcon, statIcon } from './resicons';
@@ -48,7 +48,7 @@ export class ScoutPane {
   stateKey(): string {
     const { sim } = this.c;
     return [this.sel, this.open, this.lossOpen, this.c.sim.scoutLosses.length, [...this.picked].join('.'), this.people.stateKey(), JSON.stringify(sim.sightings.map((s) => [s.tribe, s.reported])), JSON.stringify(sim.maps.map((m) => [m.tribe, m.level, m.gaps, Math.floor(m.at)])),
-      JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])), JSON.stringify(sim.drafts), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join('.'), Math.floor(sim.time / DAY_LENGTH), sim.dev.freeBuild].join('|');
+      JSON.stringify(sim.scouts.map((m) => [m.id, m.phase, m.ids.length, Math.floor((m.progress ?? 0) * 50)])), JSON.stringify(sim.drafts), sim.scoutLevel(), sim.scoutLimit(), this.candidates().map((v) => `${v.id}${Math.round(v.energy / 10)}`).join('.'), Math.floor(sim.day), sim.dev.freeBuild].join('|');
   }
 
   /** The scouts who can be sent now, the sharpest first. */
@@ -60,14 +60,14 @@ export class ScoutPane {
   private again(): void { this.key = ''; this.changed(); }
 
   private ageWords(at: number): string {
-    const days = Math.floor((this.c.sim.time - at) / DAY_LENGTH);
+    const days = Math.floor((this.c.sim.time - at) / this.c.sim.dayLen);
     return days <= 0 ? 'báo cáo trong ngày' : days === 1 ? 'báo cáo từ hôm qua' : days < 4 ? `báo cáo từ ${days} hôm trước` : 'đã cũ';
   }
 
   // ---------------------------------------------------------------- the scouts
   private renderRoster(): Node[] {
     const { sim } = this.c, level = sim.scoutLevel(), limit = sim.scoutLimit();
-    const out: Node[] = [hint('Trinh sát', 'Trinh sát là một vai trò, tuyển từ lính kỵ của Trại kỵ thú và cho nghỉ ở đây: số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết.')];
+    const out: Node[] = [hint('Trinh sát', 'Trinh sát là một vai trò, tuyển từ lính kỵ của Trại lính kỵ và cho nghỉ ở đây: số lượng tối đa theo cấp trại. Mỗi chuyến cần nhiều người, mà người giỏi (Nhanh nhẹn, Thể lực) đáng giá hơn: một mình thì không bao giờ vẽ đủ. Càng đông thì đi càng nhanh. Trinh sát có thể chết.')];
     out.push(dlg.line('Bản đồ vẽ được', LEVEL_NAME[level]));
     if (!sim.dev.freeBuild && !limit) out.push(dlg.why('Hãy dựng Trại trinh sát.'));
     out.push(...this.people.render());
@@ -102,7 +102,7 @@ export class ScoutPane {
     body.append(h('div', { class: 'dhead' }, h('div', { class: 'dpic glyph', text: '🏕' }), h('div', { class: 'dwho' }, h('b', { class: 'dtitle', text: best ? t.def.name : 'Một ngôi làng' }), h('small', { class: 'dsub', text: where ? `Cách khoảng ${where.dist} ô, hướng ${where.dir}` : '' }))));
     // what is known of it
     if (best) {
-      const days = Math.floor((sim.time - best.at) / DAY_LENGTH), accuracy = Math.max(0, 1 - 0.1 * days);
+      const days = Math.floor((sim.time - best.at) / sim.dayLen), accuracy = Math.max(0, 1 - 0.1 * days);
       body.append(h('div', { class: 'dpills' },
         dlg.pill(resIcon('role_scout'), `Bản đồ cấp ${sim.mapLevel(id) || best.level}`, undefined, 'Cấp bản đồ đã vẽ'),
         dlg.pill(resIcon('clock'), this.ageWords(best.at), days >= 3 ? 'warn' : undefined, 'Báo cáo cũ hay mới'),
@@ -142,10 +142,7 @@ export class ScoutPane {
 
     // the report: how the trip would go, as a gauge, strengths and times
     const chance = plan.count + (trip?.ids.length ?? 0) < 2 ? 0 : plan.chance, tone = chance >= 0.7 ? 'good' : chance >= 0.35 ? 'warn' : 'bad';
-    body.append(h('div', { class: 'dtile report' }, dlg.ring(chance, `${Math.round(chance * 100)}%`),
-      h('div', { class: 'dmain' }, h('div', { class: 'dname' }, h('b', { text: 'Tỉ lệ vẽ đủ chi tiết' })),
-        dlg.bar(Math.round(chance * 100), 100, plan.count < 2 ? 'cần ít nhất 2 người' : `${Math.round(chance * 100)}%`),
-        dlg.more(`Đi ${plan.count}/${limit} người · mức cần khoảng ${plan.need} người trung bình`))));
+    body.append(progressStrip(h('span', { class: 'aglyph', text: '🎯' }), 'Tỉ lệ vẽ đủ chi tiết', `đi ${plan.count}/${limit} người · cần ~${plan.need} người trung bình`, Math.round(chance * 100), plan.count < 2 ? 'cần ít nhất 2 người' : `${Math.round(chance * 100)}%`));
     body.append(h('div', { class: 'dpills' },
       dlg.pill(resIcon('role_scout'), `${plan.count}/${plan.need} người`, plan.count >= plan.need ? 'good' : plan.count >= 2 ? 'warn' : 'bad', 'Số người đã chọn so với mức cần'),
       dlg.pill(resIcon('role_scout'), `Bản đồ cấp ${Math.max(1, plan.level)}`, undefined, 'Cấp bản đồ sẽ vẽ'),

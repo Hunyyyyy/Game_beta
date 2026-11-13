@@ -1,13 +1,12 @@
 {
   "_note": "Kế hoạch phát triển theo cấp Nhà chung (lửa trại) và cấp Nhà nghiên cứu. Công trình nào mở ở cấp lửa nào nằm trong chính nó: src/content/buildings/<kind>/building.json (unlockFire). Ở đây chỉ còn cấp nhà tối đa và điều kiện nâng lửa theo từng cấp lửa, và các nghiên cứu mở ở từng cấp Nhà nghiên cứu (id trong data/research.json).",
   "campfire": {
-    "_note": "buildingMaxLevel: cấp tối đa của các nhà dưới lửa cấp này (bằng cấp lửa). upgradeNeeds: muốn nâng lửa từ cấp này lên cấp kế thì phải thỏa CẢ HAI: mọi công trình đã mở khóa cho cấp này (unlockFire trong building.json) xây xong và nâng tới cấp này; và mọi công trình thuộc nhóm trong groupAtLeastLevel (vd production) có mặt và đạt cấp đó. Không phụ thuộc nghiên cứu.",
+    "_note": "buildingMaxLevel: cấp tối đa của các nhà dưới lửa cấp này (bằng cấp lửa). upgradeNeeds: muốn nâng lửa từ cấp này lên cấp kế thì mọi công trình thuộc nhóm trong groupAtLeastLevel (hiện chỉ nhóm production: nông trại, xưởng gỗ, xưởng đá, chòi săn) phải có mặt và đạt cấp đó; các nhà khác không bắt buộc. Không phụ thuộc nghiên cứu.",
     "levels": [
       {
         "level": 1,
         "buildingMaxLevel": 1,
         "upgradeNeeds": {
-          "allUnlockedAtLeastLevel": 1,
           "groupAtLeastLevel": {
             "production": 1
           }
@@ -17,7 +16,6 @@
         "level": 2,
         "buildingMaxLevel": 2,
         "upgradeNeeds": {
-          "allUnlockedAtLeastLevel": 2,
           "groupAtLeastLevel": {
             "production": 2
           }
@@ -27,7 +25,6 @@
         "level": 3,
         "buildingMaxLevel": 3,
         "upgradeNeeds": {
-          "allUnlockedAtLeastLevel": 3,
           "groupAtLeastLevel": {
             "production": 3
           }
@@ -41,7 +38,7 @@
     ]
   },
   "research": {
-    "_note": "Mỗi cấp Nhà nghiên cứu mở những nghiên cứu nào: 'tabs' = tab nào của giao diện được mở, 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). Nghiên cứu chỉ cộng chỉ số và mở trận pháp, không khóa công trình hay cấp nhà (cấp nhà theo cấp Nhà chung). Dân tự lấy công cụ, vũ khí, đuốc ở kho và tự đặt chế tạo mà không cần nghiên cứu.",
+    "_note": "Mỗi cấp Nhà nghiên cứu mở những nghiên cứu nào: 'tabs' = tab nào của giao diện được mở, 'techs' là id trong research.json (cấp 3 dùng '@rest' = tất cả còn lại). Nghiên cứu chỉ cộng chỉ số và mở trận pháp, không khóa công trình hay cấp nhà (cấp nhà theo cấp Nhà chung). Dân tự lấy công cụ, vũ khí, đuốc ở kho và tự đặt chế tạo mà không cần nghiên cứu. Cấp 4 là Nhà nghiên cứu trung cổ cấp 1: các nghiên cứu của lớp chiến tranh (tín hiệu, trận pháp, kế hoạch) chỉ học được ở đó, và chỉ khi đã sang thời Trung cổ (Nhà chung thành Nhà chính). Cấp được xếp TRƯỚC cấp có '@rest' vì cấp cuối là cấp dự phòng.",
     "levels": [
       {
         "level": 1,
@@ -59,14 +56,29 @@
           "blueprints",
           "military"
         ],
+        "techs": []
+      },
+      {
+        "level": 4,
+        "tabs": [
+          "blueprints",
+          "military"
+        ],
         "techs": [
           "signal",
           "form_basic",
           "form_wedge",
+          "form_horns",
+          "form_scatter",
+          "form_ambush",
           "form_cells_10",
+          "form_cells_15",
           "form_squads_5",
+          "form_squads_6",
           "plan_report",
-          "plan_weather"
+          "plan_supply",
+          "plan_weather",
+          "plan_rest"
         ]
       },
       {

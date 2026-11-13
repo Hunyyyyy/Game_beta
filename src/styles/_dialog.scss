@@ -53,7 +53,8 @@
   .dchip { padding: 1px 7px; border-radius: $radius-pill; background: rgba(120, 90, 40, .2); color: #5a3a14; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .dgo.sm { min-width: 0; padding: 5px 10px; font-size: 12.5px; white-space: nowrap; }
   // the buttons at the foot of a question
-  .dbtns { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; .dgo { min-width: 110px; } }
+  // side by side when the card is wide enough for each to hold its text, else one under the other: either way the buttons are the same width
+  .dbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 8px; .dgo { min-width: 0; width: 100%; justify-self: stretch; } }
   .dgo.alt { color: #3a2c1c; background: linear-gradient(#efe0b8, #d8c28c); border-color: #8a6a36; }
   .dgo.bad { background: linear-gradient(#c8584a, #9a2f26); border-color: #6a1c16; }
   .dwhy { margin: 0; text-align: center; color: #b8322a; font-weight: 700; }
@@ -97,8 +98,6 @@
   .dpills { display: flex; flex-wrap: wrap; gap: 4px; }
   .dslots { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: #5a3a14;
     i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #8a6a36; background: transparent; &.on { background: #e0a23c; } } }
-  .dring { --p: 0; flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#e0a23c calc(var(--p) * 1%), rgba(60, 40, 10, .22) 0);
-    > span { width: 36px; height: 36px; border-radius: 50%; background: #efe0b8; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #3a2c1c; } }
   .dacts { flex: none; display: flex; gap: 4px; align-items: center; }
   .dgo.ic { min-width: 30px; width: 30px; height: 30px; padding: 0; border-radius: 8px; font-size: 14px; line-height: 1; }
   .dhouse { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 4px 2px; b { font-size: 14px; color: #5a3a14; } }
@@ -157,3 +156,17 @@
   .link.done { background: #4f8a38; }
   .link.todo { background: #c8322c; }
 }
+
+// the detail of a person: a few rows, not a wall of text
+.gdlg .dgear { display: grid; gap: 4px; margin-top: 6px; }
+.gdlg .dgear .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0; background: none; border: 0; }
+.gdlg .dgear .nm { font-weight: 600; }
+.gdlg .dgear select { max-width: 62%; }
+.gdlg .dwork { margin-top: 8px; display: grid; gap: 4px; }
+.gdlg .dsec > .sm { margin-top: 6px; }
+
+// ---- the settings window: pages as a row of buttons, a name to type, the rows of switches ----
+.gdlg .dtabs { display: flex; flex-wrap: wrap; gap: 6px; button { flex: 1 1 0; min-width: 0; white-space: nowrap; } }
+.gdlg .dname-in { width: 100%; box-sizing: border-box; padding: 7px 9px; font: 600 13px system-ui, sans-serif; color: #3a2c1c; background: rgba(255, 255, 255, .55); border: 1px solid #8a6a36; border-radius: 6px; &::placeholder { color: #85714a; font-weight: 400; } }
+.gdlg.gsettings .row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: rgba(255, 255, 255, .3); border: 1px solid #b89a5e; border-radius: 8px; .nm { flex: 1; min-width: 0; font-weight: 600; font-size: 13.5px; small { display: block; font-weight: 400; color: #5a4a2c; font-size: 12px; } } input[type='range'] { flex: 0 1 120px; min-width: 70px; } }
+.gdlg.gsettings .dacts { display: flex; gap: 6px; align-items: center; }

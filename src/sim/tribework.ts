@@ -1,6 +1,7 @@
 /**
  * The daily life of the people of the other villages (src/data/npclife.json): the civilians cut wood, dig stone and gather, the soldiers patrol, hunt and scout,
  * so the land is not empty. It is only played where the player has people (the chunks round them): far away the people just stroll about the camp.
+ * It is scenery only: what a village is worth is a fixed table (tribes.spoilsOf, difficulty.json "capture"), never what these people bring in.
  */
 import npc from '../data/npclife.json';
 import paceJson from '../data/pace.json';
@@ -9,7 +10,6 @@ import { BUILDINGS } from './buildings';
 import { CHUNK } from './world';
 import { TIER_YIELD, TOOL_OF_JOB } from './tools';
 import type { WorkJob } from './jobs';
-import type { Res, Stock } from './resources';
 import type { Sim, Villager } from './sim';
 import type { Tribe } from './tribes';
 
@@ -17,7 +17,6 @@ type Life = NonNullable<NonNullable<Villager['ai']>['life']>;
 const WORK_OF: Record<string, 'wood' | 'stone' | 'food'> = { wood: 'wood', stone: 'stone', food: 'food' };
 const GATHER = paceJson.gather as Record<string, number>;
 const KIND_OF: Record<string, 'tree' | 'rock' | 'bush'> = { wood: 'tree', stone: 'rock', food: 'bush' };
-const RES_OF: Record<string, Res> = { wood: 'wood', stone: 'stone', food: 'food' };
 const chunkKey = (x: number, y: number): number => Math.floor(y / CHUNK) * 1024 + Math.floor(x / CHUNK);
 
 /** The chunks round everyone of ours (where they stand and where they are heading): redone every second. */
@@ -159,12 +158,10 @@ function tickLife(sim: Sim, f: Villager, t: Tribe, L: Life, dt: number): boolean
       if (f.progress < 1) return true;
       const gain = Math.min(n.amount, TIER_YIELD[toolTierOf(t)]); // a better tool brings more from each stroke, as with ours
       f.progress -= 1; n.amount -= gain; L.units = (L.units ?? 0) + gain;
-      const res = RES_OF[L.job!];
-      t.stock[res as keyof Stock] = (t.stock[res as keyof Stock] ?? 0) + gain;
       if (n.amount <= 0) {
         const idx = L.idx!;
         n.workers = Math.max(0, n.workers - 1); L.idx = -1;
-        sim.world.depleted(idx, (x, y) => ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
+        sim.world.depleted(idx, (x, y) => !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y));
         endLife(sim, f); return false;
       }
       if ((L.units ?? 0) >= npc.unitsPerTrip) { endLife(sim, f); return false; }
@@ -173,7 +170,7 @@ function tickLife(sim: Sim, f: Villager, t: Tribe, L: Life, dt: number): boolean
     case 'hunt': {
       const a = sim.animalById.get(L.id!);
       if (!a) { endLife(sim, f); return false; }
-      if (a.state === 'dead') { if (a.meat > 0) { t.stock.food = (t.stock.food ?? 0) + a.meat; a.meat = 0; } endLife(sim, f); return false; }
+      if (a.state === 'dead') { a.meat = 0; endLife(sim, f); return false; }
       if (f.fight.skip && f.fight.skip.id === a.id && sim.time < f.fight.skip.until) { endLife(sim, f); return false; } // given up (src/data/chase.json): the hunt is over
       return false;
     }

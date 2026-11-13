@@ -1,7 +1,7 @@
 import { cycleOf, RULES } from './combat';
-import { engage, fireProjectile, resolve, swingTimes, weaponOf } from './battle';
+import { armOf, engage, fireProjectile, resolve, swingTimes, weaponOf } from './battle';
 import { swingCycle } from './statsys';
-import { BUILDINGS, levelsOf } from './buildings';
+import { BUILDINGS, footOf, levelsOf } from './buildings';
 import { UNIT_RULES } from './formations';
 import type { Tribe } from './tribes';
 import type { Sim, Villager } from './sim';
@@ -26,7 +26,7 @@ export function siegeBrain(sim: Sim, f: Villager, ai: Ai, dt: number, threats: A
   if (threats.length && threats[0].d <= weaponOf(f).range + 1.5) return false; // someone in reach: fight him first
   const b = sim.getBuilding(ai.siege);
   if (!b) { ai.siege = 0; f.path = []; return false; } // it has fallen: the way is open
-  const w = weaponOf(f), d = BUILDINGS[b.kind], cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+  const w = weaponOf(f), d = footOf(b), cx = b.x + d.w / 2, cy = b.y + d.h / 2;
   const dist = Math.hypot(cx - f.x, cy - f.y) - Math.max(d.w, d.h) / 2;
   if (dist <= (w.ranged ? 1.2 : w.range) + 0.6) {
     f.path = []; f.slide = null; f.phase = 'fight'; f.facing = cx >= f.x ? 'right' : 'left';
@@ -69,7 +69,12 @@ export function towerBrain(sim: Sim, f: Villager, ai: Ai, tower: NonNullable<Ret
   keepPost(sim, f, ai);
   if (willing && threats.length && f.atkCd <= 0) {
     const w = weaponOf(f), e = resolve(sim, threats[0].t), from = { x: tower.p.x + tower.p.w / 2, y: tower.p.y + 0.4 };
-    if (e && fireProjectile(sim, f, e, from, UNIT_RULES.archerOnTower.damage, Math.max(0, tower.reach - w.range - 1))) f.atkCd = swingCycle(sim, f, w);
+    if (e && fireProjectile(sim, f, e, from, UNIT_RULES.archerOnTower.damage, Math.max(0, tower.reach - w.range - 1))) {
+      f.atkCd = swingCycle(sim, f, w);
+      // he is seen to shoot: he turns to the target and draws the bow (the blow has no living target, the arrow is already in the air)
+      const { hitAt, end } = swingTimes(w.anim);
+      f.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; f.anim = w.anim; f.animClock = 0; f.facing = (e.kind === 'unit' ? e.v.x : e.a.x) >= f.x ? 'right' : 'left';
+    }
   }
 }
 
@@ -77,6 +82,11 @@ export function towerBrain(sim: Sim, f: Villager, ai: Ai, tower: NonNullable<Ret
 export function raiderBrain(sim: Sim, f: Villager, t: Tribe, ai: Ai, dt: number, threats: Array<{ t: Parameters<typeof resolve>[1]; d: number }>): void {
   if (!t.raid) return;
   if (t.raid.phase === 'retreat') { if (!f.path.length && sim.pathLeft > 0 && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) > 4) { sim.pathLeft--; f.path = sim.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 20000); } f.phase = 'move'; return; }
+  // the foot of a raid seek a tower of ours out and break it down (anyone in reach is fought first, see siegeBrain); the riders and the archers keep to their targets
+  if (!ai.siege && f.fight.repath <= 0 && !f.path.length && armOf(f) === 'foot') {
+    const towers = sim.buildings.filter((b) => b.kind === 'tower' && b.done).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y));
+    if (towers.length) ai.siege = towers[0].id;
+  }
   if (siegeBrain(sim, f, ai, dt, threats)) return;
   if (f.fight.target) {
     const e = resolve(sim, f.fight.target);

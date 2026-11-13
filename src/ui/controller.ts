@@ -1,4 +1,4 @@
-import { BuildingKind, BUILDINGS, needsWork } from '../sim/buildings';
+import { BuildingKind, BUILDINGS, footDim, footOf, needsWork } from '../sim/buildings';
 import { TILE } from '../sim/constants';
 import { JOB_NAME } from '../sim/jobs';
 import type { Sim } from '../sim/sim';
@@ -6,19 +6,60 @@ import type { Box, Camera, Ghost, Marker, Renderer } from '../render/renderer';
 
 /**
  * Input. Mouse: left click selects, right click gives an order, holding the right button and dragging moves the map.
+ * Mouse also: dragging with the left button draws a selection box (Shift or Ctrl adds to the group).
  * Touch: tap selects a villager; with villagers selected a tap on the ground, a resource or an enemy gives the order;
- * one finger dragging the ground moves the map; with one finger held down, the other taps to give the order or swipes to move the map; two fingers moving together zoom it. "Chọn nhiều" turns taps into toggles and drags into a selection box.
+ * one finger dragging the ground moves the map, but held still a moment (a quarter of a second) and then dragged it draws a selection box; with one finger held down, the other taps to give the order
+ * (or, on a villager, adds him to the group) or swipes to move the map; two fingers moving together zoom it. There is no mode to switch: the same orders work for one villager or many.
  */
 export class Controller {
   readonly selected = new Set<number>();
   readonly markers: Marker[] = [];
   box: Box | null = null;
-  onChange: () => void = () => {};  /** Short message for the player. */
+  onChange: () => void = () => {};  /** A finger or a mouse button is down on the map right now (the screen is drawn at its fullest rate while it is). */
+  get interacting(): boolean { return this.touches.size > 0 || !!this.left || !!this.right || this.ringAt !== null; }
+  /** Short message for the player. */
   onToast: (text: string) => void = () => {};
-  /** Selecting several villagers: taps toggle, drags draw a box. */
-  multi = false;
+  /** An order was given to a troop (several chosen, soldiers among them): the sound of it. */
+  onOrder: (ids: number[]) => void = () => {};
+  private ordered(ids: number[]): void { if (ids.length > 1 && ids.some((id) => this.sim.get(id)?.job === 'fight')) this.onOrder(ids); }
+  /** The army of the march is chosen: a tap or a right click on the ground sends the whole block there (sim.legionMove). */
+  legionControl = false;
+  /** The card of the chosen people is out of the way while the player orders them about; choosing someone brings it back. */
+  hushCard = false;
+  /** Holding the pointer still on the map opens a ring of buttons round it (the screen draws it): `open` when it opens, `move` while the pointer goes over it, `end` when it is let go. */
+  hold = { open: (_p: { x: number; y: number }) => undefined as void, move: (_p: { x: number; y: number }) => undefined as void, end: (_p: { x: number; y: number }) => undefined as void };
+  private ringAt: { x: number; y: number } | null = null;
+  /** Where a finger held still has made the box ready (the screen draws a ring there until the finger moves or lifts). */
+  armedAt: { x: number; y: number } | null = null;
+  /** The finger has been held long enough to draw a box: the phone buzzes. */
+  onArm: () => void = () => {};
+  private armTimer = 0;
+  /** A finger on the map: after a quarter of a second without moving, a drag draws the box (a quick swipe moves the map). The ring of buttons is for the mouse only: a hold on a phone means one thing. */
+  private armBox(): void {
+    this.disarm();
+    if (!this.boxOk()) return;
+    this.armTimer = window.setTimeout(() => {
+      this.armTimer = 0;
+      const t = [...this.touches.values()][0];
+      if (this.touches.size === 1 && t && Math.hypot(t.x - t.sx, t.y - t.sy) <= 10) { t.armed = true; this.armedAt = { x: t.x, y: t.y }; this.onArm(); }
+    }, 250);
+  }
+  private disarm(): void { if (this.armTimer) window.clearTimeout(this.armTimer); this.armTimer = 0; this.armedAt = null; }
+  private holdTimer = 0;
+  private holdFrom: { x: number; y: number } | null = null;
+  private startHold(p: { x: number; y: number }): void {
+    this.stopHold();
+    if (this.placing || this.groupMode || this.attackMoveArmed) return;
+    this.holdFrom = { x: p.x, y: p.y };
+    this.holdTimer = window.setTimeout(() => { this.holdTimer = 0; this.holdFrom = null; this.ringAt = { x: p.x, y: p.y }; this.box = null; this.hold.open(p); }, 450);
+  }
+  private stopHold(): void { if (this.holdTimer) window.clearTimeout(this.holdTimer); this.holdTimer = 0; this.holdFrom = null; }
+  /** A building whose upgrade needs bigger ground and is being planned: the player clears the ground before he confirms (upgradeplan.ts). */
+  upgradePlan: number | null = null;
   /** Building being placed, and where the ghost currently sits (top-left tile). */
   placing: BuildingKind | null = null;
+  /** A gate being placed: 1 when it is turned to stand along a column (2 tiles tall, 1 wide). */
+  placeRot: 0 | 1 = 0;
   placeAt: { x: number; y: number } | null = null;
   /** Choosing several pieces of fence (and gates) to carry together: their ids (the first is the one the group turns about), and how many quarter-turns it has been turned. */
   groupMode = false;
@@ -36,6 +77,8 @@ export class Controller {
   inspect: { kind: 'unit' | 'animal' | 'node' | 'tent'; id: number } | null = null;
   /** The campfire's people menu asked for the full page of the chosen villager. */
   openDetail = false;
+  /** The next time the panel of a house shows, open the list of the people of the house (the button "Nhân sự" of the card under the house). */
+  openPeople = false;
   /** The house whose dialog the villager's detail was opened from: closing the detail brings it back. */
   detailFrom: number | null = null;
   /** F pressed: the next click sends the selection to attack-move there. */
@@ -49,7 +92,7 @@ export class Controller {
   private left: { x: number; y: number; moved: boolean } | null = null;
   private right: { x: number; y: number; moved: boolean } | null = null;
   // touch
-  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number }>();
+  private touches = new Map<number, { x: number; y: number; sx: number; sy: number; t: number; px: number; py: number; /** The finger has been held still for a moment: a drag from now on draws a box (the screen shows a ring and the phone buzzes once) */ armed?: boolean; /** Decided at the first drag: true when the finger was armed (then it draws the box, else it moves the map) */ boxing?: boolean }>();
   private gesture: { dist: number; mid: { x: number; y: number }; acc: number } | null = null;
   private tapDead = false;
   /** The finger that went down while placing started on the building being placed: it drags the building, not the map. */
@@ -77,6 +120,7 @@ export class Controller {
   }
 
   private cancelPointers(): void {
+    this.stopHold(); this.disarm(); if (this.ringAt) { this.ringAt = null; this.hold.end({ x: -999, y: -999 }); }
     this.left = null; this.right = null; this.touches.clear(); this.gesture = null; this.box = null; this.el.style.cursor = '';
   }
 
@@ -86,25 +130,28 @@ export class Controller {
     this.el.focus();
     if (e.pointerType === 'touch') {
       this.touches.set(e.pointerId, { x: p.x, y: p.y, sx: p.x, sy: p.y, t: performance.now(), px: p.x, py: p.y });
-      if (this.touches.size === 1) { this.tapDead = false; this.dragGhost = this.onGhost(p); }
+      if (this.touches.size === 1) { this.tapDead = false; this.dragGhost = this.onGhost(p); this.armBox(); } else { this.stopHold(); this.disarm(); }
       if (this.touches.size === 2) this.startGesture();
       return;
     }
     this.el.setPointerCapture(e.pointerId);
     if (e.button === 2) this.right = { x: p.x, y: p.y, moved: false };
-    else if (e.button === 0) this.left = { x: p.x, y: p.y, moved: false };
+    else if (e.button === 0) { this.left = { x: p.x, y: p.y, moved: false }; this.startHold(p); }
     else if (e.button === 1) { this.right = { x: p.x, y: p.y, moved: true }; e.preventDefault(); }
   }
 
   private pointerMove(e: PointerEvent): void {
     const p = this.pos(e);
+    if (this.ringAt) { this.hold.move(p); return; }
+    if (this.holdFrom && Math.hypot(p.x - this.holdFrom.x, p.y - this.holdFrom.y) > 8) this.stopHold();
     if (e.pointerType === 'touch') {
       const t = this.touches.get(e.pointerId); if (!t) return;
       t.x = p.x; t.y = p.y;
       if (this.touches.size >= 2) { this.moveGesture(); return; }
       if (Math.hypot(t.x - t.sx, t.y - t.sy) > 10) {
-        if (this.multi) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
-        else if (this.placing && this.dragGhost) this.placeAt = this.originAt(p); // a finger that started on the building being placed or moved drags it
+        if (t.boxing === undefined) { t.boxing = this.boxOk() && !!t.armed; this.armedAt = null; } // held still until the phone buzzed, then drag: the box; a quick swipe still moves the map
+        if (t.boxing) this.box = { x0: t.sx, y0: t.sy, x1: t.x, y1: t.y };
+        else if (this.placing && this.dragGhost) { if (this.isFenceLine()) this.dragFence(p); else this.placeAt = this.originAt(p); } // a finger that started on the building being placed or moved drags it (fence: it lays a row)
         else { // one finger dragging the ground (also while placing, away from the building) moves the map (a tap still gives the order); two fingers still pinch to zoom
           this.cam.x -= (t.x - t.px) / this.cam.zoom; this.cam.y -= (t.y - t.py) / this.cam.zoom; this.clamp(); this.tapDead = true;
         }
@@ -119,22 +166,60 @@ export class Controller {
     }
     if (this.left) {
       if (!this.left.moved && Math.hypot(p.x - this.left.x, p.y - this.left.y) > 5) this.left.moved = true;
-      if (this.left.moved && this.multi) this.box = { x0: this.left.x, y0: this.left.y, x1: p.x, y1: p.y };
+      if (this.left.moved && this.boxOk()) this.box = { x0: this.left.x, y0: this.left.y, x1: p.x, y1: p.y };
+      else if (this.left.moved && this.isFenceLine()) this.dragFence(p); // placing fence: the drag lays a row of it (the map is moved with the right button)
       else if (this.left.moved && this.placing) { // dragging with the left button while placing or moving a building pans the map; the building stays where it was
         this.cam.x -= (p.x - this.left.x) / this.cam.zoom; this.cam.y -= (p.y - this.left.y) / this.cam.zoom; this.left.x = p.x; this.left.y = p.y; this.clamp(); this.el.style.cursor = 'grabbing';
       }
     }
   }
 
+  /** A drag may draw a selection box: not while a building is placed, fence is chosen, an attack-move is armed or the marching army is led. */
+  private boxOk(): boolean { return !this.placing && !this.groupMode && !this.attackMoveArmed && !(this.legionControl && this.sim.legion.on); }
+
+  // ---------------------------------------------------------------- a row of fence laid by dragging
+  private fenceLast: { x: number; y: number } | null = null;
+  private fencePlaced = 0;
+  private fenceFailed = false;
+  /** A new fence is being placed (not carried): dragging lays a row of it. */
+  private isFenceLine(): boolean { return this.placing === 'fence' && this.moving === null && !this.groupMoving; }
+  /** The pointer moved over the map: every tile from the last one to this one gets a piece of fence (those that cannot be built are skipped, the first reason is told once). */
+  private dragFence(p: { x: number; y: number }): void {
+    const to = this.originAt(p);
+    if (!to) return;
+    let { x, y } = this.fenceLast ?? to;
+    const dx = Math.abs(to.x - x), dy = Math.abs(to.y - y), sx = x < to.x ? 1 : -1, sy = y < to.y ? 1 : -1;
+    let err = dx - dy;
+    for (let guard = 0; guard < 400; guard++) {
+      if (!this.fenceLast || x !== this.fenceLast.x || y !== this.fenceLast.y || this.fencePlaced === 0) {
+        this.placeAt = { x, y };
+        if (this.confirmPlace(true, true)) this.fencePlaced++;
+        else if (!this.fenceFailed) { this.fenceFailed = true; const why = this.sim.canPlace('fence', x, y); if (why) this.onToast(why); }
+      }
+      this.fenceLast = { x, y };
+      if (x === to.x && y === to.y) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x += sx; }
+      if (e2 < dx) { err += dx; y += sy; }
+    }
+    this.placeAt = to;
+  }
+  private endFenceLine(): void {
+    if (this.fencePlaced > 1) this.onToast(`Đã đặt ${this.fencePlaced} đoạn hàng rào`);
+    this.fenceLast = null; this.fencePlaced = 0; this.fenceFailed = false;
+  }
+
   /** Is the screen point on (or close to) the building being placed or moved: a finger there drags the building, anywhere else it drags the map. */
   private onGhost(p: { x: number; y: number }): boolean {
     if (!this.placing || !this.placeAt) return false;
-    const w = this.r.screenToWorld(p.x, p.y), tx = w.x / TILE, ty = w.y / TILE, d = BUILDINGS[this.placing], slack = this.groupMoving ? 4 : 1;
+    const w = this.r.screenToWorld(p.x, p.y), tx = w.x / TILE, ty = w.y / TILE, d = this.placeDim(), slack = this.groupMoving ? 4 : 1;
     return tx >= this.placeAt.x - slack && tx <= this.placeAt.x + d.w + slack && ty >= this.placeAt.y - slack - 1 && ty <= this.placeAt.y + d.h + slack;
   }
 
   private pointerUp(e: PointerEvent): void {
     const p = this.pos(e);
+    this.stopHold(); this.disarm();
+    if (this.ringAt) { this.ringAt = null; this.hold.end(p); this.left = null; this.right = null; this.touches.clear(); this.gesture = null; this.box = null; this.el.style.cursor = ''; return; } // the ring took this press
     if (e.pointerType === 'touch') {
       const t = this.touches.get(e.pointerId); this.touches.delete(e.pointerId);
       if (this.touches.size < 2) this.gesture = null;
@@ -142,10 +227,11 @@ export class Controller {
       // one finger held on the screen and the other taps: that is the order, the spot tapped; the other swiping moves the map (see moveGesture)
       if (this.touches.size === 1) {
         const [held] = [...this.touches.values()];
-        if (Math.hypot(held.x - held.sx, held.y - held.sy) < 14 && t.t - held.t > 250 && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) { this.activate(p, true, false); return; }
+        if (Math.hypot(held.x - held.sx, held.y - held.sy) < 14 && t.t - held.t > 250 && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) { this.activate(p, true, this.hit(p, true) !== null); return; } // the other finger taps a villager: he joins the group
       }
       if (this.touches.size === 0) {
-        if (this.box) { this.boxSelect(this.box, true); this.box = null; }
+        this.endFenceLine();
+        if (this.box) { this.boxSelect(this.box, false); this.box = null; }
         else if (!this.tapDead && Math.hypot(p.x - t.sx, p.y - t.sy) < 12 && performance.now() - t.t < 600) this.activate(p, true, false);
       }
       return;
@@ -155,7 +241,8 @@ export class Controller {
       if (r && !r.moved) this.rightClick(p, e.shiftKey);
     } else if (e.button === 0) {
       const l = this.left; this.left = null; if (this.placing) this.el.style.cursor = '';
-      if (this.box) { this.boxSelect(this.box, true); this.box = null; }
+      this.endFenceLine();
+      if (this.box) { this.boxSelect(this.box, e.shiftKey || e.ctrlKey); this.box = null; }
       else if (l && !l.moved) this.activate(p, false, e.shiftKey || e.ctrlKey);
     }
   }
@@ -202,11 +289,25 @@ export class Controller {
     return best;
   }
 
+  /** The visit of a guest waiting at the gate under the point (they are not villagers of ours, so `hit` skips them). */
+  private guestAt(p: { x: number; y: number }, touch: boolean): number | null {
+    const reach = ((touch ? 28 : 16) * Math.max(1, this.cam.zoom)) ** 2;
+    for (const g of this.sim.guestsWaiting()) {
+      for (const uid of g.unitIds) {
+        const f = this.sim.get(uid);
+        if (!f) continue;
+        const s = this.bodyScreen(f);
+        if ((s.x - p.x) ** 2 + (s.y - p.y) ** 2 < reach) return g.id;
+      }
+    }
+    return null;
+  }
+
   /** Building whose drawn shape (footprint plus what stands above it) is under the screen point. */
   private buildingUnder(p: { x: number; y: number }): number | null {
     const w = this.r.screenToWorld(p.x, p.y);
     for (const b of this.sim.buildings) {
-      const d = BUILDINGS[b.kind];
+      const d = footOf(b);
       if (w.x >= b.x * TILE && w.x <= (b.x + d.w) * TILE && w.y >= b.y * TILE - 24 && w.y <= (b.y + d.h) * TILE) return b.id;
     }
     return null;
@@ -214,15 +315,18 @@ export class Controller {
 
   /** Left click or tap. */
   private activate(p: { x: number; y: number }, touch: boolean, additive: boolean): void {
+    if (this.legionControl && this.sim.legion.on && !this.placing) { this.command(p, additive); return; }
     if (this.attackMoveArmed) { this.attackMove(p, additive); return; }
     // choosing pieces of fence: a tap takes one in or puts it back
-    if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); return; }
+    if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); else { this.endGroup(); this.selectedBuilding = null; this.onChange(); } return; } // a tap away from the fence lets the group go
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
+    const guest = this.guestAt(p, touch);
+    if (guest !== null) { const e = this.sim.encounterOpen(guest); if (e) this.onToast(e); return; } // a guest at the gate: click to receive
     const id = this.hit(p, touch);
-    if (this.multi) { if (id !== null) { this.toggle(id); this.onChange(); } return; }
     const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (id !== null) {
+      this.hushCard = false;
       const now = performance.now();
       if (this.lastClick.id === id && now - this.lastClick.t < 400) { this.selectSameJob(id); this.lastClick = { t: 0, id: -1 }; return; }
       this.lastClick = { t: now, id };
@@ -278,6 +382,7 @@ export class Controller {
     this.onChange();
   }
 
+  /** The people inside the box become the group; the group chosen before is let go (unless `add`: they join it). */
   private boxSelect(b: Box, add: boolean): void {
     const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
     if (!add) this.selected.clear();
@@ -299,8 +404,14 @@ export class Controller {
   /** Top-left tile of a building of the placing kind centred on the point. */
   private originAt(p: { x: number; y: number }): { x: number; y: number } | null {
     if (!this.placing) return null;
-    const d = BUILDINGS[this.placing], w = this.r.screenToWorld(p.x, p.y);
+    const d = this.placeDim(), w = this.r.screenToWorld(p.x, p.y);
     return { x: Math.round(w.x / TILE - d.w / 2), y: Math.round(w.y / TILE - d.h / 2) };
+  }
+  /** The tiles the thing being placed covers: a gate turned or not; a building being carried keeps the size it has. */
+  private placeDim(): { w: number; h: number } {
+    if (!this.placing) return { w: 1, h: 1 };
+    const moved = this.moving !== null && !this.groupMoving ? this.sim.getBuilding(this.moving) : undefined;
+    return moved ? (this.turnable(moved) ? footDim(moved.kind, this.placeRot) : footOf(moved)) : footDim(this.placing, this.placeRot);
   }
 
   /** Fences and gates may be picked up together. */
@@ -338,7 +449,24 @@ export class Controller {
     this.groupRot = turns; this.moving = a.id; this.selectedBuilding = null; this.startPlacing(a.kind); this.placeAt = { x: a.x, y: a.y }; this.onChange();
   }
   /** Turn the group a quarter-turn clockwise (while carrying it, or to start carrying it turned). */
-  rotateGroup(): void { if (this.groupMoving) { this.groupRot = (this.groupRot + 1) % 4; this.onChange(); } else if (this.groupMode) this.startGroupMove(1); }
+  rotateGroup(): void {
+    if (this.groupMoving) { this.groupRot = (this.groupRot + 1) % 4; this.onChange(); }
+    else if (this.groupMode) this.startGroupMove(1);
+    else if (this.canTurnGate) { const mid = this.placeAt ? this.centreOfGhost() : null; this.placeRot = this.placeRot ? 0 : 1; if (mid) this.placeAt = this.originAt(mid); this.onChange(); } // a new gate: lying along a row, or standing along a column, turned about its middle
+  }
+  /** A gate (of the two-tile kind: the one tile of an old save has no direction) may be turned. */
+  private turnable(b: { kind: BuildingKind; w?: number }): boolean { return b.kind === 'gate' && b.w === undefined; }
+  /** A gate that is being put down, or carried to a new place, may be turned. */
+  get canTurnGate(): boolean {
+    if (this.placing !== 'gate' || this.groupMode) return false;
+    const moved = this.moving !== null ? this.sim.getBuilding(this.moving) : undefined;
+    return !moved || this.turnable(moved);
+  }
+  /** The screen point at the middle of the ghost, so that turning it keeps it under the finger. */
+  private centreOfGhost(): { x: number; y: number } {
+    const d = this.placeDim(), a = this.placeAt!, s = this.r.worldToScreen((a.x + d.w / 2) * TILE, (a.y + d.h / 2) * TILE);
+    return { x: s.x, y: s.y };
+  }
 
   ghost(): Ghost | null {
     if (!this.placing || !this.placeAt) return null;
@@ -347,20 +475,21 @@ export class Controller {
       return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, group: plan, movingIds: [...this.groupIds] };
     }
     const b = this.moving !== null ? this.sim.getBuilding(this.moving) : undefined;
-    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? undefined };
+    const dim = this.placeDim();
+    return { kind: this.placing, x: this.placeAt.x, y: this.placeAt.y, ok: this.placeProblem() === null, level: b?.level, era: b?.era, moving: this.moving ?? undefined, w: dim.w, h: dim.h, rot: b && !this.turnable(b) ? b.rot : this.placeRot };
   }
 
   /** Why the ghost cannot be put down where it is, or null. */
   placeProblem(): string | null {
     if (!this.placing || !this.placeAt) return 'Chạm lên bản đồ để chọn chỗ';
     if (this.groupMoving) return this.sim.canMoveGroup(this.groupIds, this.placeAt, this.groupRot);
-    if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y);
+    if (this.moving === null) return this.sim.canPlace(this.placing, this.placeAt.x, this.placeAt.y, this.placeRot);
     const b = this.sim.getBuilding(this.moving);
-    return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y) : 'Công trình không còn';
+    return b ? this.sim.canMove(b, this.placeAt.x, this.placeAt.y, this.turnable(b) ? this.placeRot : undefined) : 'Công trình không còn';
   }
 
   startPlacing(kind: BuildingKind): void {
-    this.placing = kind; this.attackMoveArmed = false;
+    this.placing = kind; this.attackMoveArmed = false; this.placeRot = 0;
     // start the ghost in the middle of the screen so a finger can see it at once
     this.placeAt = this.originAt({ x: this.r.w / 2, y: this.r.h / 2 });
     this.onChange();
@@ -369,59 +498,67 @@ export class Controller {
   startMoving(id: number): void {
     const b = this.sim.getBuilding(id); if (!b) return;
     this.moving = id; this.selectedBuilding = null; this.startPlacing(b.kind);
+    this.placeRot = b.rot === 1 ? 1 : 0; // a gate is carried as it stands, and may be turned on the way
     this.placeAt = { x: b.x, y: b.y }; this.onChange();
   }
   cancelPlacing(): void { this.placing = null; this.placeAt = null; this.moving = null; if (this.groupMode) { this.groupRot = 0; this.selectedBuilding = this.groupIds[0] ?? null; } this.onChange(); }
 
-  confirmPlace(keep = false): void {
-    if (!this.placing || !this.placeAt) return;
+  confirmPlace(keep = false, quiet = false): boolean {
+    if (!this.placing || !this.placeAt) return false;
     if (this.groupMoving) {
       const err = this.sim.moveGroup(this.groupIds, this.placeAt, this.groupRot);
-      if (err) { this.onToast(err); return; }
-      this.onToast(`Đã dời ${this.groupIds.length} mảnh`); this.endGroup(); return;
+      if (err) { this.onToast(err); return false; }
+      this.onToast(`Đã dời ${this.groupIds.length} mảnh`); this.endGroup(); return true;
     }
     if (this.moving !== null) {
-      const id = this.moving, err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y);
-      if (err) { this.onToast(err); return; }
+      const id = this.moving, mv = this.sim.getBuilding(id), err = this.sim.moveBuilding(id, this.placeAt.x, this.placeAt.y, mv && this.turnable(mv) ? this.placeRot : undefined);
+      if (err) { this.onToast(err); return false; }
       const ids = [...this.selected], b = this.sim.getBuilding(id);
       if (ids.length && b && needsWork(b)) this.sim.orderWork(ids, b.x, b.y);
-      this.placing = null; this.placeAt = null; this.moving = null; this.onToast('Đã dời công trình'); this.onChange(); return;
+      this.placing = null; this.placeAt = null; this.moving = null; this.onToast('Đã dời công trình'); this.onChange(); return true;
     }
-    const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y);
-    if (!res.ok) { this.onToast(res.reason ?? 'Không đặt được'); return; }
-    const d = BUILDINGS[this.placing];
+    const o = this.placeAt, res = this.sim.placeBuilding(this.placing, o.x, o.y, this.placeRot);
+    if (!res.ok) { if (!quiet) this.onToast(res.reason ?? 'Không đặt được'); return false; }
+    const d = this.placeDim();
+    const repeat = BUILDINGS[this.placing].repeat;
     this.markers.push({ x: (o.x + d.w / 2) * TILE, y: (o.y + d.h / 2) * TILE, age: 0 });
     // Có dân đang chọn thì tự giao việc xây cho họ.
     const ids = [...this.selected];
     if (ids.length && res.building && needsWork(res.building)) this.sim.orderWork(ids, o.x, o.y);
-    if (!keep && !d.repeat) { this.placing = null; this.placeAt = null; }
+    if (!keep && !repeat) { this.placing = null; this.placeAt = null; }
     this.onChange();
+    return true;
   }
 
   // ---------------------------------------------------------------- orders
   /** Chọn đúng vật thể người chơi nhìn thấy (tán cây vẽ cao hơn ô của nó): trả về ô gốc. */
   private pickTile(wx: number, wy: number): { x: number; y: number } {
     const world = this.sim.world, i = Math.floor(wx / TILE), j0 = Math.floor(wy / TILE);
-    const reach: Record<string, [number, number, number]> = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4] };
+    const reach: Record<string, [number, number, number]> = { tree: [14, 56, 4], rock: [14, 20, 4], bush: [13, 18, 4], ore: [14, 22, 4] }; // a seam of ore is drawn like a rock, on the same anchor
     for (let j = j0 + 2; j >= j0 - 1; j--) {            // vật ở phía trước (j lớn) che vật phía sau
       const n = world.nodeAt(i, j);
       if (!n) continue;
-      const [hw, up, down] = reach[n.kind], base = j * TILE + 28, cx = i * TILE + 16;
+      const [hw, up, down] = reach[n.kind] ?? reach.rock, base = j * TILE + 28, cx = i * TILE + 16;
       if (Math.abs(wx - cx) <= hw && wy >= base - up && wy <= base + down) return { x: i, y: j };
     }
     for (const b of this.sim.buildings) {
-      const d = BUILDINGS[b.kind];
+      const d = footOf(b);
       if (wx >= b.x * TILE && wx <= (b.x + d.w) * TILE && wy >= b.y * TILE - 24 && wy <= (b.y + d.h) * TILE) return { x: b.x, y: b.y };
     }
     return { x: Math.floor(wx / TILE), y: j0 };
   }
 
   command(p: { x: number; y: number }, queue = false): void {
+    if (this.legionControl && this.sim.legion.on) { // the army of the march: the whole block goes where the player points
+      const w = this.r.screenToWorld(p.x, p.y), e = this.sim.legionMove(w.x / TILE, w.y / TILE);
+      if (e) this.onToast(e); else { this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onToast('Đội quân hành quân'); }
+      this.onChange(); return;
+    }
     if (!this.selected.size) return;
-    const w = this.r.screenToWorld(p.x, p.y), ids = [...this.selected];
+    this.hushCard = true;
+    const w = this.r.screenToWorld(p.x, p.y);
+    let ids = [...this.selected];
     if (ids.every((id) => this.sim.scouts.some((m) => m.ids.includes(id)))) { this.onToast(ids.length > 1 ? 'Các trinh sát đang làm nhiệm vụ: đợi họ về' : 'Trinh sát đang làm nhiệm vụ: đợi họ về'); return; }
-    const worn = ids.filter((id) => { const o = this.sim.get(id); return !!o && this.sim.sleepLocked(o); });
-    if (worn.length === ids.length) { this.onToast(ids.length > 1 ? 'Họ đang ngủ say, chưa gọi dậy được' : `${this.sim.get(ids[0])?.name} đang ngủ say, chưa gọi dậy được`); return; }
     // an enemy, an animal or a carcass under the cursor beats ground orders
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
     if (seen) {
@@ -434,7 +571,21 @@ export class Controller {
         const why = seen.kind === 'foe' ? null : this.sim.autoHunter(ids, seen.target), n = this.sim.orderAttack(ids, seen.target, queue);
         this.onToast(n ? (seen.kind === 'foe' ? 'Tấn công' : 'Săn') : seen.kind === 'foe' ? 'Chỉ chiến binh mới đánh: tuyển lính ở trại lính' : why ?? noHunter);
       }
-      this.markers.push({ x: w.x, y: w.y, age: 0 }); this.onChange(); return;
+      this.markers.push({ x: w.x, y: w.y, age: 0 }); this.ordered(ids); this.onChange(); return;
+    }
+    // the soldiers hit whatever is clicked, a work of an enemy village or a tree, rock or bush (which gives nothing), for one soldier as for many; the order is absolute. A work of ours is only walked to.
+    {
+      const fighters = this.fighters(), N = this.sim.world.size, raw = { x: Math.floor(w.x / TILE), y: Math.floor(w.y / TILE) };
+      const hit = fighters.length ? [this.pickTile(w.x, w.y), raw].find((c) => this.sim.world.inBounds(c.x, c.y) && this.sim.fog.state[c.y * N + c.x] !== 0 && this.sim.obstacleAt(c.x, c.y)?.clear) : undefined;
+      if (hit) {
+        const label = this.sim.obstacleAt(hit.x, hit.y)!.label;
+        if (this.sim.orderBreak(fighters, hit.x, hit.y)) {
+          this.onToast(`Tấn công ${label}`);
+          this.markers.push({ x: hit.x * TILE + TILE / 2, y: hit.y * TILE + TILE / 2, age: 0 }); this.ordered(fighters);
+          ids = ids.filter((id) => !fighters.includes(id)); // the others (villagers) follow the plain order below
+          if (!ids.length) { this.onChange(); return; }
+        }
+      }
     }
     const { x: tx, y: ty } = this.pickTile(w.x, w.y);
     if (!this.sim.world.inBounds(tx, ty)) return;
@@ -443,6 +594,7 @@ export class Controller {
     if (work) this.onToast(work.sent ? (work.err ? `${JOB_NAME[work.job]} (${work.err})` : JOB_NAME[work.job]) : work.job === 'build' ? 'Chỉ thợ xây của Nhà thợ xây mới xây: chọn thợ ở nhà đó' : work.err ?? `Dân đã có nghề khác: chỉ đổi nghề ở công trình của nghề ${JOB_NAME[work.job].toLowerCase()}`);
     else this.sim.orderMove(ids, tx, ty, queue);
     this.markers.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, age: 0 });
+    this.ordered(ids);
     if (work?.sent) this.releaseCivilians(queue); // a job lets the villager go; plain moves keep them chosen so they can be sent on again
     this.onChange();
   }
@@ -451,8 +603,10 @@ export class Controller {
   attackMove(p: { x: number; y: number }, queue = false): void {
     this.attackMoveArmed = false;
     if (!this.selected.size) { this.onChange(); return; }
+    this.hushCard = true;
     const w = this.r.screenToWorld(p.x, p.y);
     this.sim.orderAttackMove([...this.selected], w.x / TILE, w.y / TILE, queue);
+    this.ordered([...this.selected]);
     this.markers.push({ x: w.x, y: w.y, age: 0 });
     this.onToast('Tấn công – di chuyển'); this.onChange();
   }
@@ -467,7 +621,6 @@ export class Controller {
 
   selectAll(): void { this.sim.villagers.forEach((v) => { if (v.inside === null) this.selected.add(v.id); }); this.selectedBuilding = null; this.onChange(); }
   clearSelection(): void { this.selected.clear(); this.selectedBuilding = null; this.inspect = null; this.onChange(); }
-  setMulti(on: boolean): void { this.multi = on; this.box = null; this.onChange(); }
 
   // ---------------------------------------------------------------- camera
   centerOn(wx: number, wy: number): void {
@@ -476,6 +629,25 @@ export class Controller {
 
   /** The tile the middle of the screen looks at. */
   viewTile(): { x: number; y: number } { const w = this.r.screenToWorld(this.r.w / 2, this.r.h / 2); return { x: w.x / TILE, y: w.y / TILE }; }
+
+  private fly: { x0: number; y0: number; z0: number; x1: number; y1: number; z1: number; t: number; dur: number } | null = null;
+  private savedView: { x: number; y: number; zoom: number } | null = null;
+
+  /** Ease the camera to a tile and zoom in on it (the middle of the upper part of the screen, clear of a panel along the bottom). The view it leaves is kept for `returnView`. */
+  flyToTile(tx: number, ty: number, ms = 800, area?: { top: number; bottom: number }): void {
+    if (!this.savedView) this.savedView = { x: this.cam.x, y: this.cam.y, zoom: this.cam.zoom };
+    // `area` = the strip of the screen (css px) clear of the top bar and of a panel along the bottom: the person stands in the middle of it, and the zoom is chosen so the whole person and some ground around fit (a small strip on a phone zooms less)
+    const top = area ? area.top : 0, bottom = area ? area.bottom : this.r.h * 0.68, strip = Math.max(60, bottom - top);
+    const z = Math.min(4, Math.max(1, Math.round(strip / (TILE * 3.5))));
+    const feet = top + strip / 2 + TILE * z; // a person is about two tiles tall: the feet sit one tile below the middle
+    this.fly = { x0: this.cam.x, y0: this.cam.y, z0: this.cam.zoom, x1: tx * TILE - this.r.w / z / 2, y1: ty * TILE - feet / z, z1: z, t: 0, dur: ms / 1000 };
+  }
+
+  /** Ease back to the view before `flyToTile`. */
+  returnView(ms = 700): void {
+    const s = this.savedView; this.savedView = null;
+    if (s) this.fly = { x0: this.cam.x, y0: this.cam.y, z0: this.cam.zoom, x1: s.x, y1: s.y, z1: s.zoom, t: 0, dur: ms / 1000 };
+  }
 
   focusSelection(): void {
     const vs = this.sim.villagers.filter((v) => v.inside === null && (!this.selected.size || this.selected.has(v.id)));
@@ -497,7 +669,7 @@ export class Controller {
     if (e.target instanceof HTMLElement && /input|textarea|select/i.test(e.target.tagName)) return;
     if ((e.ctrlKey || e.metaKey) && k === 'a') { e.preventDefault(); this.selectAll(); return; }
     if (k === 'escape') { if (this.attackMoveArmed) { this.attackMoveArmed = false; this.onChange(); } else if (this.placing) this.cancelPlacing(); else if (this.groupMode) this.endGroup(); else this.clearSelection(); return; }
-    if (k === 'r' && this.groupMode) { this.rotateGroup(); return; }
+    if (k === 'r' && (this.groupMode || this.canTurnGate)) { this.rotateGroup(); return; }
     if (/^[1-9]$/.test(k) && !e.shiftKey) { this.group(Number(k), e.ctrlKey || e.metaKey); e.preventDefault(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (k === 'f' && this.fighters().length) { this.attackMoveArmed = true; this.onToast('Chọn điểm đến (chuột trái); Esc để hủy'); this.onChange(); return; }
@@ -522,6 +694,12 @@ export class Controller {
     if (k.has('a') || k.has('arrowleft')) this.cam.x -= sp;
     if (k.has('d') || k.has('arrowright')) this.cam.x += sp;
     if (k.size) this.clamp();
+    if (this.fly) { // the camera flies (a dialogue opens or closes): ease in and out
+      const f = this.fly; f.t += dt;
+      const u = Math.min(1, f.t / f.dur), e = u < 0.5 ? 2 * u * u : 1 - ((-2 * u + 2) ** 2) / 2;
+      this.cam.x = f.x0 + (f.x1 - f.x0) * e; this.cam.y = f.y0 + (f.y1 - f.y0) * e; this.cam.zoom = f.z0 + (f.z1 - f.z0) * e;
+      this.clamp(); if (u >= 1) this.fly = null;
+    }
     for (const id of [...this.selected]) if (!this.sim.get(id)) { this.selected.delete(id); this.onChange(); }
     for (const m of this.markers) m.age += dt;
     for (let i = this.markers.length - 1; i >= 0; i--) if (this.markers[i].age > 0.9) this.markers.splice(i, 1);

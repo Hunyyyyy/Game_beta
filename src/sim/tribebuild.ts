@@ -1,5 +1,5 @@
 import type { BuildingKind } from './buildings';
-import { planCamp } from './campplan';
+import { planBandits, planCamp } from './campplan';
 import { SIEGE } from './combat';
 import { DIFF } from './difficulty';
 import type { Sim } from './sim';
@@ -40,6 +40,48 @@ function clearPatch(sim: Sim, x: number, y: number, w: number, h: number, margin
  * and marked on the map. A piece that stands already and is still in the plan is kept (hurt as it is) and raised to the new level; the rest of the old plan goes and the new one is put up.
  * Costs nothing and takes no builders. Returns how many pieces the plan has.
  */
+/** Is this ground no place for a piece of a camp: the edge of the world, water or mountain. */
+const blockedBy = (sim: Sim) => (r: { x: number; y: number; w: number; h: number }): boolean => {
+  const W = sim.world, N = W.size;
+  for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
+    if (i < 2 || j < 2 || i >= N - 2 || j >= N - 2) return true;
+    const tile = W.at(i, j);
+    if (tile === Tile.Water || tile === Tile.Mountain) return true;
+  }
+  return false;
+};
+
+/** The pieces the plan of a village has at its level and the pieces of it that stand (a piece torn down in a war is no longer in `props`). */
+export function campPieces(sim: Sim, t: Tribe): { plan: number; standing: number } {
+  const fire = t.props.find((p) => p.kind === 'fire'), level = t.built ?? 0;
+  if (!fire || !level) return { plan: 0, standing: 0 };
+  const base = t.props.filter((p) => !planned(p)), have = new Set(t.props.filter(planned).map(keyOf));
+  const pieces = planPieces(sim, t, fire, level, base, blockedBy(sim));
+  return { plan: pieces.length, standing: pieces.filter((q) => have.has(`${q.kind === 'fence' || q.kind === 'gate' || q.kind === 'tower' ? q.kind : q.kind}@${q.x},${q.y}`)).length };
+}
+
+/**
+ * A beaten village puts up again some of what was torn down: the pieces of its plan that are missing, at most `count` a day, new and weak (a third of their strength), mending over the days
+ * (repairProps). Its people can only be as many as its houses can hold, see tribelod.recoverTribe. Returns how many went up.
+ */
+export function rebuildProps(sim: Sim, t: Tribe, count: number): number {
+  const fire = t.props.find((p) => p.kind === 'fire'), level = t.built ?? 0;
+  if (t.state === 'destroyed' || !fire || !level || count <= 0) return 0;
+  const W = sim.world, N = W.size, base = t.props.filter((p) => !planned(p)), have = new Set(t.props.filter(planned).map(keyOf));
+  let n = 0;
+  for (const piece of planPieces(sim, t, fire, level, base, blockedBy(sim))) {
+    if (n >= count) break;
+    const kind: Prop['kind'] = piece.kind === 'fence' || piece.kind === 'gate' || piece.kind === 'tower' ? piece.kind : 'house', b: BuildingKind | undefined = kind === 'house' ? piece.kind : undefined;
+    const prop: Prop = { x: piece.x, y: piece.y, w: piece.w, h: piece.h, kind, b, lv: piece.level, hp: 0 };
+    if (have.has(keyOf(prop))) continue;
+    prop.hp = Math.max(1, Math.round(hpOf(kind, prop.w, prop.h, prop.lv!, !!t.boss) / 3));
+    clearPatch(sim, prop.x, prop.y, prop.w, prop.h, kind === 'fence' || kind === 'gate' ? 0 : 1);
+    if (kind !== 'gate' || prop.open === false) for (let j = 0; j < prop.h; j++) for (let i = 0; i < prop.w; i++) W.occ[(prop.y + j) * N + prop.x + i] = 1;
+    t.props.push(prop); n++;
+  }
+  return n;
+}
+
 export function growCamp(sim: Sim, t: Tribe, level: number): number {
   if (t.state === 'destroyed' || level <= (t.built ?? 0)) return 0;
   const fire = t.props.find((p) => p.kind === 'fire');
@@ -47,14 +89,7 @@ export function growCamp(sim: Sim, t: Tribe, level: number): number {
   const W = sim.world, N = W.size;
   W.ensure(fire.x, fire.y, 16); // the land must exist before it can be judged
   const base = t.props.filter((p) => !planned(p)), old = new Map(t.props.filter(planned).map((p) => [keyOf(p), p] as const));
-  const blocked = (r: { x: number; y: number; w: number; h: number }): boolean => {
-    for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) {
-      if (i < 2 || j < 2 || i >= N - 2 || j >= N - 2) return true;
-      const tile = W.at(i, j);
-      if (tile === Tile.Water || tile === Tile.Mountain) return true;
-    }
-    return false;
-  };
+  const blocked = blockedBy(sim);
   const next: Prop[] = [...base];
   for (const piece of planPieces(sim, t, fire, level, base, blocked)) {
     const kind: Prop['kind'] = piece.kind === 'fence' || piece.kind === 'gate' || piece.kind === 'tower' ? piece.kind : 'house', b: BuildingKind | undefined = kind === 'house' ? piece.kind : undefined;
@@ -77,8 +112,9 @@ export function setGates(sim: Sim, t: Tribe, shut: boolean): void {
   for (const p of t.props) {
     if (p.kind !== 'gate' || (p.open !== false) !== shut) continue;
     p.open = !shut;
+    sim.addSfx(shut ? 'gate_shut' : 'gate_open', false, p.x, p.y);
     for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) { const k = (p.y + j) * N + p.x + i; sim.world.occ[k] = shut ? 1 : 0; if (shut) sim.world.foeGates.add(k); else sim.world.foeGates.delete(k); } // the village's own people pass its shut gates
   }
 }
 
-const planPieces = (sim: Sim, t: Tribe, fire: Prop, level: number, base: Prop[], blocked: (r: { x: number; y: number; w: number; h: number }) => boolean) => planCamp(fire.x, fire.y, level, sim.era, sim.advanced || !!t.boss, base, blocked);
+const planPieces = (sim: Sim, t: Tribe, fire: Prop, level: number, base: Prop[], blocked: (r: { x: number; y: number; w: number; h: number }) => boolean) => (t.bandit ? planBandits(fire.x, fire.y, DIFF.capture.bandit.tents[t.tier as 'normal' | 'medium' | 'raider'] ?? 2, base, blocked) : planCamp(fire.x, fire.y, level, sim.era, sim.era === 'ancient' || !!t.boss, base, blocked));

@@ -1,0 +1,63 @@
+{
+ "kind": "smelter",
+ "name": "Lò luyện",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 4,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Lò đắp đất",
+    "cost": {
+     "wood": 105,
+     "stone": 180
+    },
+    "buildTime": 360,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 520,
+    "sight": 0
+   },
+   {
+    "name": "Sân rèn lò gạch",
+    "cost": {
+     "wood": 165,
+     "stone": 345,
+     "iron": 15,
+     "coal": 10
+    },
+    "buildTime": 520,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 3,
+    "hp": 720,
+    "sight": 0
+   },
+   {
+    "name": "Lò cao",
+    "cost": {
+     "wood": 225,
+     "stone": 510,
+     "iron": 30,
+     "coal": 20,
+     "steel": 12
+    },
+    "buildTime": 760,
+    "cap": 0,
+    "craftSpeed": 1.5,
+    "slots": 4,
+    "hp": 980,
+    "sight": 0
+   }
+  ]
+ }
+}

@@ -1,0 +1,210 @@
+{
+ "_note": "Rider (Kỵ binh cấp 1): studded leather jerkin, iron cap, a shortsword sheathed at the hip. Dyed blue-grey leather, so that the rider shows against a brown horse.",
+ "name": "Giáp kỵ binh",
+ "palette": {
+  "iron": "#8d969e",
+  "ironH": "#cfd6dc",
+  "ironD": "#566068",
+  "lea": "#4a5a6e",
+  "leaD": "#323f50",
+  "leaH": "#6e82a0",
+  "stud": "#a9b1b8",
+  "belt": "#2a1c10",
+  "gold": "#d8b04a",
+  "scab": "#33200f",
+  "hilt": "#9aa2a8",
+  "glove": "#2a2f38",
+  "breech": "#3a3f48",
+  "breechD": "#292d34"
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "i": "iron",
+    "H": "ironH",
+    "D": "ironD"
+   },
+   "rows": [
+    ".....iiii....",
+    "...iiiHHiii..",
+    "..iiHHHiiiiD.",
+    ".iiHHiiiiiiiD",
+    ".iiiiiiiiiiiD",
+    "DDDDDDDDDDDD.",
+    ".DDDDD.......",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    ".............",
+    "............."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "l": "lea",
+    "d": "leaD",
+    "h": "leaH",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold"
+   },
+   "rows": [
+    "lllslld",
+    "hllllld",
+    "lslllld",
+    "lllllld",
+    "lllllsd",
+    "llllsld",
+    "BBBBGBB",
+    "dddddd.",
+    ".dddd..",
+    "..dd..."
+   ]
+  },
+  "over": {
+   "ox": -3,
+   "oy": 6,
+   "legend": {
+    "k": "scab",
+    "h": "hilt",
+    "g": "gold"
+   },
+   "rows": [
+    "hh...",
+    "gk...",
+    ".kk..",
+    ".kk..",
+    "..kk.",
+    "...k."
+   ]
+  }
+ },
+ "wraps": {
+  "leg": {
+   "dy": 3,
+   "w": 3,
+   "h": 5,
+   "color": "lea",
+   "edge": "leaD"
+  },
+  "arm": {
+   "full": true,
+   "color": "lea",
+   "far": "leaD",
+   "hand": "glove",
+   "w": 3,
+   "h": 2
+  }
+ },
+ "legs": {
+  "near": "breech",
+  "far": "breechD"
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "i": "iron",
+    "H": "ironH",
+    "D": "ironD"
+   },
+   "rows": [
+    "....iiii....",
+    "..iiHHiiii..",
+    ".iiHHHiiiiD.",
+    "iiHHiiiiiiiD",
+    "iiiiiiiiiiiD",
+    "DDDDDDDDDDDD",
+    ".DDDDDDDDDD.",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "l": "lea",
+    "d": "leaD",
+    "h": "leaH",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold"
+   },
+   "rows": [
+    "lllsllllls",
+    "llslllllsl",
+    "lslllllsll",
+    "slllllslll",
+    "lllllsllll",
+    "llllslllll",
+    "BBBBGGBBBB",
+    "dddddddddd",
+    "dddddddddd",
+    ".dddddddd.",
+    "..dddddd.."
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "i": "iron",
+    "H": "ironH",
+    "D": "ironD"
+   },
+   "rows": [
+    "....iiii....",
+    "..iiHHiiii..",
+    ".iiHHHiiiiD.",
+    "iiHHiiiiiiiD",
+    "iiiiiiiiiiiD",
+    "DDDDDDDDDDDD",
+    ".DDDDDDDDDD.",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............",
+    "............"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "l": "lea",
+    "d": "leaD",
+    "h": "leaH",
+    "s": "stud",
+    "B": "belt",
+    "G": "gold"
+   },
+   "rows": [
+    "lllsllllls",
+    "llslllllsl",
+    "lslllllsll",
+    "slllllslll",
+    "lllllsllll",
+    "llllslllll",
+    "BBBBBBBBBB",
+    "dddddddddd",
+    "dddddddddd",
+    ".dddddddd.",
+    "..dddddd.."
+   ]
+  }
+ }
+}

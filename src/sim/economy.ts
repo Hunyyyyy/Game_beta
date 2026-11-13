@@ -2,8 +2,9 @@
 import { BARTER, FOOD, rationAt, Res, RES_NAME, Stock } from './resources';
 import type { Sim } from './sim';
 import paceJson from '../data/pace.json';
+import { statBonus } from './research';
+import { villageBonus } from './statsys';
 import { Building, gatherMult, levelDef } from './buildings';
-import { DAY_LENGTH } from './constants';
 import { FARM_TIME, JOBS, roleOf } from './jobs';
 import type { WorkJob } from './jobs';
 import { workFactor } from './labor';
@@ -11,6 +12,7 @@ import { REST } from './rest';
 import { toolBonus } from './statsys';
 import { TIER_YIELD } from './tools';
 import type { Villager } from './model';
+import { rankRation } from './ranks';
 
 /** Reason the stock cannot pay `cost`, or null. */
 export function missing(sim: Sim, cost: Partial<Stock>): string | null {
@@ -22,27 +24,21 @@ export function affordable(sim: Sim, cost: Partial<Stock>): boolean { return (Ob
 
 export function pay(sim: Sim, cost: Partial<Stock>, sign = -1): void { for (const k of Object.keys(cost) as Res[]) sim.stock[k] += sign * (cost[k] ?? 0); }
 
-/** Swap goods for shells: the village trades a fixed amount of one good for one coin. */
-export function barter(sim: Sim, res: Exclude<Res, 'coin'>): string | null {
-  const n = BARTER[res];
-  if (sim.stock[res] < n) return `Cần ${n} ${RES_NAME[res].toLowerCase()} để đổi lấy 1 ${RES_NAME.coin.toLowerCase()}`;
-  if (sim.stock.coin >= sim.capacity()) return `Kho đã đầy ${RES_NAME.coin.toLowerCase()}`;
-  sim.stock[res] -= n; sim.stock.coin += 1;
-  return null;
-}
-
 // ---------------------------------------------------------------- the daily meal (src/data/food.json)
+/** The ration of one person: a soldier of a camp eats the more the higher his rank (ranks.json). */
+const ration = (level: number, v: Villager): number => rationAt(level, v.job === 'fight') * (v.job === 'fight' && !v.guard ? rankRation(v.rank ?? 1) : 1);
+
 /** What the village eats at the end of this day: a ration for every villager and a bigger one for every soldier, by the level of the campfire. */
 export function foodNeed(sim: Sim): number {
   const level = sim.campfire()?.level ?? 1;
   let n = 0;
-  for (const v of sim.villagers) n += rationAt(level, v.job === 'fight');
+  for (const v of sim.villagers) n += ration(level, v);
   return n;
 }
 
 /** Put what was gathered into the village: food fills the pot of the campfire first, and only what is over goes to the store (up to its capacity). Returns how much was taken. */
 export function deposit(sim: Sim, res: Res, amount: number): number {
-  let left = amount, taken = 0;
+  let left = Math.ceil(amount - 1e-9), taken = 0; // the stores only hold whole goods: what is carried in fractions is rounded up here
   if (res === 'food') { const toPot = Math.max(0, Math.min(left, foodNeed(sim) - sim.foodPot)); sim.foodPot += toPot; left -= toPot; taken += toPot; }
   const toStore = Math.max(0, Math.min(left, sim.capacity(res) - sim.stock[res]));
   sim.stock[res] += toStore;
@@ -74,7 +70,7 @@ export function eatDay(sim: Sim): void {
 export function warNeed(sim: Sim): number {
   const level = sim.campfire()?.level ?? 1;
   let n = 0;
-  for (const v of sim.villagers) if (!sim.warIds.has(v.id)) n += rationAt(level, v.job === 'fight');
+  for (const v of sim.villagers) if (!sim.warIds.has(v.id)) n += ration(level, v);
   return n;
 }
 
@@ -82,7 +78,7 @@ export function warNeed(sim: Sim): number {
 export function armyNeed(sim: Sim): number {
   const level = sim.campfire()?.level ?? 1;
   let n = 0;
-  for (const v of sim.villagers) if (sim.warIds.has(v.id)) n += rationAt(level, true) * sim.march.food;
+  for (const v of sim.villagers) if (sim.warIds.has(v.id)) n += rationAt(level, true) * rankRation(v.rank ?? 1) * sim.march.food;
   return n;
 }
 
@@ -126,8 +122,8 @@ export function rollYield(sim: Sim): void {
 
 // ---------------------------------------------------------------- what a house brings in per day, worked out from who works there
 /** Seconds of work a villager puts in over one day, by their shift (the night counts at the night efficiency). */
-function workSeconds(v: Villager): number {
-  const day = DAY_LENGTH * 0.65, night = DAY_LENGTH * 0.35 * REST.nightEfficiency;
+function workSeconds(sim: Sim, v: Villager): number {
+  const day = sim.dayLen * 0.65, night = sim.dayLen * 0.35 * REST.nightEfficiency;
   return v.shift === 'night' ? night : v.shift === 'both' ? day + night : day;
 }
 
@@ -141,6 +137,7 @@ export function dailyYield(sim: Sim, b: Building): { amount: number; people: num
   switch (b.kind) {
     case 'lumberyard': job = 'wood'; workers = sim.villagers.filter((v) => roleOf(v) === 'wood'); break;
     case 'quarry': job = 'stone'; workers = sim.villagers.filter((v) => roleOf(v) === 'stone'); break;
+    case 'mine': job = 'mine'; workers = sim.villagers.filter((v) => roleOf(v) === 'mine'); break;
     case 'farmhouse': job = 'food'; workers = sim.villagers.filter((v) => roleOf(v) === 'food'); break;
     case 'huntlodge': job = 'hunt'; workers = sim.villagers.filter((v) => roleOf(v) === 'hunt'); break;
     case 'field': job = 'food'; workers = sim.villagers.filter((v) => v.job === 'food' && v.post === b.id); break;
@@ -148,10 +145,10 @@ export function dailyYield(sim: Sim, b: Building): { amount: number; people: num
   }
   let amount = 0;
   for (const v of workers) {
-    const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(v);
-    if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (DAY_LENGTH * 0.65)); continue; }
+    const speed = workFactor(sim, v, job, b.kind === 'field') / Math.max(0.01, sim.restFactor(v)), secs = workSeconds(sim, v);
+    if (job === 'hunt') { amount += paceJson.huntPerDay * speed * (secs / (sim.dayLen * 0.65)) * (1 + (statBonus(sim.researched, 'hunt', 'gyield') + villageBonus(sim)) / 100); continue; }
     const per = TIER_YIELD[sim.toolTier(v, job)] * (1 + toolBonus(sim, v, job, 'tyield') / 100);
-    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty * gatherMult(b)) / JOBS[job].baseTime;
+    amount += b.kind === 'field' ? (speed * levelDef(b).craftSpeed * per * secs) / FARM_TIME : (speed * per * secs * paceJson.gatherDuty * gatherMult(b) * paceJson.yield[JOBS[job].res as 'wood' | 'stone' | 'food' | 'iron_ore']) / JOBS[job].baseTime;
   }
   return { amount, people: workers.length };
 }

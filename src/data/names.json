@@ -1,0 +1,14 @@
+{
+  "_note": "Tên người: ghép âm tiết kiểu bộ lạc. Mỗi 'giọng' (voice) có bộ phụ âm đầu, nguyên âm và âm cuối riêng; giọng 0 là của dân ta, các giọng còn lại chia cho các bộ tộc (theo mã bộ tộc). Nam: âm cuối là nguyên âm hoặc một phụ âm (coda, xác suất codaChance); nữ: kết thúc bằng nguyên âm trong endF. threeChance: xác suất tên 3 âm (còn lại 2 âm); maxLen: tên dài hơn bấy nhiêu chữ thì bỏ, bốc lại.",
+  "threeChance": 0.06,
+  "codaChance": 0.45,
+  "maxLen": 6,
+  "endF": ["a", "i", "e"],
+  "voices": [
+    { "onset": ["k", "t", "m", "n", "b", "r", "l", "s", "d", "g", "z", "p", "h"], "vowel": ["a", "o", "u", "i", "e"], "coda": ["k", "r", "n", "m", "g"] },
+    { "onset": ["k", "r", "g", "t", "kh"], "vowel": ["a", "o", "u"], "coda": ["r", "k", "n"] },
+    { "onset": ["m", "l", "n", "v", "s"], "vowel": ["a", "e", "i", "o"], "coda": ["n", "m", "l"] },
+    { "onset": ["b", "d", "z", "j", "v"], "vowel": ["u", "o", "a", "e"], "coda": ["g", "d", "k"] },
+    { "onset": ["s", "t", "sh", "ch", "th"], "vowel": ["i", "a", "e", "u"], "coda": ["s", "t", "n"] }
+  ]
+}

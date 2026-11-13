@@ -5,7 +5,9 @@
       "Bash(npx tsc *)",
       "Bash(grep -i '\\\\.md$')",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('src/data/progression.json','utf8'\\)\\);console.log\\('ok'\\)\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(rm -f run_1.txt)",
+      "Bash(EVENTS=1 WAR=1 node bot2.cjs 1 30)"
     ]
   }
 }

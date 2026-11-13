@@ -1,4 +1,5 @@
 import animsJson from '../data/anims.json';
+import { armorRank } from './ranks';
 import { ARMORS, ArmorDef, damageOf, DmgType, RULES, Team, WeaponDef, WEAPONS } from './combat';
 import { WEATHER } from './calendar';
 import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
@@ -7,7 +8,8 @@ import chaseJson from '../data/chase.json';
 import { chaseSight } from './fightpolicy';
 import { isActive } from './tribework';
 import type { Sim, Target, Villager } from './sim';
-import { critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
+import { armPerk, critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
+import { perkPct } from './research';
 
 const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>;
 /** When, inside an attack animation, the blow lands and when it ends (seconds). */
@@ -49,7 +51,7 @@ export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
   return sim.tribesFeud(a, b); // two villages fight only when they are at feud
 }
 
-export interface Threat { t: Target; x: number; y: number; d: number; name: string }
+export interface Threat { t: Target; x: number; y: number; d: number; name: string; /** A soldier of the other side (not a civilian, not a beast): the archers pick these first. */ fighter?: boolean }
 
 /** Enemies of `v` within `radius`, nearest first. Player units only notice what they can see. */
 /** Tiles on a side of a cell of the grid that finds who is near whom. */
@@ -87,9 +89,9 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
-    if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name });
+    if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name, fighter: isFighter(o) || (!!o.ai && o.ai.role !== 'civ') });
   }
   if (player) for (const a of sim.animals) {
     if (a.state === 'dead' || (sk && sk.kind === 'animal' && sk.id === a.id)) continue;
@@ -98,6 +100,8 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
     const d = Math.hypot(a.x - v.x, a.y - v.y);
     if (d <= radius && seen(a.x, a.y)) out.push({ t: { kind: 'animal', id: a.id }, x: a.x, y: a.y, d, name: def.name });
   }
+  // an archer (of either side) picks a soldier of the enemy before anyone else in sight; the rest, and every other arm, go by distance
+  if (armOf(v) === 'archer') return out.sort((p, q) => (q.fighter ? 1 : 0) - (p.fighter ? 1 : 0) || p.d - q.d);
   return out.sort((p, q) => p.d - q.d);
 }
 
@@ -119,8 +123,10 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (target.kind === 'animal') {
     const a = sim.animalById.get(target.id);
     if (!a || a.state === 'dead') return;
+    if (src.unit?.team === 'player') dmg *= 1 + perkPct(sim.researched, `beast_${a.species}`) / 100; // the hunters who have studied this beast hit it harder
+    if (a.raid && src.unit?.team === 'player') sim.noteDamage(true, Math.min(dmg, a.hp));
     a.hp -= dmg;
-    if (a.hp <= 0) { animalDie(sim, a); sim.onKill?.(); if (src.unit?.team === 'player' && a.species === 'wolf') sim.say('Một con sói đã bị hạ.'); }
+    if (a.hp <= 0) { if (a.raid) sim.noteBattle('foes'); animalDie(sim, a); sim.onKill?.(); if (src.unit?.team === 'player' && a.species === 'wolf') sim.say('Một con sói đã bị hạ.'); }
     else if (src.unit) provoke(sim, a, src.unit.id);
     return;
   }
@@ -128,11 +134,17 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-  const armor = armorOf(v), final = dmg * (1 - (armor ? armor[type] : 0)) * (1 - guardCut(sim, v, missile)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v);
+  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
+  if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
   v.health -= final; v.calm = 0; v.flinch = 0.3;
+  if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes
+  if (src.unit) { const sw = weaponOf(src.unit); sim.addSfx(sw.id, missile, v.x, v.y, sw.rank ?? 0, armor ? armorRank(v.armor) : 0); } // the sound belongs to the weapon in his hand, whoever holds it
   if (src.unit && src.unit.team !== v.team && src.unit.team !== 'player' && v.team !== 'player' && src.unit.team !== 'wild' && v.team !== 'wild') noteClash(sim, src.unit.team, v.team, v.x, v.y);
   if (armor) sim.wearGear(v, 'armor');
   if (src.unit && src.unit.team === 'player' && v.team !== 'player') sim.tribeAttacked(v.team as Exclude<Team, 'player' | 'wild'>, v);
+  // our soldier and a soldier of a village strike each other, ordered or not: the skirmish begins (warskirmish.ts)
+  if (src.unit && src.unit.team === 'player' && src.unit.job === 'fight' && v.team !== 'player') { const foe = sim.foeVillage(v); if (foe && !sim.inSkirmish(src.unit)) sim.skirmishOrder([src.unit.id], foe); }
+  else if (src.unit && v.team === 'player' && v.job === 'fight') { const foe = sim.foeVillage(src.unit); if (foe && !sim.inSkirmish(v)) sim.skirmishOrder([v.id], foe); }
   if (v.health > 0 && v.team !== 'player' && v.ai && v.ai.role !== 'civ' && src.unit && src.unit.team === 'player' && src.unit.inside !== null) {
     const tw = sim.getBuilding(src.unit.inside);
     if (tw && tw.kind === 'tower') { v.ai.siege = tw.id; v.fight.target = null; } // shot from a tower: it is the tower he goes for
@@ -156,7 +168,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
 /** A villager with no health left is dead for good: nobody picks them up, nothing brings them back. */
 function fallUnit(sim: Sim, v: Villager): void {
   sim.resetTask(v); v.queue.length = 0; v.swing = null;
-  sim.noteBattle('ours');
+  sim.noteLoss(v);
   sim.killUnit(v, 'tử trận');
 }
 
@@ -177,8 +189,9 @@ function critRoll(sim: Sim, v: Villager, w: WeaponDef): number {
 }
 
 /** What the arms do to each other: foot beats archers, archers beat riders, riders beat foot (units.json). Animals are no arm. */
-export function armMultiplier(attacker: Villager, e: Ent): number {
-  return e.kind === 'unit' ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
+export function armMultiplier(sim: Sim, attacker: Villager, e: Ent): number {
+  const m = e.kind === 'unit' ? matchup(armOf(attacker), armOf(e.v), effWeapon(attacker)) : 1;
+  return m > 1 ? m * (1 + armPerk(sim, attacker, 'counter') / 100) : m; // the research of an arm makes it hit harder the arm it beats
 }
 
 /** Loose an arrow or a stone from a point (the archer, or the tower he stands in): it must be seen and within reach, and it flies. */
@@ -186,7 +199,7 @@ export function fireProjectile(sim: Sim, v: Villager, e: Ent, from: { x: number;
   const w = weaponOf(v), tx = entX(e), ty = entY(e), d = Math.hypot(tx - from.x, ty - from.y);
   if (d > w.range + rangeBonus + 1 || !canSee(sim, v, tx, ty)) return false;
   // an archer with the enemy in his face shoots badly, rain and storm spoil the aim
-  const shot = (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim, v, w) * clampTactical(armMultiplier(v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
+  const shot = (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * critRoll(sim, v, w) * clampTactical(armMultiplier(sim, v, e) * mult * sim.attackFactor(v, e)) * WEATHER[sim.weather].bow * (d <= UNIT_RULES.archerPressed.within ? UNIT_RULES.archerPressed.damage : 1);
   if (v.inside !== null) sim.noteBattle('shot');
   const target: Target = e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id };
   sim.projectiles.push({ x: from.x, y: from.y - 0.4, tx, ty, speed: 14, dmg: shot, type: w.type, from, src: v.id, team: v.team, target, chance: d <= (w.range + rangeBonus) / 2 ? RULES.rangedHitNear : RULES.rangedHitFar, kind: w.projectile ?? 'stone' });
@@ -197,13 +210,13 @@ export function fireProjectile(sim: Sim, v: Villager, e: Ent, from: { x: number;
 function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   const e = resolve(sim, target);
   if (!e) return;
-  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(v, e);
+  const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(sim, v, e);
   if (w.ranged) { fireProjectile(sim, v, e, { x: v.x, y: v.y }, 1, 0); return; }
   if (d > w.range + 1.1) return; // the target stepped away: the blow misses
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
-  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, null, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim.wearGear(v, 'weapon');
 }
 

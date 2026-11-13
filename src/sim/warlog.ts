@@ -18,7 +18,7 @@ export function begin(sim: Sim, plan: Plan): void {
   for (const m of plan.missions) { const s = sim.squadById(m.squad); if (s) for (const v of sim.squadUnits(s)) sent[armOf(v)]++; }
   const loaded = { food: 0, wood: 0, hide: 0 };
   for (const id of plan.supplyIds) { const p = sim.get(id)?.pack; if (p) { loaded.food += p.food; loaded.wood += p.wood; loaded.hide += p.hide; } }
-  plan.stats = { startDay: sim.day, fought: false, sent, dead: arms(), supplySent: plan.supplyIds.length, supplyDead: 0, loaded, returned: { food: 0, wood: 0, hide: 0 }, loot: {} } satisfies WarStats;
+  plan.stats = { startDay: sim.day, fought: false, sent, dead: arms(), supplySent: plan.supplyIds.length, supplyDead: 0, foeDead: 0, notes: [], loaded, returned: { food: 0, wood: 0, hide: 0 }, loot: {} } satisfies WarStats;
 }
 
 /** A soldier or supply soldier of the army fell. */
@@ -26,6 +26,18 @@ export function noteDeath(sim: Sim, id: number, supply: boolean, arm: keyof ArmC
   const plan = live(sim);
   if (!plan?.stats || !sim.warIds.has(id)) return;
   if (supply) plan.stats.supplyDead++; else plan.stats.dead[arm]++;
+}
+
+/** An enemy of the village we are attacking fell to our soldiers. */
+export function noteFoeDeath(sim: Sim, tribe: string): void {
+  const plan = sim.plans.find((p) => p.kind === 'attack' && p.status === 'running' && p.stats && p.tribe === tribe);
+  if (plan?.stats) plan.stats.foeDead++;
+}
+
+/** A line of the story of the war that is on. */
+export function noteLine(sim: Sim, text: string): void {
+  const st = live(sim)?.stats;
+  if (st && st.notes.length < 24) st.notes.push(text);
 }
 
 /** Goods taken from the village that was beaten. */
@@ -48,7 +60,7 @@ export function finish(sim: Sim, meals: number): void {
     const rec: WarRecord = {
       id: sim.warLog.length + 1, tribe: plan.tribe ?? '', name: t?.def.name ?? 'địch', mapLevel: t ? sim.mapLevel(t.id) : 0, startDay: st.startDay, endDay: sim.day,
       days: Math.max(0, sim.time - (sim.warSince >= 0 ? sim.warSince : plan.startedAt)) / 1200, result: plan.result || (st.fought ? 'lost' : 'off'), squads: plan.missions.length,
-      sent: st.sent, dead: st.dead, supplySent: st.supplySent, supplyDead: st.supplyDead,
+      sent: st.sent, dead: st.dead, supplySent: st.supplySent, supplyDead: st.supplyDead, foeDead: st.foeDead, notes: st.notes,
       spent: { food: Math.max(0, Math.round(st.loaded.food - st.returned.food + meals)), wood: Math.max(0, Math.round(st.loaded.wood - st.returned.wood)), hide: Math.max(0, Math.round(st.loaded.hide - st.returned.hide)) },
       loot: st.loot,
     };

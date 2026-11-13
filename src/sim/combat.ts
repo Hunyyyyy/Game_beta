@@ -21,6 +21,11 @@ export interface WeaponDef {
   ranged?: boolean;
   /** Which set of fighting animations it uses: a key of `styles` in weapons.json (swing, thrust, shoot, sling, throw, fist). */
   style: string;
+  /** A shield held in the other hand (src/data/shields): only drawn. */
+  shield?: string;
+  /** What a guard of the Trại lính gác does with this weapon instead: the style of his standing and fighting animations, and the shield he holds (the stone-age guards stand neatly, with a wooden shield). */
+  postStyle?: string;
+  postShield?: string;
   /** Single animations this weapon plays instead of its style's. */
   anims?: Partial<Record<CombatState, string>>;
   /** What a ranged weapon fires. */
@@ -30,11 +35,16 @@ export interface WeaponDef {
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
+  /** The rank of soldier that carries it (ranks.json); a rank N soldier of a camp carries only rank N weapons. */
+  rank?: number;
   /** Blows (or shots) before it is worn out; foes' gear does not wear. */
   durability?: number;
 }
-export interface ArmorDef extends Record<DmgType, number> {
+/** Armour adds to the person's own defence stats (Phòng thủ cận chiến `defm`, Phòng thủ tầm xa `defr`): it no longer takes a share off each kind of blow. */
+export interface ArmorDef {
   name: string;
+  defm: number;
+  defr: number;
   cost?: Partial<Stock>;
   time?: number;
   tier?: number;
@@ -54,10 +64,13 @@ export const WEAPONS = weaponsJson.weapons as unknown as Record<string, WeaponDe
  * The animation a weapon uses in a state: its own override, else its style's, else bare fists.
  * `null` is a person with nothing in their hands.
  */
-export function poseOf(weapon: string | null, state: CombatState): string {
+export function poseOf(weapon: string | null, state: CombatState, guard = false): string {
   const w = weapon ? WEAPONS[weapon] : WEAPONS.fist;
+  if (guard && w?.postStyle && STYLES[w.postStyle]) return STYLES[w.postStyle][state];
   return w?.anims?.[state] ?? STYLES[w?.style ?? 'fist']?.[state] ?? STYLES.fist[state];
 }
+/** The shield a weapon is held with: a guard of the Trại lính gác may hold another one than the soldiers of the camps. */
+export const shieldOf = (w: Pick<WeaponDef, 'shield' | 'postShield'>, guard = false): string | undefined => (guard && w.postShield) || w.shield;
 for (const id of Object.keys(WEAPONS)) { WEAPONS[id].id = id; WEAPONS[id].anim = poseOf(id, 'attack'); }
 export const ARMORS = weaponsJson.armor as unknown as Record<string, ArmorDef>;
 export const RULES = weaponsJson.rules;
@@ -102,9 +115,8 @@ export interface TribeDef {
   personality: Personality;
   angle: number;
   distance: number;
-  /** Share of the strength of all the villages of the land that this one takes, and how much of it is army (src/content/difficulty.json). */
-  share: number;
-  military: number;
+  /** How strong the village is against the player (src/content/difficulty.json "tiers"): weak, normal, medium or the boss. */
+  tier: 'weak' | 'normal' | 'medium' | 'boss';
   civilians: number;
   warriors: number;
   weapons: string[];
@@ -112,17 +124,22 @@ export interface TribeDef {
   look: { hide: string; pants: string };
   relation: number;
   reward: string;
-  tribute: Partial<Stock>;
+  /** A camp of bandits, not a village: no gifts, tribute or taking in; wiped out it gives a bag and comes back. */
+  bandit?: boolean;
 }
-export type TribeId = 'spring' | 'axe' | 'swamp' | 'cave' | 'dune';
+export type TribeId = 'spring' | 'axe' | 'swamp' | 'cave' | 'dune' | 'harbor' | 'ridge' | 'bandit1' | 'bandit2';
+/** The villages of the land at the start of a game. */
 export const TRIBE_IDS: TribeId[] = ['spring', 'axe', 'swamp', 'cave', 'dune'];
-export const TRIBES = Object.fromEntries(TRIBE_IDS.map((t) => [t, (tribesJson as unknown as Record<string, TribeDef>)[t]])) as Record<TribeId, TribeDef>;
+/** The sixth and the seventh village: they come later, when we have taken villages (tribefrontier.ts). */
+export const LATE_TRIBES: TribeId[] = ['harbor', 'ridge'];
+/** The camps of bandits: they are put up again after they are wiped out, and change their strength every few days (tribefrontier.ts). */
+export const BANDIT_TRIBES: TribeId[] = ['bandit1', 'bandit2'];
+export const TRIBES = Object.fromEntries([...TRIBE_IDS, ...LATE_TRIBES, ...BANDIT_TRIBES].map((t) => [t, (tribesJson as unknown as Record<string, TribeDef>)[t]])) as Record<TribeId, TribeDef>;
 export const RELATION = tribesJson.relation;
 /** Who fights whom on sight (src/data/tribes.json "meet"). */
 export const MEET = tribesJson.meet as { friendlyFrom: number; feuds: string[][] };
 /** Below this relation a tribe is hostile (the start of the 'Trung lập' band). */
 export const HOSTILE_BELOW = RELATION.labels[1][0] as number;
-export const SURRENDER = tribesJson.surrender;
 
 /** Team of a unit: the player, a tribe, or wild animals. */
 export type Team = 'player' | TribeId | 'wild';
@@ -146,8 +163,8 @@ export const maxHpOf = (vit: number) => 40 + 8 * vit;
 /** Seconds between two blows: weapon cycle times the agility factor. */
 export const cycleOf = (weaponCycle: number, agi: number) => weaponCycle * (RULES.agilityBase - RULES.agilityStep * agi);
 
-/** Damage of one blow after armour; `strength` adds to melee only. */
-export function damageOf(w: { damage: number; type: DmgType; ranged?: boolean }, strength: number, armor: ArmorDef | null, backstab: boolean): number {
+/** Damage of one blow before the defender's defence; `strength` adds to melee only. */
+export function damageOf(w: { damage: number; type: DmgType; ranged?: boolean }, strength: number, backstab: boolean): number {
   const base = w.damage + RULES.strengthDamage * strength;
-  return base * (1 - (armor ? armor[w.type] : 0)) * (backstab ? RULES.backstab : 1);
+  return base * (backstab ? RULES.backstab : 1);
 }

@@ -4,6 +4,7 @@ import { FIRE_VISION, NIGHT_VISION, VISION } from './constants';
 import { BUILDINGS, buildingSight } from './buildings';
 import { armOf } from './battle';
 import startJson from '../data/start.json';
+import weatherJson from '../data/weather.json';
 import type { Sim } from './sim';
 import { Villager } from './model';
 
@@ -12,15 +13,23 @@ export function tickCalendar(sim: Sim): void {
   const day = sim.day;
   if (day !== sim.lastDay) {
     sim.lastDay = day;
-    sim.weather = sim.nextWeather;
+    sim.dayWeather = sim.nextWeather; sim.weather = 'clear'; // the weather of the day comes for a minute or two, at some moment of it
     sim.nextWeather = rollWeather(seasonOf(day + 1), sim.wrnd());
+    const dur = weatherJson.duration, dayStart = sim.time - sim.tod * sim.dayLen;
+    sim.weatherAt = dayStart + (dur.startFrom + sim.wrnd() * (dur.startTo - dur.startFrom)) * sim.dayLen;
+    sim.weatherEnd = sim.weatherAt + dur.min + sim.wrnd() * (dur.max - dur.min);
     sim.signalled = false;
     const season = seasonOf(day);
     if (season !== sim.world.season) { sim.world.setSeason(season); sim.say(SEASON_DEF[season].enter); }
-    if (sim.weather !== 'clear') sim.say(`Hôm nay: ${WEATHER[sim.weather].name.toLowerCase()}.`);
+    if (sim.dayWeather !== 'clear') sim.say(`Hôm nay sẽ có ${WEATHER[sim.dayWeather].name.toLowerCase()}.`);
     sim.restockAnimals(); // what hunting took comes back, a herd at a time
     sim.eatDay(); // the day that has just ended is paid for before anyone new walks in
+    sim.marketRoll(); // the market draws what it takes today
     if (day >= startJson.arrivals.firstDay && !sim.dev.noArrivals) newcomers(sim);
+  }
+  if (sim.dayWeather !== 'clear') { // it comes and goes
+    if (sim.weather === 'clear' && sim.time >= sim.weatherAt && sim.time < sim.weatherEnd) { sim.weather = sim.dayWeather; sim.say(`Trời bắt đầu ${WEATHER[sim.weather].name.toLowerCase()}.`); }
+    else if (sim.weather !== 'clear' && sim.time >= sim.weatherEnd) { sim.say(`${WEATHER[sim.weather].name} đã qua.`); sim.weather = 'clear'; sim.dayWeather = 'clear'; }
   }
   if (!sim.signalled && sim.tod >= 0.5) {
     sim.signalled = true;
@@ -32,17 +41,26 @@ export function tickCalendar(sim: Sim): void {
   sim.resting = rest;
 }
 
-/** Each new day a few strangers walk in and settle by the fire (how many: start.json "arrivals"). */
+/** The player opens or shuts the village to strangers (the campfire's panel): while shut nobody comes. Returns whether it is open now. */
+export function toggleNewcomers(sim: Sim): boolean { sim.newcomersOpen = !sim.newcomersOpen; return sim.newcomersOpen; }
+
+/** Each new day a party of strangers comes to the gate to ask to stay (encounters.ts: the player decides there), unless the village is shut to them. The first day is start.json "arrivals" `firstDay`. */
 function newcomers(sim: Sim): void {
-  const { min, max, femaleChance } = startJson.arrivals;
-  const n = min + Math.floor(sim.frnd() * (max - min + 1)), fire = sim.campfire(), s = sim.world.start;
+  if (!sim.newcomersOpen) return;
+  sim.dailyArrival();
+}
+
+/** `n` people come to live by the fire (as many as the village has room for when `room` is asked); returns their names. */
+export function settle(sim: Sim, n: number, room = false): string[] {
+  const { femaleChance } = startJson.arrivals, fire = sim.campfire(), s = sim.world.start, names: string[] = [];
+  if (room) n = Math.min(n, Math.max(0, sim.popCap() - sim.villagers.length));
   for (let i = 0; i < n; i++) {
     const a = sim.frnd() * Math.PI * 2, r = 2 + sim.frnd() * 2;
     const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim.nearestFree(gx, gy, new Set()) ?? [gx, gy];
     const v = sim.makeVillager(spot[0], spot[1], sim.frnd() < femaleChance ? 'f' : 'm', 'player', sim.frnd);
-    sim.villagers.push(v); sim.registerUnit(v);
-    sim.say(`${v.name} đến làng xin ở lại.`);
+    sim.villagers.push(v); sim.registerUnit(v); names.push(v.name);
   }
+  return names;
 }
 
 // ---------------------------------------------------------------- vòng lặp

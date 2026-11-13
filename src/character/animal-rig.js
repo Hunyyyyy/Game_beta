@@ -61,6 +61,100 @@ function colors(def) {
   return { base, light: hex(P.light), dark: hex(P.dark), acc: hex(P.accent), eye: hex(P.eye), far: shade(base, 0.72), rim: shade(hex(P.dark), 0.5), beak: P.beak ? hex(P.beak) : hex(P.accent) };
 }
 
+/* The harness of a beast that is ridden: saddle and blanket on the back, a strap round the chest and a bridle. Colours are hex strings in def.gear;
+   `plate` (barding) covers the body and the neck with armour. Everything is drawn over the body, before the tail and the rim. */
+function drawGear(b, def, C, k) {
+  const G = def.gear, col = (n) => (G[n] ? hex(G[n]) : null), { cx, cy, bodyH, shX, hx, hy, rise, S } = k;
+  const top = cy - bodyH / 2, sad = col('saddle'), blan = col('blanket'), chest = col('chest'), stud = col('stud'), brid = col('bridle'), plate = col('plate'), plateH = col('plateH'), plateD = col('plateD');
+  if (plate) { // armour over the barrel and the neck, in a few plates
+    ell(b, cx + 1, cy + 0.5, S.bodyL / 2 - 0.5, bodyH / 2 + 0.5, plate);
+    for (const [dx, dy, rx, ry, c] of [[-3, -3, 5, 1.5, plateH], [3, -3, 4, 1.5, plateH], [-1, 3, 7, 1.5, plateD]]) ell(b, cx + dx, cy + dy, rx, ry, c);
+    for (let i = -8; i <= 8; i += 4) put(b, cx + i, cy, plateD);
+    line(b, shX - 1, cy - bodyH / 2 + 1, hx - 1, hy + 1, 3, plate); line(b, shX - 1, cy - bodyH / 2, hx - 1, hy, 1, plateH); // the crinet over the neck
+    ell(b, hx + 1, hy - 1, S.headR + 0.5, S.headR - 0.5, plate); put(b, hx + 3, hy - 1, plateH); // the chanfron on the face
+  }
+  if (blan) { // the cloth under the saddle; over armour it hangs down the flank as a caparison with a gold edge
+    const bw = plate ? 8.5 : 5.5, bh = plate ? 4.8 : 2.4, by = top + 1.5 - rise * 0.4 + (plate ? 1.5 : 0);
+    ell(b, cx, by, bw, bh, blan);
+    if (plate && chest) line(b, cx - bw + 2, by + bh - 1, cx + bw - 2, by + bh - 1, 1, chest);
+  }
+  if (sad) { ell(b, cx, top - 0.2 - rise * 0.4, 4, 2, sad); rect(b, Math.round(cx) + 2, Math.round(top) - 3, 2, 3, sad); rect(b, Math.round(cx) - 4, Math.round(top) - 2, 2, 2, sad); } // seat, pommel, cantle
+  if (sad) { const sx2 = Math.round(cx) + 1; line(b, sx2, top + 2, sx2, cy + bodyH / 2 - 2, 1, hex('#3a2410')); rect(b, sx2 - 1, Math.round(cy + bodyH / 2 - 2), 3, 1, hex('#c3ccd2')); } // girth and stirrup
+  if (chest) { line(b, shX - 1, cy - bodyH / 2 + 1, shX, cy + bodyH / 2 - 1, 3, chest); if (stud) for (let i = 0; i < 3; i++) put(b, shX - 1 + (i % 2), cy - bodyH / 2 + 3 + i * 2, stud); }
+  if (brid && S.feature === 'horse') { // headstall, noseband, cheek strap, bit and a sagging rein to the rider's hand
+    const hr = S.headR, mx = hx + hr + S.snout - 3, my = hy + 2.5;
+    line(b, hx - 1, hy - hr + 1, hx - 1, hy + hr - 1, 1, brid); // headstall behind the ear
+    line(b, hx - 1, hy - 1, mx, my - 1, 1, brid); // cheek strap to the bit
+    line(b, hx + hr, hy - 1, hx + hr + 1, hy + 2, 1, brid); // noseband
+    put(b, mx, my, hex('#c3ccd2')); // bit ring
+    const px = cx + 3, py = top - 2 - rise * 0.4, sx3 = (mx + px) / 2, sy3 = (my + py) / 2 + 3; // rein hangs in a gentle curve
+    line(b, mx, my, sx3, sy3, 1, brid); line(b, sx3, sy3, px, py, 1, brid);
+  } else if (brid) { line(b, hx + 1, hy - 3, hx + 1, hy + 2, 1, brid); line(b, hx + S.headR, hy, hx + S.headR + S.snout - 2, hy + 1, 1, brid); }
+}
+
+// ------------------------------------------------------------------ the horse seen from the front or from behind (def.views)
+/* A rider sits between two drawings of the horse: `layer` 'rear' is what is behind him (the barrel, the far legs), 'front' what is in front of him
+   (from the front: the neck, the head, the chest; from behind: the rump, the tail, the hind legs). renderAnimal returns both: `data` and `over`. */
+function horseView(b, def, f, back, layer) {
+  const S = def.shape, C = colors(def), G = def.gear || {}, gc = (n) => (G[n] ? hex(G[n]) : null);
+  const rear = layer === 'rear', top = layer === 'front';
+  const cx = b.w / 2, gy = b.h - 2, bob = num(f, 'bob', 0), legL = S.legL;
+  const raise = (p) => Math.min(5, Math.max(0, num(p, 'a', 0)) * 0.12 + num(p, 'lift', 0) * 0.8); // a leg lifts as it swings
+  const hipY = gy - legL - 1 + bob;
+  const leg = (x, p, col, w) => { // a thigh, a cannon bone and a hoof, straight down
+    const up = raise(p), fy = gy - up, my = hipY + (fy - hipY) * 0.5;
+    line(b, x, hipY, x, my, w + 1, col); line(b, x, my, x, fy - 2, w, col);
+    rect(b, Math.round(x) - 1, Math.round(fy) - 2, w + 1, 2, C.dark);
+  };
+  const bodyY = hipY - 4;
+  const blanket = gc('blanket'), saddle = gc('saddle'), chest = gc('chest'), stud = gc('stud'), brid = gc('bridle');
+  const farL = back ? f.fl : f.bl, farR = back ? f.fr : f.br, nearL = back ? f.bl : f.fl, nearR = back ? f.br : f.fr;
+  const plate = gc('plate'), plateH = gc('plateH'), plateD = gc('plateD');
+  const barrel = () => {
+    ell(b, cx, bodyY, back ? 7.6 : 6.6, 7, C.base);
+    ell(b, cx - 2, bodyY - 2, 3.2, 4, C.light);
+    ell(b, cx + 3, bodyY + 3, 3.4, 3, C.dark);
+    if (plate) { ell(b, cx, bodyY, back ? 7.8 : 6.8, 7.2, plate); ell(b, cx - 2.2, bodyY - 2.5, 3.2, 3.6, plateH); ell(b, cx + 3, bodyY + 3, 3.4, 3, plateD); line(b, cx - 6, bodyY + 1, cx + 6, bodyY + 1, 1, plateD); } // barding over the barrel
+    if (back) line(b, cx, bodyY - 6, cx, bodyY + 3, 1, C.dark); // the line down the croup
+    if (blanket) ell(b, cx, bodyY - 5.5, 8.4, 2.6, blanket);
+    if (saddle) ell(b, cx, bodyY - 6.5, 5, 1.8, saddle);
+  };
+  if (!back) {
+    if (rear) { leg(cx - 3.5, farL, C.far, 2); leg(cx + 3.5, farR, C.far, 2); barrel(); }
+    if (top) {
+      // the neck, the mane down both sides, the head and its face, then the chest strap and the legs nearest to us
+      line(b, cx, bodyY - 3, cx, bodyY - 8, 6, C.base);
+      line(b, cx - 3, bodyY - 4, cx - 3, bodyY - 9, 1, C.dark); line(b, cx + 3, bodyY - 4, cx + 3, bodyY - 9, 1, C.dark);
+      ell(b, cx, bodyY + 1, 5.6, 4.6, C.base); ell(b, cx - 1.5, bodyY - 0.5, 2.6, 2.8, C.light);
+      if (chest) { line(b, cx - 5, bodyY + 2, cx + 5, bodyY + 2, 2, chest); if (stud) for (const dx of [-3, 0, 3]) put(b, cx + dx, bodyY + 2, stud); }
+      const hy = bodyY - 7;
+      ell(b, cx, hy, 3.7, 5, C.base);
+      ell(b, cx, hy + 4.5, 2.7, 2.6, C.light);
+      put(b, cx - 1, hy + 5, C.dark); put(b, cx + 1, hy + 5, C.dark); // nostrils
+      put(b, cx - 2.5, hy - 1, C.eye); put(b, cx + 1.5, hy - 1, C.eye);
+      rect(b, Math.round(cx), Math.round(hy) - 4, 1, 8, C.acc); // the blaze
+      poly(b, [[cx - 3, hy - 4], [cx - 4.5, hy - 9], [cx - 1, hy - 5]], C.dark); poly(b, [[cx + 3, hy - 4], [cx + 4.5, hy - 9], [cx + 1, hy - 5]], C.dark);
+      rect(b, Math.round(cx) - 1, Math.round(hy) - 6, 3, 2, C.dark); // the forelock
+      if (plate) { ell(b, cx, hy + 1, 3.3, 4.6, plate); ell(b, cx - 1.2, hy - 1, 1.4, 2.4, plateH); rect(b, Math.round(cx), Math.round(hy) - 3, 1, 6, plateD); line(b, cx - 3, bodyY - 3, cx - 3, bodyY - 8, 1, plateD); line(b, cx + 3, bodyY - 3, cx + 3, bodyY - 8, 1, plateD); } // chanfron and crinet
+      if (brid) { line(b, cx - 3, hy, cx + 3, hy, 1, brid); line(b, cx - 2, hy + 3, cx + 2, hy + 3, 1, brid); }
+      leg(cx - 4.5, nearL, C.base, 2); leg(cx + 4.5, nearR, C.base, 2);
+    }
+  } else {
+    if (rear) {
+      leg(cx - 3.5, farL, C.far, 2); leg(cx + 3.5, farR, C.far, 2);
+      poly(b, [[cx - 3, bodyY - 13], [cx - 4, bodyY - 18], [cx - 1, bodyY - 13]], C.dark); poly(b, [[cx + 3, bodyY - 13], [cx + 4, bodyY - 18], [cx + 1, bodyY - 13]], C.dark); // the ears over the rider's shoulders
+    }
+    if (top) {
+      barrel();
+      // the tail hangs from the croup and swings a little with the gait
+      const sway = Math.round(Math.sin(num(f, 'tail', 0) * 0.05) * 1.5);
+      line(b, cx, bodyY - 3, cx + sway, bodyY + 10, 3, C.dark); line(b, cx + sway, bodyY + 8, cx + sway * 2, bodyY + 13, 2, C.dark);
+      leg(cx - 4.5, nearL, C.base, 3); leg(cx + 4.5, nearR, C.base, 3);
+    }
+  }
+  outline(b, C.rim);
+}
+
 // ------------------------------------------------------------------ four legs: deer, boar, wolf
 function quadruped(b, def, f) {
   const S = def.shape, C = colors(def), has = (n) => S.feature === n || (Array.isArray(S.features) && S.features.includes(n)), gy = b.h - 2, lay = num(f, 'lay', 0), side = num(f, 'side', 0);
@@ -71,6 +165,23 @@ function quadruped(b, def, f) {
   const leg = (x, p, col, w) => {
     const a = num(p, 'a', 0), lift = num(p, 'lift', 0);
     const fx = x + Math.sin(rad(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad(a)) * legL - lift);
+    if (has('horse') || S.legJoints) { // two joints: front = elbow-knee(carpus)-fetlock, hind = stifle-hock-fetlock, then the hoof
+      const front = x > cx, fold = Math.min(3, lift * 0.5); // a lifted leg folds at the joints
+      const lerp = (t) => [x + (fx - x) * t, jy + (fy - jy) * t];
+      let j1, j2, j3;
+      if (front) { // the knee points forward, the cannon drops straight, the fetlock sits slightly behind
+        j1 = lerp(0.4); j2 = lerp(0.62); j3 = lerp(0.86);
+        j2 = [j2[0] + 0.5 + fold * 0.5, j2[1]]; j3 = [j3[0] - 0.3 - fold, j3[1]];
+      } else { // the stifle goes forward, the hock points back, the cannon slopes forward to the fetlock
+        j1 = lerp(0.32); j2 = lerp(0.62); j3 = lerp(0.86);
+        j1 = [j1[0] + 0.6, j1[1]]; j2 = [j2[0] - 1 - fold * 0.5, j2[1]]; j3 = [j3[0] + 0.3 - fold, j3[1]];
+      }
+      const hv = has('horse') ? 1 : 0; // horses get a heavier thigh; lighter animals keep slimmer legs
+      line(b, x, jy, j1[0], j1[1], w + 1 + hv, col); line(b, j1[0], j1[1], j2[0], j2[1], w + hv, col); // thigh / forearm
+      line(b, j2[0], j2[1], j3[0], j3[1], w, col); line(b, j3[0], j3[1], fx, fy, w, col); // slim cannon and pastern
+      if (fy > gy - 4) rect(b, Math.round(fx) - 1, Math.round(fy) - 1, w + 1, 2, C.dark); else put(b, fx, fy, C.dark); // a hoof on the ground, a dot when the leg is tucked
+      return;
+    }
     line(b, x, jy, fx, fy, w, col); put(b, fx, fy, C.dark); put(b, fx + (a > 0 ? 1 : 0), fy, C.dark);
   };
   const thick = S.legW || 2;
@@ -79,6 +190,10 @@ function quadruped(b, def, f) {
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t, S.bodyL / 4 + 1.5, bodyH / 2, C.base); }
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t + bodyH * 0.22, S.bodyL / 4 + 0.5, bodyH * 0.27, C.light); }
   for (let i = 0; i <= 4; i++) { const t = i / 4; ell(b, cx - S.bodyL / 2 + 2 + t * (S.bodyL - 4), cy - rise * t - bodyH * 0.32, S.bodyL / 4 + 1, bodyH * 0.2, C.dark); }
+  if (has('horse')) { // a deeper chest and rounded haunch so the legs grow out of muscle
+    ell(b, shX - 1, cy + 1 - rise, 4.5, bodyH / 2 + 0.5, C.base); ell(b, hipX + 1, cy + 1, 5.5, bodyH / 2 + 1, C.base);
+    ell(b, hipX + 1, cy - 1, 3.5, bodyH * 0.3, C.light); ell(b, shX - 1, cy - 1 - rise, 2.5, bodyH * 0.25, C.light);
+  }
   if (has('antlers')) for (const [dx, dy] of [[-4, -1], [0, -2], [4, -1], [-2, 1], [2, 1]]) put(b, cx + dx, cy - bodyH * 0.2 + dy, C.light);
   if (has('tusks')) for (let i = 0; i < S.bodyL - 4; i += 2) put(b, cx - S.bodyL / 2 + 3 + i, cy - bodyH / 2 - 1 - rise * (i / S.bodyL), C.dark); // bristle mane
   if (has('bear')) ell(b, shX - 1, cy - bodyH / 2 - rise, 4, 3, C.base); // shoulder hump
@@ -87,7 +202,11 @@ function quadruped(b, def, f) {
   // neck and head
   const sx = shX + 1, sy = cy - bodyH / 2 + 2 - rise, ang = rad(num(f.head, 'a', S.neckA)), dy = num(f.head, 'dy', 0);
   const hx = sx + Math.cos(ang) * S.neck, hy = sy - Math.sin(ang) * S.neck + dy;
-  line(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
+  if (has('horse')) { // an arched, muscular neck: thick at the withers, narrower at the poll, crest bowed upward
+    const nmx = (sx + hx) / 2 - 1, nmy = (sy + hy) / 2 - 1.5;
+    line(b, sx - 1, sy + 1, nmx, nmy, Math.round(bodyH * 0.62), C.base); line(b, nmx, nmy, hx, hy, Math.max(3, Math.round(bodyH * 0.4)), C.base);
+    line(b, sx, sy + 3, nmx + 1, nmy + 2, 1, C.light); // lit underside
+  } else line(b, sx, sy, hx, hy, Math.max(2, Math.round(bodyH * 0.45)), C.base);
   if (has('mane')) ell(b, hx - 2, hy + 1, S.headR + 3, S.headR + 3, C.dark);
   if (has('trunk')) ell(b, hx - 1, hy - S.headR * 0.6, S.headR * 0.9, S.headR * 0.8, C.base); // domed forehead
   ell(b, hx, hy, S.headR * 1.1, S.headR, C.base);
@@ -126,11 +245,28 @@ function quadruped(b, def, f) {
     line(b, hx + S.headR - 1, hy + 1, hx + S.headR + 1 + sway, hy + tl * 0.7, 3, C.base); line(b, hx + S.headR + 1 + sway, hy + tl * 0.7, hx + S.headR + 3 + sway, hy + tl, 2, C.base);
     line(b, hx + S.headR - 2, hy + 3, hx + S.headR + 5, hy + 9, 2, C.acc); put(b, hx + S.headR + 6, hy + 8, C.acc); // tusk curling forward
   }
+  if (has('horse')) { // the mane along the neck, a blaze down the face
+    for (let k = 0; k <= 4; k++) { const t = k / 4; ell(b, sx + (hx - sx) * t - 2, sy + (hy - sy) * t - 2.5 - S.headR * 0.4 * t - t * (1 - t) * 3, 1.6, 1.6, C.dark); }
+    // a long wedge head: broad cheek and jaw, flat face sloping down to a small muzzle
+    const hr = S.headR, tipX = hx + hr + S.snout - 1, tipY = hy + 2.5 + (open ? 1 : 0);
+    poly(b, [[hx - 2, hy - hr + 0.5], [hx + hr, hy - 1.5], [tipX, tipY - 2], [tipX, tipY + 1], [hx + hr - 1, hy + 2.5], [hx - 1, hy + hr + 1], [hx - 3, hy + hr - 1]], C.base);
+    line(b, hx - 1, hy + hr, hx + hr - 1, hy + 2.5, 1, C.light); // jaw line
+    ell(b, tipX - 1, tipY - 0.5, 2.2, 1.9, C.dark); put(b, tipX, tipY - 1, C.rim); // dark muzzle with a nostril
+    for (let k = 0; k < 4; k++) put(b, hx + 1 + k, hy - 1.5 + k * 0.75, C.acc); // blaze down the face
+    put(b, hx + 1, hy - 1, asleep ? C.dark : C.eye); // eye
+    poly(b, [[hx - 2, hy - hr + 1], [hx - 3 - (asleep ? 2 : 0), hy - hr - earL + (asleep ? 3 : 0)], [hx - 0.5, hy - hr - earL + 1 + (asleep ? 2 : 0)], [hx + 0.5, hy - hr + 0.5]], C.dark); // two-point ear
+  }
+  if (def.gear) drawGear(b, def, C, { cx, cy, bodyH, shX, hipX, hx, hy, rise, S });
   // tail
   const tb = [cx - S.bodyL / 2 - 1, cy - bodyH * 0.25], ta = rad(num(f.tail !== undefined ? { a: f.tail } : null, 'a', 15)), tl = S.tail;
   const tx = tb[0] - Math.cos(ta) * tl, ty = tb[1] - Math.sin(ta) * tl;
-  line(b, tb[0], tb[1], tx, ty, has('bushy') ? 3 : 2, C.base);
+  if (!has('horse')) line(b, tb[0], tb[1], tx, ty, has('bushy') ? 3 : 2, C.base);
   if (has('bushy')) ell(b, tx, ty, 2, 2, C.dark);
+  if (has('horse')) { // a flowing tail: arches out from the croup, then falls and tapers
+    const p1 = [tb[0] - Math.cos(ta) * tl * 0.3, tb[1] - Math.sin(ta) * tl * 0.3 + 0.5], p2 = [p1[0] - 2, p1[1] + tl * 0.35], p3 = [p2[0] + 0.5, p2[1] + tl * 0.4];
+    line(b, tb[0], tb[1], p1[0], p1[1], 3, C.dark); line(b, p1[0], p1[1], p2[0], p2[1], 3, C.dark); line(b, p2[0], p2[1], p3[0], p3[1], 2, C.dark);
+    line(b, p1[0] + 1, p1[1] + 1, p3[0] + 1, p3[1] - 1, 1, C.rim);
+  }
   outline(b, C.rim);
 }
 
@@ -218,10 +354,16 @@ function fish(b, def, f) {
 
 const DRAW = { quadruped, hopper, biped, fish };
 
-/** Draw one frame of a clip. Returns { w, h, data } RGBA, facing right. */
-export function renderAnimal(def, clip, frameIdx) {
-  const b = buf(def.size[0], def.size[1]);
+/** Draw one frame of a clip. Returns { w, h, data } RGBA, facing right; `view` 'front' or 'back' draws a species that has `views` (the horse) from the front or from behind. */
+export function renderAnimal(def, clip, frameIdx, view) {
+  const v = view && def.views && def.views[view];
   const frames = clip.frames, f = frames[Math.max(0, Math.min(frames.length - 1, frameIdx))] || {};
+  if (v) { // seen from the front or behind: the part behind the rider and the part over him
+    const rear = buf(v.size[0], v.size[1]), front = buf(v.size[0], v.size[1]);
+    horseView(rear, def, f, view === 'back', 'rear'); horseView(front, def, f, view === 'back', 'front');
+    return { w: rear.w, h: rear.h, data: rear.d, over: front.d };
+  }
+  const b = buf(def.size[0], def.size[1]);
   (DRAW[def.body] || quadruped)(b, def, f);
   return { w: b.w, h: b.h, data: b.d };
 }

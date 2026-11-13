@@ -1,39 +1,10 @@
 {
-  "_note": "Độ khó và sức mạnh của các làng. power: sức mạnh một làng = economy × (kinh tế) + military × (quân sự). Kinh tế = tổng hệ số tốc độ làm việc của mọi người đang có việc sản xuất (1 là người gốc chưa nghiên cứu). Quân sự = tổng hệ số chỉ số chiến đấu (máu × sức mạnh × phòng thủ, so với người gốc) của mọi lính và trinh sát. Tính theo CHỈ SỐ (kể cả phần trăm nghiên cứu), không tính theo vũ khí. Làng NPC: tổng sức mạnh của mọi làng NPC = trần của người chơi ở cấp lửa hiện tại / playerEdge (người chơi phát triển tối đa chỉ hơn tổng NPC 30%). Trần người chơi = dân tối đa của cấp lửa (kể cả giường nhà dân) × chỉ số tối đa nghiên cứu được ở cấp Nhà nghiên cứu = cấp lửa; militaryShare là phần dân làm lính. Mỗi làng nhận phần 'share' và 'military' (tỉ lệ quân sự) trong tribes.json, rồi nhân hệ số k của riêng nó (random-walk mỗi ngày). Code tự tính phần trăm chỉ số (máu, sức mạnh, phòng thủ, làm việc) cho người của làng để đạt mục tiêu, không ghi tay. startFactor: khoảng k lúc đầu. daily: mỗi ngày k nhân thêm (1 + random trong min..max), kẹp trong band. campLevel: cấp trại lửa random của mỗi làng; luôn có ít nhất một làng ở cấp không quá guaranteeWeak để người chơi có chỗ đánh. yieldPerEco: tài nguyên một điểm kinh tế làm ra mỗi ngày (cộng vào kho của làng). stockCap: sức chứa kho của làng theo cấp trại. bonusClamp: giới hạn phần trăm chỉ số cộng thêm. Số người của một làng = số dân trại lửa của nó chứa ở cấp trại (POP_BY_FIRE), chia lính và dân theo tỉ lệ trong tribes.json. raid: đợt tấn công của bộ tộc có trường power trong events.json (1 = mạnh bằng quân sự hiện tại của người chơi, 1.1 = hơn 10%, 0.8 = yếu hơn 20%). Kết quả bị kẹp giữa floor và ceiling nhân quân sự tối đa của người chơi ở cấp lửa đó: người chơi không có quân vẫn gặp một đợt tối thiểu, và người chơi quá mạnh không làm đợt tấn công vô nghĩa. capture: khi một làng bị thu nạp, bị tiêu diệt (do người của ta đánh) hoặc chịu cống nạp, ta nhận spoilShare (0.5) mọi tài nguyên trong kho của làng đó; thu nạp hoặc tiêu diệt còn cộng vào dân tối đa của ta đúng bằng số dân trại lửa của làng đó chứa ở cấp của nó (không giới hạn số lần chiếm); cống nạp thì làng vẫn sống nên không cộng dân. campSlots: mỗi làng bị thu nạp hoặc tiêu diệt còn thêm ngần này chỗ cho MỖI trại lính (bộ binh, cung, kỵ), vì số lính bị giới hạn bởi chỗ của trại chứ không phải bởi số dân.",
+  "_note": "Độ khó và sức mạnh của các làng. power: sức mạnh một làng = economy × (kinh tế) + military × (quân sự). Kinh tế = tổng hệ số tốc độ làm việc của mọi người đang có việc sản xuất (1 là người gốc chưa nghiên cứu). Quân sự = tổng hệ số chỉ số chiến đấu (máu × sức mạnh × phòng thủ, so với người gốc) của mọi lính và trinh sát. Tính theo CHỈ SỐ (kể cả phần trăm nghiên cứu), không tính theo vũ khí. Làng NPC có BẬC (tier trong tribes.json): yếu, thường, trung bình, boss. Trần người chơi = dân tối đa của cấp lửa (kể cả giường nhà dân) × chỉ số tối đa nghiên cứu được ở cấp Nhà nghiên cứu = cấp lửa; militaryShare là phần dân làm lính. tiers: mỗi bậc có strength (đã calibrate bằng trận mô phỏng: quân trại tối đa của cấp lửa tham chiếu, đủ đồ, nghiên cứu theo cấp đó: làng thường ở lửa 2 mất khoảng 33% quân, trung bình ở lửa 3 khoảng 29%, yếu ở lửa 2 khoảng 10%; trung bình có vách đá, strength 4 là thua hẳn) (sức quân và kinh tế của làng = strength × trần người chơi ở cấp trại của làng; boss: boss.power × trần ở cấp lửa người chơi + 1), edge (cấp trại của làng = lửa người chơi + edge: yếu −1, thường 0, trung bình +1, boss +1) và capLevel (cấp trại cao nhất, qua đó làng yếu luôn dễ hơn). Code tự tính phần trăm chỉ số (máu, sức mạnh, phòng thủ, làm việc) cho người của làng để đạt mục tiêu, không ghi tay. bonusClamp: giới hạn phần trăm chỉ số cộng thêm. Số người của một làng = số dân trại lửa của nó chứa ở cấp trại (POP_BY_FIRE), chia lính và dân theo warriors và civilians trong tribes.json. raid: đợt tấn công của bộ tộc có trường power trong events.json (1 = mạnh bằng quân sự hiện tại của người chơi, 1.1 = hơn 10%, 0.8 = yếu hơn 20%). Kết quả bị kẹp giữa floor và ceiling nhân quân sự tối đa của người chơi ở cấp lửa đó: người chơi không có quân vẫn gặp một đợt tối thiểu, và người chơi quá mạnh không làm đợt tấn công vô nghĩa. capture: khi một làng bị thu nạp hoặc bị tiêu diệt (do người của ta đánh), ta nhận cả túi chiến lợi phẩm của làng (spoils, tra theo thời đại hiện tại rồi cấp trại của nó, boss nhân bossMult; mỗi làng chỉ trả một lần Ở MỖI THỜI ĐẠI, để sang thời sau không ai khai thác mãi một làng cũ: bảng 'ancient' hiện chỉ là số tạm, gấp ba bảng đồ đá); làng chịu cống nạp thì cứ mỗi tribute.everyDays ngày trả một phần của túi đó: baseShare lúc đầu, người chơi tăng hoặc giảm từng step (tối đa maxShare). Mỗi lần trả quan hệ giảm relationLoss × (1 + số bước đòi thêm); mỗi bước đòi thêm cộng greedChancePerStep cơ hội làng PHẢN BỘI (thành thủ lĩnh phụ 'rebel' có sức bằng rebel.share của boss, tối đa maxRebels, tự tập kích như mọi làng thù địch, xem events.json hostile). Người chơi có thể hạ mức cống nạp xuống 0 (không lấy): mỗi kỳ không lấy, quan hệ hồi relationRegen (tối đa 100). Quan hệ của làng cống nạp xuống tới betrayBelow thì làng phản bội ngay. Thủ lĩnh phản bội mà bị ta đánh thắng thì hết là thủ lĩnh: trở lại cống nạp thêm returnBonus (rebel.returnBonus) so với mức mặc định, phần thêm này không bị trừ quan hệ và không có cơ hội phản bội. Mỗi ngày làng (đã hàng, cống nạp hoặc tự do) hồi recoverPerDay số quân và dân còn thiếu. Túi là số cố định trong dữ liệu, không phụ thuộc việc người của làng làm việc hay có camera lia tới. adopt: thu nạp một làng (hoặc tiêu diệt hẳn) cộng VĨNH VIỄN cho ta pop người (chỗ ở và người mới đến ở lửa) và slots chỗ cho MỖI trại lính (bộ binh, cung, kỵ), theo bậc của làng, vì số lính bị giới hạn bởi chỗ của trại chứ không phải bởi số dân. Làng thu nạp biến mất hẳn khỏi bản đồ và không cống nạp nữa. Cống nạp thì làng vẫn sống nên không cộng gì. gift: tặng quà cho làng chưa chiếm (trừ boss): mỗi lần tặng share của túi của làng đó; quan hệ tăng 100 × share / cost (cost là số lần túi của làng cần tặng để quan hệ từ 0 lên 100: yếu 1, thường 1,5, trung bình 2, nên làng mạnh đòi nhiều hơn). Quan hệ từ friendAt trở lên làng không gửi tập kích qua phá ta. allies: số lính mỗi làng góp khi ta đi đánh (theo bậc làng, chia đều bộ binh, cung, kỵ; giảm theo quan hệ: quan hệ 100 là đủ). Làng đang cống nạp góp mọi bậc, quan hệ giảm battleLoss mỗi trận; làng chưa chiếm có quan hệ 100 (qua tặng quà) góp trừ bậc trung bình, rồi quan hệ giảm giftLoss. Lính đồng minh lấy đồ từ Kho vũ khí của ta, dùng chỉ số nghiên cứu của ta, và sau trận rời đi, khuất khỏi camera là biến mất (đồ của người còn sống về kho). yieldPerVillage: phần trăm sản lượng khai thác (gỗ, đá, thức ăn, săn) cộng thêm cho MỖI làng đã thu nạp hoặc tiêu diệt (sim.conquered).",
   "power": {
     "economy": 1,
     "military": 1
   },
-  "playerEdge": 1.3,
   "militaryShare": 0.6,
-  "startFactor": [
-    0.7,
-    1.0
-  ],
-  "daily": {
-    "min": 0.0,
-    "max": 0.02,
-    "band": [
-      0.7,
-      1.3
-    ]
-  },
-  "campLevel": {
-    "min": 1,
-    "max": 4,
-    "guaranteeWeak": 2
-  },
-  "yieldPerEco": {
-    "food": 6,
-    "wood": 3,
-    "stone": 2
-  },
-  "stockCap": [
-    100,
-    250,
-    500,
-    1000
-  ],
   "bonusClamp": [
     -0.6,
     5
@@ -43,17 +14,190 @@
     "ceiling": 1.0
   },
   "capture": {
-    "spoilShare": 0.5,
-    "campSlots": 5
+    "bossMult": 2,
+    "spoils": {
+      "stone": {
+        "food": [
+          160,
+          500,
+          2300,
+          6000
+        ],
+        "wood": [
+          180,
+          600,
+          2550,
+          7200
+        ],
+        "stone": [
+          120,
+          450,
+          2100,
+          6000
+        ],
+        "hide": [
+          40,
+          120,
+          560,
+          1600
+        ],
+        "coin": [
+          10,
+          30,
+          140,
+          400
+        ],
+        "bone": [
+          32,
+          96,
+          448,
+          1280
+        ]
+      },
+      "ancient": {
+        "food": [
+          480,
+          1500,
+          6900,
+          18000
+        ],
+        "wood": [
+          540,
+          1800,
+          7650,
+          21600
+        ],
+        "stone": [
+          360,
+          1350,
+          6300,
+          18000
+        ],
+        "hide": [
+          120,
+          360,
+          1680,
+          4800
+        ],
+        "coin": [
+          30,
+          90,
+          420,
+          1200
+        ],
+        "bone": [
+          96,
+          288,
+          1344,
+          3840
+        ]
+      }
+    },
+    "yieldPerVillage": { "weak": 4, "normal": 8, "medium": 15, "boss": 20, "rebel": 20, "raider": 0 },
+    "bandit": { "_note": "Trại cướp (tribes.json bandit): là một trại nhỏ, không phải làng: một đống lửa, vài lều (tents) và hai đống đồ cướp, không rào, không cổng, không chòi, không dân thường; bọn cướp (people, tất cả là lính) ngồi đứng quanh đống lửa. Hai trại ngoài bản đồ, hai trại ngoài bản đồ, mỗi 2 đến 3 ngày tự đổi mức mạnh (yếu = bậc normal, vừa = medium, mạnh = raider) dù chưa bị diệt. Diệt hết thì nhận một phần (bag) túi theo cấp trại, rồi trại mọc lại sau respawn ngày.", "rerollMin": 2, "rerollMax": 3, "respawnMin": 2, "respawnMax": 3, "bag": 0.4, "strengths": ["normal", "medium", "raider"], "people": { "normal": 4, "medium": 6, "raider": 9 }, "tents": { "normal": 2, "medium": 3, "raider": 4 } },
+    "adopt": {
+      "raider": {
+        "pop": 0,
+        "slots": 0
+      },
+      "weak": {
+        "pop": 3,
+        "slots": 1
+      },
+      "normal": {
+        "pop": 6,
+        "slots": 2
+      },
+      "medium": {
+        "pop": 18,
+        "slots": 6
+      },
+      "boss": {
+        "pop": 18,
+        "slots": 6
+      },
+      "rebel": {
+        "pop": 18,
+        "slots": 6
+      }
+    },
+    "tribute": {
+      "everyDays": 3,
+      "baseShare": 0.25,
+      "step": 0.1,
+      "maxShare": 1,
+      "relationLoss": 1,
+      "greedChancePerStep": 0.05,
+      "recoverPerDay": 0.15,
+      "rebuildPerDay": 2,
+      "betrayBelow": -40,
+      "relationRegen": 2
+    },
+    "rebel": {
+      "share": 0.6,
+      "maxRebels": 3,
+      "returnBonus": 0.3
+    },
+    "retake": { "after": 3, "delayMin": 3, "delayMax": 6, "maxLate": 2 },
+    "allies": {
+      "max": 33,
+      "weak": 3,
+      "normal": 6,
+      "medium": 18,
+      "battleLoss": 10,
+      "giftLoss": 30
+    },
+    "gift": {
+      "share": 0.1,
+      "cost": {
+        "weak": 1,
+        "normal": 1.5,
+        "medium": 2
+      },
+      "friendAt": 100
+    }
   },
   "boss": {
-    "_note": "Làng đầu mục (boss): mỗi ván có count[0]..count[1] làng, luôn hơn người chơi một bậc (cấp trại +1, tối đa maxCamp; có chòi canh và đồ đồng dù người chơi còn ở đồ đá). power: sức mạnh quân của boss so với quân tối đa người chơi có thể có ở cấp trại đó (chỉ số mỗi lính chỉ tăng theo căn bậc ba của số này, nên cần số lớn: 16 được chỉnh bằng chạy thử trận, 60 lính đủ giáp và nghiên cứu hết mức của cấp trại 4 thường thua, cần chiếm khoảng 2 làng thường (mỗi làng thêm 5 chỗ cho mỗi trại lính, capture.campSlots) mới thắng); economy: kinh tế so với kinh tế tối đa; popMult: số dân so với cấp trại; bronzeShare: phần lính cầm vũ khí đồng và mặc giáp đồng; wallHp: độ bền rào, cổng, chòi và nhà so với làng thường.",
-    "count": [1, 2],
-    "power": 16,
+    "_note": "Làng đầu mục (boss): mỗi ván có một làng boss (bậc 'boss' của tribes.json), luôn hơn người chơi một bậc (cấp trại +1, tối đa maxCamp; có chòi canh và đồ đồng dù người chơi còn ở đồ đá). power: sức mạnh quân của boss so với quân tối đa người chơi có thể có ở cấp trại đó (chỉ số mỗi lính chỉ tăng theo căn bậc ba của số này, nên cần số lớn: 6 được chỉnh bằng chạy thử trận: 60 lính trại đủ giáp và nghiên cứu hết mức của cấp trại 4 luôn thua, 93 lính (60 của ta cộng 33 lính đồng minh của các làng) thắng và mất khoảng 30 đến 40% quân); economy: kinh tế so với kinh tế tối đa; popMult: số dân so với cấp trại; bronzeShare: phần lính cầm vũ khí đồng và mặc giáp đồng; wallHp: độ bền rào, cổng, chòi và nhà so với làng thường.",
+    "power": 3,
     "economy": 0.6,
     "popMult": 1.6,
     "bronzeShare": 0.6,
     "wallHp": 1.5,
-    "weapons": ["bronze_sword", "bronze_axe", "bronze_spear"]
+    "weapons": [
+      "bronze_sword",
+      "bronze_axe",
+      "bronze_spear"
+    ]
+  },
+  "tiers": {
+    "weak": {
+      "capLevel": 2,
+      "edge": -1,
+      "strength": 10
+    },
+    "normal": {
+      "capLevel": 3,
+      "edge": 0,
+      "strength": 3
+    },
+    "medium": {
+      "capLevel": 3,
+      "edge": 1,
+      "strength": 2.5
+    },
+    "boss": {
+      "capLevel": 3,
+      "edge": 1
+    },
+    "rebel": {
+      "capLevel": 3,
+      "edge": 1
+    },
+    "raider": {
+      "capLevel": 3,
+      "edge": 1,
+      "strength": 3.5
+    }
   }
 }

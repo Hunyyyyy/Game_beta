@@ -1,0 +1,32 @@
+{
+  "name": "Mạch than",
+  "type": "prop",
+  "size": [32, 26],
+  "anchor": [16, 23],
+  "footprint": [5, 18, 22, 6],
+  "seed": 12,
+  "palette": { "rock": "#303036", "rockL": "#52545f", "rockD": "#1a1a1f", "crack": "#0b0b0e", "sheen": "#7d88a0", "sheenL": "#b9c3d8", "dust": "#46464e", "line": "#14161a", "shadow": "#000000", "snow": "#eef4f8" },
+  "params": {"autumn": 0, "winter": 0, "burnt": 0},
+  "palettes": {
+    "autumn": { "rock": "#2e2d33" },
+    "winter": { "rock": "#303038", "sheen": "#8a96ae" },
+    "burnt": { "rock": "#1c1c20", "rockL": "#3a3b44" }
+  },
+  "layers": [
+    { "shape": "poly", "points": [[3, 21], [1, 14], [5, 6], [12, 2], [21, 3], [28, 9], [29, 18], [24, 22], [14, 23]], "color": "rock", "jitter": 1 },
+    { "shape": "poly", "points": [[5, 6], [12, 2], [21, 3], [15, 9], [7, 11]], "color": "rockL", "clip": "inside" },
+    { "shape": "poly", "points": [[29, 18], [28, 9], [21, 8], [17, 22], [24, 22]], "color": "rockD", "clip": "inside" },
+    { "shape": "poly", "points": [[9, 5], [14, 3], [16, 5], [12, 8]], "color": "sheen", "clip": "inside" },
+    { "shape": "poly", "points": [[11, 4], [14, 3], [14, 5], [12, 6]], "color": "sheenL", "clip": "inside" },
+    { "shape": "poly", "points": [[20, 12], [24, 11], [25, 15], [21, 16]], "color": "rockL", "clip": "inside" },
+    { "shape": "pixels", "at": [[22, 12], [23, 12]], "color": "sheenL" },
+    { "shape": "line", "from": [8, 13], "to": [12, 20], "color": "crack" },
+    { "shape": "line", "from": [16, 10], "to": [17, 17], "color": "crack" },
+    { "shape": "scatter", "count": 26, "area": [2, 4, 28, 20], "size": 1, "colors": ["dust", "rockD", "crack"], "onlyOver": ["rock"] },
+    { "shape": "scatter", "count": 12, "area": [3, 4, 27, 18], "size": 1, "colors": ["sheen", "sheenL"], "onlyOver": ["rock", "rockL"] },
+    { "shape": "bevel", "light": "#ffffff", "lightAlpha": 0.2, "dark": "#000000", "darkAlpha": 0.35 },
+    { "shape": "scatter", "if": "winter", "count": 36, "area": [2, 0, 28, 10], "size": [3, 1], "color": "snow", "onlyOver": ["rock", "rockL", "rockD", "sheen"] },
+    { "shape": "outline", "color": "line" },
+    { "shape": "ellipse", "cx": 16, "cy": 23, "rx": 15, "ry": 2.5, "color": "shadow", "alpha": 0.28, "mode": "under" }
+  ]
+}

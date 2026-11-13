@@ -1,4 +1,7 @@
+import { SEASON_DEF } from './calendar';
 import type { Season } from './calendar';
+import paceJson from '../data/pace.json';
+import NODES from '../data/nodes.json';
 import { MAP_SIZE } from './constants';
 import type { NodeKind } from './jobs';
 import type { Res } from './resources';
@@ -7,7 +10,7 @@ import { fbm, hash2, mix32, mulberry32 } from './rng';
 /** The village never starts nearer than this to the edge of the map (tiles). */
 const START_MARGIN = 110;
 
-export const Tile = { Grass: 0, Water: 1, Tree: 2, Rock: 3, Mud: 4, Bush: 5, Mountain: 6 } as const;
+export const Tile = { Grass: 0, Water: 1, Tree: 2, Rock: 3, Mud: 4, Bush: 5, Mountain: 6, Ore: 7 } as const;
 export type TileId = (typeof Tile)[keyof typeof Tile];
 
 export interface ResourceNode {
@@ -21,12 +24,14 @@ export interface ResourceNode {
   regrow: number; // giây còn lại đến khi mọc lại (chỉ bụi quả)
 }
 
+/** What a tree, a rock and a bush hold when whole (data/pace.json "node"): the more, the fewer trips to a new one. */
 const NODE_INFO: Record<NodeKind, { res: Res; max: number }> = {
-  tree: { res: 'wood', max: 10 },
-  rock: { res: 'stone', max: 14 },
-  bush: { res: 'food', max: 6 },
+  tree: { res: 'wood', max: paceJson.node.tree },
+  rock: { res: 'stone', max: paceJson.node.rock },
+  bush: { res: 'food', max: paceJson.node.bush },
+  ore: { res: 'iron_ore', max: paceJson.node.ore }, // the ore of a node is iron ore or coal: oreOf
 };
-const TILE_OF: Record<NodeKind, TileId> = { tree: Tile.Tree, rock: Tile.Rock, bush: Tile.Bush };
+const TILE_OF: Record<NodeKind, TileId> = { tree: Tile.Tree, rock: Tile.Rock, bush: Tile.Bush, ore: Tile.Ore };
 
 /** The world is made a chunk at a time: a chunk is this many tiles on a side. */
 export const CHUNK = 32;
@@ -47,6 +52,10 @@ const TREE_PLAINS = 0.003, TREE_SPARSE = 0.1, TREE_DENSE = 0.42;
 /** Relief noise above this raises a mountain; rocks gather at its foot (above FOOT). */
 const MOUNTAIN_ABOVE = 0.72, FOOT_ABOVE = 0.64;
 const ROCK_PLAINS = 0.003, ROCK_FOOT = 0.03, BUSH_PLAINS = 0.005, BUSH_SPARSE = 0.012;
+/** Chance of a seam of ore on a tile at the foot of a mountain, and the share of the seams that are iron ore and coal (the rest is copper ore). */
+const ORE_FOOT = 0.014, ORE_IRON_SHARE = 0.45, ORE_COAL_SHARE = 0.3;
+/** Rare ore: among the seams of the mountains farther than RARE_FROM tiles from the village, this share is the blue ore only a Mỏ of level 3 can work. Swamp ore: the chance of a seam of iron ore (small, it comes back slowly) on a muddy tile of a shore. */
+const RARE_FROM = 70, RARE_SHARE = 0.14, SWAMP_ORE = 0.012;
 /** Nothing but plains this close to the village: forests start beyond FOREST_FROM, mountains beyond MOUNTAIN_FROM. */
 const FOREST_FROM = 14, MOUNTAIN_FROM = 34;
 
@@ -130,17 +139,18 @@ export class World {
         else if (d > FOREST_FROM && wood > DENSE_ABOVE && hash2(x, y, seed + 3) < TREE_DENSE) t = Tile.Tree;
         else if (d > FOREST_FROM && wood > SPARSE_ABOVE && hash2(x, y, seed + 3) < TREE_SPARSE) t = Tile.Tree;
         else if (d > 5 && hash2(x, y, seed + 9) < (relief > FOOT_ABOVE ? ROCK_FOOT : ROCK_PLAINS)) t = Tile.Rock;
+        else if (d > 5 && relief > FOOT_ABOVE && hash2(x, y, seed + 19) < ORE_FOOT) t = Tile.Ore;
         else if (d > 4 && hash2(x, y, seed + 13) < (wood > SPARSE_ABOVE ? BUSH_SPARSE : BUSH_PLAINS)) t = Tile.Bush;
         else if (d > 8 && hash2(x, y, seed + 5) < TREE_PLAINS) t = Tile.Tree;
         this.tiles[y * N + x] = t;
       }
     }
-    // mud along the shores
+    // mud along the shores, and now and then a seam of swamp ore in it
     for (let y = y0; y < y0 + CHUNK; y++) for (let x = x0; x < x0 + CHUNK; x++) {
       if (this.tiles[y * N + x] !== Tile.Grass) continue;
       let near = false;
       for (let dy = -1; dy <= 1 && !near; dy++) for (let dx = -1; dx <= 1; dx++) if (this.waterAt(x + dx, y + dy)) { near = true; break; }
-      if (near && hash2(x, y, seed + 17) < 0.8) this.tiles[y * N + x] = Tile.Mud;
+      if (near && hash2(x, y, seed + 17) < 0.8) this.tiles[y * N + x] = Math.hypot(x - this.start.x, y - this.start.y) > 12 && hash2(x, y, seed + 29) < SWAMP_ORE ? Tile.Ore : Tile.Mud;
     }
     this.ready[cy * CHUNKS + cx] = 1;
   }
@@ -150,9 +160,30 @@ export class World {
     const N = this.size, x0 = cx * CHUNK, y0 = cy * CHUNK;
     for (let y = y0; y < y0 + CHUNK; y++) for (let x = x0; x < x0 + CHUNK; x++) {
       const i = y * N + x, t = this.tiles[i];
-      const kind: NodeKind | null = t === Tile.Tree ? 'tree' : t === Tile.Rock ? 'rock' : t === Tile.Bush ? 'bush' : null;
-      if (kind) this.nodes.set(i, { kind, res: NODE_INFO[kind].res, amount: NODE_INFO[kind].max, max: NODE_INFO[kind].max, workers: 0, sides: 0, regrow: 0 });
+      const kind: NodeKind | null = t === Tile.Tree ? 'tree' : t === Tile.Rock ? 'rock' : t === Tile.Bush ? 'bush' : t === Tile.Ore ? 'ore' : null;
+      if (!kind) continue;
+      const res = kind === 'ore' ? this.oreOf(x, y) : NODE_INFO[kind].res, max = kind === 'ore' && this.nearWater(x, y) ? Math.round(NODE_INFO.ore.max * 0.5) : NODE_INFO[kind].max; // a seam of the swamp holds half
+      this.nodes.set(i, { kind, res, amount: max, max, workers: 0, sides: 0, regrow: 0 });
     }
+  }
+
+  /** What a seam of ore at a tile is: iron ore, coal or copper ore, by the noise of the tile (the same in every world made from the seed). */
+  private oreOf(x: number, y: number): Res {
+    if (this.nearWater(x, y)) return 'iron_ore'; // the ore of the swamp
+    const h = hash2(x, y, this.seed + 23);
+    if (Math.hypot(x - this.start.x, y - this.start.y) >= RARE_FROM && hash2(x, y, this.seed + 31) < RARE_SHARE) return 'rare_ore';
+    return h < ORE_IRON_SHARE ? 'iron_ore' : h < ORE_IRON_SHARE + ORE_COAL_SHARE ? 'coal' : 'copper_ore';
+  }
+
+  /** Is there water next to this tile (a seam on a shore is swamp ore)? */
+  private nearWater(x: number, y: number): boolean {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (this.waterAt(x + dx, y + dy)) return true;
+    return false;
+  }
+
+  /** Is this tile at the foot of a mountain, where the seams of ore lie (by the same noise that raised the range)? */
+  private atFoot(x: number, y: number): boolean {
+    return Math.hypot(x - this.start.x, y - this.start.y) > MOUNTAIN_FROM - 12 && fbm(x / 40, y / 40, this.seed + 301) > FOOT_ABOVE;
   }
 
   /** Put a tree, rock or bush on a bare, open spot; false when the spot will not do. */
@@ -199,6 +230,10 @@ export class World {
   at(x: number, y: number): TileId {
     return this.tiles[y * this.size + x] as TileId;
   }
+  /** Game seconds the land has existed (advanced by `tick`): the clock of the memory of searches. Not saved. */
+  age = 0;
+  /** The answers of searches for a way that did not reach their goal, kept for a moment (path.ts). Not saved. */
+  readonly pathFails = new Map<string, { until: number; path: ReadonlyArray<readonly [number, number]> }>();
   /** The tiles of the gates that are shut: they stop the enemy and the beasts, but our own people pass through them. */
   readonly gates = new Set<number>();
   /** Blocked for someone of ours (a villager, a soldier): the same as isBlocked, but a shut gate lets him by. */
@@ -224,19 +259,23 @@ export class World {
    * A tree, rock or bush that is used up is gone and its tile turns back to grass; one of the same kind appears on another free grass tile
    * a few steps away (never in the starting ring, never under somebody's feet, and where `free` allows), so the land is neither emptied nor reset in place.
    */
-  depleted(idx: number, free?: (x: number, y: number) => boolean): void {
+  depleted(idx: number, free?: (x: number, y: number) => boolean, level = 3): void {
     const n = this.nodes.get(idx);
     if (!n) return;
     this.nodes.delete(idx);
-    this.tiles[idx] = Tile.Grass;
     const N = this.size, fx = idx % N, fy = (idx / N) | 0, salt = this.respawns++;
+    const swamp = n.kind === 'ore' && this.nearWater(fx, fy); // a seam of the swamp leaves mud behind and comes back, slowly, in the mud of a shore
+    this.tiles[idx] = swamp ? Tile.Mud : Tile.Grass;
+    const lv = Math.max(1, Math.min(NODES.respawnMinDist.length, Math.round(level))) - 1;
+    if (hash2(idx, salt, this.seed + 47) >= (swamp ? NODES.swampRespawn : NODES.respawnShare[n.kind][lv])) return; // not all is refilled, and the later the less (nodes.json): the village must look farther in time
     for (let t = 0; t < 40; t++) {
       const ang = hash2(idx, salt * 40 + t, this.seed + 41) * Math.PI * 2, r = 4 + hash2(idx, salt * 40 + t, this.seed + 43) * 7;
       const x = Math.round(fx + Math.cos(ang) * r), y = Math.round(fy + Math.sin(ang) * r), j = y * N + x;
-      if (!this.isReady(x, y) || this.tiles[j] !== Tile.Grass || this.occ[j] !== 0 || this.nodes.has(j)) continue;
-      if (Math.hypot(x - this.start.x, y - this.start.y) < 7 || (free && !free(x, y)) || this.wouldTrap(x, y)) continue;
+      if (!this.isReady(x, y) || this.tiles[j] !== (swamp ? Tile.Mud : Tile.Grass) || this.occ[j] !== 0 || this.nodes.has(j) || (swamp && !this.nearWater(x, y))) continue;
+      if (Math.hypot(x - this.start.x, y - this.start.y) < NODES.respawnMinDist[lv] || (free && !free(x, y)) || this.wouldTrap(x, y)) continue;
+      if (n.kind === 'ore' && !swamp && !this.atFoot(x, y)) continue; // a seam of ore comes back only where the mountain is, and keeps its kind of ore
       this.tiles[j] = TILE_OF[n.kind];
-      this.nodes.set(j, { kind: n.kind, res: n.res, amount: this.season === 'winter' && n.kind === 'bush' ? 0 : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
+      this.nodes.set(j, { kind: n.kind, res: swamp ? 'iron_ore' : n.res, amount: n.kind === 'bush' ? Math.round(n.max * (SEASON_DEF[this.season].bushLeft ?? 1)) : n.max, max: n.max, workers: 0, sides: 0, regrow: 0 });
       return;
     }
   }
@@ -268,18 +307,19 @@ export class World {
     if (season === prev) return;
     for (const [idx, n] of this.nodes) {
       if (n.kind !== 'bush') continue;
-      if (season === 'winter') { n.amount = 0; n.regrow = 0; }
-      else if (prev === 'winter') { n.amount = 0; n.regrow = 60 + 120 * hash2(idx % this.size, (idx / this.size) | 0, this.seed + 29); }
+      if (season === 'winter') { const left = SEASON_DEF.winter.bushLeft ?? 1; if (left < 1) { n.amount = Math.min(n.amount, Math.round(n.max * left)); n.regrow = 0; } }
+      else if (prev === 'winter' && (SEASON_DEF.winter.bushLeft ?? 1) < 1) { n.amount = 0; n.regrow = 60 + 120 * hash2(idx % this.size, (idx / this.size) | 0, this.seed + 29); }
     }
   }
 
   private grown = 0;
   /** Bushes fruit again; the map holds well over a hundred thousand things, so this runs once a second rather than every tick. */
   tick(dt: number): void {
+    this.age += dt;
     this.grown += dt;
     if (this.grown < 1) return;
     dt = this.grown; this.grown = 0;
-    if (this.season === 'winter') return;
+    if (this.season === 'winter' && (SEASON_DEF.winter.bushLeft ?? 1) < 1) return;
     for (const n of this.nodes.values()) {
       if (n.kind === 'bush' && n.amount === 0 && n.regrow > 0) {
         n.regrow -= dt;

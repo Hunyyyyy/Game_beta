@@ -16,8 +16,7 @@
    {
     "name": "Chòi gác",
     "cost": {
-     "wood": 25,
-     "hide": 4
+     "wood": 10
     },
     "buildTime": 70,
     "cap": 0,
@@ -30,8 +29,7 @@
     "name": "Trạm gác",
     "cost": {
      "wood": 30,
-     "stone": 10,
-     "hide": 8
+     "stone": 10
     },
     "buildTime": 110,
     "cap": 0,
@@ -43,29 +41,33 @@
    {
     "name": "Đồn gác",
     "cost": {
-     "wood": 35,
-     "stone": 30,
-     "hide": 12
+     "wood": 38,
+     "stone": 45
     },
-    "buildTime": 170,
+    "buildTime": 217,
     "cap": 0,
     "craftSpeed": 1.5,
-    "slots": 18,
-    "hp": 360,
+    "slots": 21,
+    "hp": 405,
     "sight": 0
-   },
+   }
+  ],
+  "ancient": [
    {
-    "name": "Đồn gác gia cố",
+    "name": "Gạch ngói (trung cổ)",
     "cost": {
-     "wood": 41,
-     "stone": 60,
-     "hide": 18
+     "wood": 74,
+     "stone": 108,
+     "hide": 33,
+     "iron": 20,
+     "hardwood": 8,
+     "leather": 6
     },
-    "buildTime": 263,
+    "buildTime": 394,
     "cap": 0,
-    "craftSpeed": 1.5,
-    "slots": 24,
-    "hp": 450,
+    "craftSpeed": 1.88,
+    "slots": 30,
+    "hp": 675,
     "sight": 0
    }
   ]

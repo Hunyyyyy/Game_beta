@@ -16,8 +16,7 @@
    {
     "name": "Lều da",
     "cost": {
-     "wood": 20,
-     "hide": 6
+     "wood": 20
     },
     "buildTime": 70,
     "cap": 0,
@@ -30,7 +29,6 @@
     "name": "Lều lớn",
     "cost": {
      "wood": 30,
-     "hide": 8,
      "stone": 10
     },
     "buildTime": 110,
@@ -43,29 +41,33 @@
    {
     "name": "Lều thám thính",
     "cost": {
-     "wood": 40,
-     "hide": 12,
-     "stone": 25
+     "wood": 47,
+     "stone": 38
     },
-    "buildTime": 160,
+    "buildTime": 197,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 6,
-    "hp": 360,
+    "hp": 405,
     "sight": 0
-   },
+   }
+  ],
+  "ancient": [
    {
-    "name": "Lều thám thính gia cố",
+    "name": "Gạch ngói (trung cổ)",
     "cost": {
-     "wood": 53,
-     "hide": 18,
-     "stone": 50
+     "wood": 96,
+     "hide": 33,
+     "stone": 90,
+     "iron": 10,
+     "hardwood": 8,
+     "leather": 8
     },
-    "buildTime": 233,
+    "buildTime": 350,
     "cap": 0,
-    "craftSpeed": 1,
-    "slots": 6,
-    "hp": 450,
+    "craftSpeed": 1.25,
+    "slots": 7,
+    "hp": 675,
     "sight": 0
    }
   ]

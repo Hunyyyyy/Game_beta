@@ -56,7 +56,7 @@ const isGround = (sim: Sim, x: number, y: number) => {
 };
 const isWater = (sim: Sim, x: number, y: number) => sim.world.inBounds(x, y) && sim.world.at(x, y) === Tile.Water;
 /** Can this species stand on the tile: land animals on ground, fish in water. */
-const habitable = (sim: Sim, def: AnimalDef, x: number, y: number) => (def.habitat === 'water' ? isWater(sim, x, y) : isGround(sim, x, y));
+const habitable = (sim: Sim, def: AnimalDef, x: number, y: number) => !sim.inZone(x, y) && (def.habitat === 'water' ? isWater(sim, x, y) : isGround(sim, x, y)); // nothing is born in a military zone
 
 /**
  * animals.json counts are for the first map, 192 tiles a side. Herds are laid down a chunk at a time as the land is made, in the same share of
@@ -227,6 +227,15 @@ export function provoke(sim: Sim, a: Animal, byId: number): void {
   }
 }
 
+/** A beast shut out by a wall (no way round it) bites the wall (a fence, a gate) beside it until it gives way. */
+function gnaw(sim: Sim, a: Animal, def: AnimalDef): void {
+  if (a.cd > 0) return;
+  const wall = sim.nearestWork(a.x, a.y, def.range + 2.2);
+  if (!wall) return;
+  a.cd = def.cycle; a.bite = 0.25; a.timer = 20; a.chaseT = 0;
+  sim.damageWork(wall, def.damage * BEHAVIOUR.wallBite);
+}
+
 export function tickAnimals(sim: Sim, dt: number): void {
   const night = sim.restTime;
   for (let i = sim.animals.length - 1; i >= 0; i--) {
@@ -277,7 +286,7 @@ export function tickAnimals(sim: Sim, dt: number): void {
           if (out && out.d < (a.raid ? 40 : def.aggro)) { a.siege = undefined; a.state = 'attack'; a.target = { kind: 'unit', id: out.id }; a.timer = 20; a.chaseT = 0; break; } // someone came out: it goes for him
           if (!house || !house.done || a.timer <= 0 || raidOver(a, night)) { a.siege = undefined; a.state = 'graze'; a.timer = 3; break; }
           const hd = BUILDINGS[house.kind], hx = house.x + hd.w / 2, hy = house.y + hd.h / 2;
-          if (Math.hypot(hx - a.x, hy - a.y) - Math.max(hd.w, hd.h) / 2 > def.range + 0.4) step(sim, a, hx, hy, def.speed * slow, dt);
+          if (Math.hypot(hx - a.x, hy - a.y) - Math.max(hd.w, hd.h) / 2 > def.range + 0.4) { if (!step(sim, a, hx, hy, def.speed * slow, dt)) gnaw(sim, a, def); }
           else if (a.cd <= 0) { a.cd = def.cycle; a.bite = 0.25; a.timer = 20; sim.damageWork(house, def.damage); }
           break;
         }
@@ -288,7 +297,7 @@ export function tickAnimals(sim: Sim, dt: number): void {
         const d = Math.hypot(t.x - a.x, t.y - a.y);
         // a wolf will not walk into firelight: it circles the edge instead
         if (def.fearsFire && fireDistance(sim, t.x, t.y) <= def.fearsFire && fireDistance(sim, a.x, a.y) < def.fearsFire + 1.5) { step(sim, a, a.home.x, a.home.y, def.speed, dt); break; }
-        if (d > def.range + 0.4) step(sim, a, t.x, t.y, def.speed * slow, dt);
+        if (d > def.range + 0.4) { if (!step(sim, a, t.x, t.y, def.speed * slow, dt)) gnaw(sim, a, def); }
         else if (a.cd <= 0) {
           a.cd = def.cycle; a.bite = 0.25; a.chaseT = 0;
           const behind = (t.facing === 'right' && a.x < t.x) || (t.facing === 'left' && a.x > t.x);

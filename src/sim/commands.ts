@@ -49,8 +49,10 @@ export function clearCombat(sim: Sim, v: Villager): void {
 }
 
 export function mine(sim: Sim, ids: readonly number[]): Villager[] {
-  // someone worn out asleep cannot be woken, and a scout out on a trip answers to no order until he is home
-  return ids.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0 && !sim.sleepLocked(v) && !sim.scouts.some((m) => m.ids.includes(v.id)));
+  // the player's word is the highest: even one worn out asleep wakes for it (the lock is dropped); only a scout out on a trip answers to no order until he is home
+  const out = ids.map((id) => sim.byId.get(id)).filter((v): v is Villager => !!v && v.team === 'player' && v.down <= 0 && !sim.scouts.some((m) => m.ids.includes(v.id)));
+  for (const v of out) if (v.lockUntil > 0) v.lockUntil = 0;
+  return out;
 }
 
 /** A unit that is already doing something takes a Shift-queued order after it. */
@@ -79,8 +81,9 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
     // finding a way is the dear part of an order given to hundreds: past the budget of this tick a soldier is left to walk to his post when his turn comes
     if (v.job === 'fight' && sim.pathLeft <= 0) { v.phase = 'idle'; continue; }
     if (v.job === 'fight') sim.pathLeft--;
-    v.path = sim.pathTo(v, goal[0], goal[1], 30000);
+    v.path = sim.pathTo(v, goal[0], goal[1], 30000, true); // the player's word: the map as it is now, never an answer kept from a moment ago
     v.phase = v.path.length ? 'move' : 'idle';
+    if (v.job === 'fight' && v.path.length) v.fight.obey = true; // the player's word is the highest: he walks there whatever he meets, and fights again on arrival (brainplayer clears it)
   }
 }
 
@@ -94,7 +97,7 @@ export function callWorker(sim: Sim, tx: number, ty: number): { name: string } |
   if (node.amount <= 0) return { reason: 'Bụi quả đã hết quả, chờ mọc lại' };
   const job = NODE_JOB[node.kind];
   const pool = mine(sim, sim.villagers.map((v) => v.id)).filter((v) => v.job === job && v.inside === null && v.post < 0 && v.phase !== 'sleep' && v.prefer !== ty * sim.world.size + tx);
-  if (!pool.length) return { reason: job === 'wood' ? 'Chưa có ai làm nghề đốn gỗ: giao nghề ở Xưởng gỗ' : job === 'stone' ? 'Chưa có ai làm thợ đá: giao nghề ở Xưởng đá' : 'Chưa có ai hái lượm: giao nghề ở Nông trại' };
+  if (!pool.length) return { reason: job === 'wood' ? 'Chưa có ai làm nghề đốn gỗ: giao nghề ở Xưởng gỗ' : job === 'stone' ? 'Chưa có ai làm thợ đá: giao nghề ở Xưởng đá' : job === 'mine' ? 'Chưa có ai làm thợ mỏ: giao nghề ở Mỏ' : 'Chưa có ai hái lượm: giao nghề ở Nông trại' };
   pool.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
   const near = pool.slice(0, 3), v = near[Math.floor(hash2(tx, ty, Math.floor(sim.time)) * near.length) % near.length];
   orderWork(sim, [v.id], tx, ty);
@@ -117,7 +120,7 @@ export function orderWork(sim: Sim, ids: readonly number[], tx: number, ty: numb
   // the one exception: before any Nhà thợ xây stands nobody can be a builder, so whoever is sent raises the very first one
   const first = !!site && site.kind === 'builder' && !sim.building('builder');
   let err: string | null = null;
-  if (node && (job === 'wood' || job === 'stone' || job === 'food')) {
+  if (node && (job === 'wood' || job === 'stone' || job === 'mine' || job === 'food')) {
     const idle = mine(sim, ids).filter(isFree).map((v) => v.id);
     if (idle.length) err = sim.assignRole(idle, job);
   }
@@ -151,7 +154,7 @@ export function setJob(sim: Sim, ids: readonly number[], job: Job): string | nul
 }
 
 function jobFor(sim: Sim, ids: readonly number[], job: Job): string | null {
-  if (job === 'craft' || job === 'research' || job === 'tame') return sim.assignStaff(ids, job);
+  if (job === 'craft' || job === 'research' || job === 'tame' || job === 'herd') return sim.assignStaff(ids, job);
   if (job === 'build') return sim.assignCrew(ids);
   for (const v of mine(sim, ids)) {
     resetTask(sim, v); clearCombat(sim, v); v.job = job; v.prefer = -1; v.post = -1;
@@ -229,6 +232,7 @@ export function orderAttack(sim: Sim, ids: readonly number[], target: Target, qu
   const e = resolve(sim, target);
   const prey = e?.kind === 'animal' && e.a.state !== 'dead' && animalDef(e.a).prey;
   let n = 0;
+  const went: number[] = [];
   for (const v of mine(sim, ids)) {
     if (!(v.job === 'fight' || (prey && v.job === 'hunt'))) continue;
     n++;
@@ -236,19 +240,46 @@ export function orderAttack(sim: Sim, ids: readonly number[], target: Target, qu
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
     v.fight.mode = 'attack'; v.fight.target = target;
     takeOut(sim, v); keepWatch(sim, v);
+    if (v.job === 'fight') went.push(v.id);
   }
+  const foe = e?.kind === 'unit' ? sim.foeVillage(e.v) : undefined;
+  if (foe) sim.skirmishOrder(went, foe); // our soldiers set on a village: a skirmish (warskirmish.ts)
+  return n;
+}
+
+/**
+ * The player's order: these soldiers break down what stands on the tile (a work of an enemy village, or a tree, rock or bush, which yields nothing). The order is absolute:
+ * they keep at it whatever comes near. Returns how many took it (0 when the tile holds nothing that can be broken).
+ */
+export function orderBreak(sim: Sim, ids: readonly number[], x: number, y: number): number {
+  const ob = sim.obstacleAt(x, y);
+  if (!ob || !ob.clear) return 0;
+  let n = 0;
+  const went: number[] = [];
+  for (const v of mine(sim, ids)) {
+    if (v.job !== 'fight' || !sim.startBreaking(v, ob)) continue;
+    v.prefer = -1;
+    if (v.breaks) v.breaks.ordered = true;
+    went.push(v.id); n++;
+  }
+  const foe = ob.kind === 'enemy' && ob.tribe ? sim.tribes.find((t) => t.id === ob.tribe && t.state === 'free' && !t.raid) : undefined;
+  if (foe) sim.skirmishOrder(went, foe); // breaking a work of a village: a skirmish too
   return n;
 }
 
 /** Walk to a point and fight whatever is met on the way (soldiers only). */
 export function orderAttackMove(sim: Sim, ids: readonly number[], x: number, y: number, queue = false): void {
+  const went: number[] = [];
   for (const v of mine(sim, ids)) {
     if (v.job !== 'fight') continue;
     if (queue && busy(sim, v)) { v.queue.push({ k: 'attackMove', x, y }); continue; }
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
     v.fight.mode = 'attackMove'; v.fight.dest = { x, y }; v.phase = 'move';
     takeOut(sim, v); keepWatch(sim, v);
+    went.push(v.id);
   }
+  const foe = sim.villageAt(x, y);
+  if (foe) sim.skirmishOrder(went, foe); // sent into the land of a village: a skirmish
 }
 
 /** Right click on a dead animal: hunters go and skin it. Returns how many went. */
@@ -288,7 +319,7 @@ export function nextOrder(sim: Sim, v: Villager): boolean {
   if (o.k === 'move') {
     v.fight.mode = 'none'; v.fight.target = null;
     const goal = sim.nearestFree(Math.floor(o.x), Math.floor(o.y), new Set());
-    if (goal) { v.path = sim.pathTo(v, goal[0], goal[1], 30000); v.phase = v.path.length ? 'move' : 'idle'; if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; } }
+    if (goal) { v.path = sim.pathTo(v, goal[0], goal[1], 30000, true); v.phase = v.path.length ? 'move' : 'idle'; if (v.job === 'fight') { v.fight.mode = 'guard'; v.fight.anchor = { x: goal[0] + 0.5, y: goal[1] + 0.5 }; } }
   } else if (o.k === 'attackMove') { v.fight.mode = 'attackMove'; v.fight.dest = { x: o.x, y: o.y }; v.phase = 'move'; }
   else { v.fight.mode = 'attack'; v.fight.target = o.t; }
   return true;

@@ -1,6 +1,39 @@
 {
-  "_note": "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone, 3 = bronze; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
-  "1": { "name": "wood", "head": "#b88c54", "light": "#deb87e", "dark": "#805c34" },
-  "2": { "name": "stone", "head": "#8e9496", "light": "#c0c6c6", "dark": "#62686c" },
-  "3": { "name": "bronze", "head": "#c98a3d", "light": "#f2c673", "dark": "#8a5a22" }
+ "_note": "Tool head colors per tier. Keys are tier numbers (1 = wood, 2 = stone, 3 = bronze, 4 = iron, 5 = steel, 6 = holy; 0 = bare hands, nothing drawn). To add a tier, add an entry here.",
+ "1": {
+  "name": "wood",
+  "head": "#b88c54",
+  "light": "#deb87e",
+  "dark": "#805c34"
+ },
+ "2": {
+  "name": "stone",
+  "head": "#8e9496",
+  "light": "#c0c6c6",
+  "dark": "#62686c"
+ },
+ "3": {
+  "name": "bronze",
+  "head": "#c98a3d",
+  "light": "#f2c673",
+  "dark": "#8a5a22"
+ },
+ "4": {
+  "name": "iron",
+  "head": "#9ba5ad",
+  "light": "#d9e0e5",
+  "dark": "#5d6870"
+ },
+ "5": {
+  "name": "steel",
+  "head": "#b4c2ce",
+  "light": "#f2f7fb",
+  "dark": "#6a7a89"
+ },
+ "6": {
+  "name": "holy",
+  "head": "#f1e7b6",
+  "light": "#ffffff",
+  "dark": "#c9a94e"
+ }
 }

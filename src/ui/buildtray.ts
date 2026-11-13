@@ -1,4 +1,4 @@
-import { eraLocked, BUILDINGS, BuildingKind, levelsOf } from '../sim/buildings';
+import { eraLocked, BUILDINGS, BuildingKind } from '../sim/buildings';
 import { RES_NAME } from '../sim/resources';
 import { costText, h, iconCanvas } from './dom';
 import { dlg, GameDialog } from './gamedialog';
@@ -7,8 +7,8 @@ import type { Ctx } from './ctx';
 
 /** What each house is for, shown when the card's ⓘ is tapped. */
 const ROLE: Partial<Record<BuildingKind, string>> = {
-builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu bản vẽ, quân sự và tự động hóa. Dân làm việc bên trong.',
-workshop: 'Chế tạo công cụ, vũ khí, giáp theo bản vẽ. Dân làm việc bên trong.',
+builder: 'Dân làm thợ xây ở đây (do bạn chọn). Phải có nhà này mới dựng được các công trình khác.', storage: 'Cất tài nguyên.', lab: 'Nghiên cứu quân sự, xây dựng và kinh tế. Dân làm việc bên trong.',
+workshop: 'Chế tạo công cụ, vũ khí, giáp. Dân làm việc bên trong.',
 infantry: 'Trại của chiến binh cận chiến: tuyển và cho nghỉ ở đây, họ cũng ngủ ở đây; lính hồi sức nhanh hơn dân 40% và hồi máu nhanh hơn 50% khi ở trong trại. Chỉ xây một cái; nâng cấp để chứa thêm người.',
 cavalry: 'Trại của người cưỡi thú: xung phong nhanh, khắc người ném nhưng sợ giáo. Chỉ xây một cái; nâng cấp để chứa thêm người.',
 guardpost: 'Trại lính gác: chọn dân rảnh làm lính gác (không cần qua trại lính khác). Mỗi lính gác có một chỗ gác riêng, nhìn xa hơn lính thường 5 ô, ra tay khi làng bị phá hoặc dân bị tấn công rồi quay về chỗ gác. Cấp 1, 2, 3 chứa 6, 12, 18 người.',
@@ -17,6 +17,8 @@ farmhouse: 'Giao việc hái lượm ở đây: người được giao ra bụi 
 huntlodge: 'Giao việc săn bắn ở đây: người được giao đi săn thú. Chỉ xây một cái; nâng cấp để thêm người.',
 lumberyard: 'Giao việc đốn gỗ ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
 quarry: 'Giao việc đục đá ở đây. Chỉ xây một cái; nâng cấp để thêm người.',
+ranch: 'Trại chăn nuôi: người làm bên trong nuôi thú, tự cho da, sợi, gân và lông vũ (mở dần theo cấp), không cần vẽ thú. Chỉ xây một cái; nâng cấp để thêm người và thêm sản phẩm.',
+mine: 'Giao việc khai quặng sắt và than ở đây: thợ mỏ ra các mạch quặng ở chân núi. Chỉ xây một cái; nâng cấp để thêm người.',
 house: 'Dân thường ngủ ở đây (vào nhà, hiện thành danh sách). Hồi sức như nhau ở mọi nơi ngủ; không có nhà hoặc hết giường thì dân ngủ cạnh đống lửa.',
 field: 'Dân bạn chọn vào ruộng làm việc bên trong (không hiện trên bản đồ), thức ăn về thẳng kho, đều quanh năm hơn bụi quả (bụi quả không mọc lại). Mỗi ruộng một người, nâng cấp để làm nhanh hơn.',
 wartent: 'Nơi lập đội, chọn trận pháp, lập kế hoạch và thẻ lệnh cho trận đánh. Cấp càng cao càng nhiều đội và thẻ lệnh.',
@@ -28,14 +30,14 @@ trap: 'Hố chông gài sẵn: địch bước vào bị thương, mỗi hố l�
 fence: 'Chặn đường, tạo chỗ thắt: địch phải phá rào mới vào được. Đặt từng đoạn một, cứ chạm tiếp để đặt đoạn kế. Cấp 2 (hàng rào đôi) bền gấp ba. Số đoạn tối đa tăng theo Nhà chung.',
 gate: 'Chỗ ra vào của hàng rào. Mở thì ai cũng qua được, đóng thì chặn tất cả kể cả dân mình. Chạm vào cổng để mở hoặc đóng.',
 tower: 'Chòi canh: dân rảnh lên chòi làm lính chòi canh (không cần trại cung thủ), bắn xa hơn và mạnh hơn khi đứng trên chòi. Chạm vào chòi để giao người.',
-toolstore: 'Cất công cụ cho dân tự lấy.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
+toolstore: 'Cất công cụ cho dân tự lấy.', smelter: 'Lò luyện: nấu quặng sắt và than thành thỏi sắt, thép, thép cao cấp cho giáp và vũ khí Trung cổ. Cần có người làm việc trong lò.', carpentry: 'Xưởng mộc: xẻ gỗ thành gỗ cứng và đốt gỗ thành than củi. Cần có người làm việc trong xưởng.', tannery: 'Xưởng thuộc da và dệt: thuộc da thành da thuộc, dệt sợi thành vải. Cần có người làm việc trong xưởng.', market: 'Chợ: nơi duy nhất đổi hàng lấy vỏ sò hoặc đổi hàng này lấy hàng khác. Mỗi ngày chợ nhận một lượng khác nhau mỗi loại hàng; nâng cấp để đổi lợi hơn. Chỉ xây một cái.', armory: 'Cất vũ khí và giáp cho dân tự lấy.',
   };
 
 /** The build categories, in the order of the tabs. */
 const GROUPS: Array<[string, BuildingKind[]]> = [
   ['Thiết yếu', ['builder', 'storage', 'house', 'field']],
-  ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory']],
-  ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'stable']],
+  ['Sản xuất', ['workshop', 'lab', 'toolstore', 'armory', 'market', 'smelter', 'carpentry', 'tannery', 'ranch']],
+  ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'mine', 'stable']],
   ['Quân sự', ['infantry', 'cavalry', 'archery', 'guardpost', 'wartent', 'scouttent', 'supplycamp', 'drill']],
   ['Phòng thủ', ['fence', 'gate', 'tower', 'trap']],
 ];
@@ -81,6 +83,7 @@ export class BuildTray {
         const info = h('span', { class: 'info', text: 'ⓘ', title: 'Công dụng', onclick: (e: Event) => { e.stopPropagation(); this.c.toast(`${d.name}: ${role ?? ''}`); } });
         if (role) card.append(info);
         this.refresh.push(() => {
+          lv.cost = sim.startCost(kind); costLine.textContent = costText(lv.cost, RES_NAME); // the price follows the research of the builders
           const lock = sim.buildingLock(kind), poor = !sim.freeCost() && !(Object.keys(lv.cost) as Array<keyof typeof lv.cost>).every((k) => sim.stock[k as keyof typeof sim.stock] >= (lv.cost[k] ?? 0));
           const have = sim.buildings.filter((b) => b.kind === kind).length, limit = sim.buildingLimit(kind);
           card.classList.toggle('locked', !!lock); lockIcon.hidden = !lock; costLine.classList.toggle('short', poor && !lock);

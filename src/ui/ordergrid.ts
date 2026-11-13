@@ -3,7 +3,7 @@ import { RES_NAME } from '../sim/resources';
 import type { Stock } from '../sim/resources';
 import { h } from './dom';
 import { dlg, GameDialog } from './gamedialog';
-import { resIcon } from './resicons';
+import { resIcon, statIcon } from './resicons';
 import type { Ctx } from './ctx';
 
 /** One thing that can be ordered from a house: a tool, a weapon, a suit of armour, a beast to tame. */
@@ -18,7 +18,7 @@ export interface OrderItem {
   /** Work time (work-seconds). */
   time: number;
   icon: () => HTMLElement;
-  /** Why it cannot be ordered at all yet (a blueprint, a house level), or null. */
+  /** Why it cannot be ordered at all yet (a house level), or null. */
   lock: () => string | null;
   /** Why no more can be ordered right now (a full store), or null. */
   full: () => string | null;
@@ -29,6 +29,8 @@ export interface OrderItem {
   cancel: () => void;
   /** A line for the dialog about what it gives (speed of a beast ...). */
   extra?: () => string | null;
+  /** Numbers shown as picture + value (damage, speed, durability ...); `icon` is a name for `statIcon`. */
+  stats?: Array<{ icon: string; value: string; title: string }>;
 }
 
 export interface OrderFilter { key: string; label: string }
@@ -87,7 +89,7 @@ export class OrderGrid {
     const add = dlg.button('Thêm vào hàng đợi', () => { const e = it.add(); if (e) toast(e); ctl.onChange(); this.render(); }, { disabled: !!lock || !!full });
     const cancel = dlg.button(`Bỏ một đơn${queued ? ` (${queued})` : ''}`, () => { it.cancel(); ctl.onChange(); this.render(); }, { tone: 'alt', disabled: queued === 0 });
     const head = dlg.head({ pic: it.icon(), title: it.name, sub: `Trong kho ${it.stored()} · đang đợi ${queued}`, onClose: () => { this.picked = null; this.dialog.hide(); } });
-    this.dialog.show(dlg.card({ label: it.name }, head, dlg.text(it.use), extra ? dlg.note(extra, false) : null,
+    this.dialog.show(dlg.card({ label: it.name }, head, dlg.text(it.use), it.stats?.length ? dlg.costs(...it.stats.map((x) => dlg.cost(statIcon(x.icon), x.value, null, false, x.title))) : null, extra ? dlg.note(extra, false) : null,
       dlg.costs(...costs, dlg.cost(resIcon('clock'), workDays(it.time), null, false, 'Thời gian')),
       lock ? dlg.note(lock) : null, full ? dlg.note(full) : null, !lock && !full && poor ? dlg.note('Chưa đủ vật liệu: vật liệu được trừ ngay khi thêm vào hàng đợi') : dlg.note('Vật liệu trừ ngay khi thêm vào hàng đợi, hủy đơn thì được trả lại', false),
       dlg.buttons(add, cancel)));

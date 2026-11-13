@@ -8,13 +8,13 @@ import { statBonus } from './research';
 import restJson from '../data/rest.json';
 import { brainPlayer } from './brainplayer';
 import { tickCommon, tickDown } from './battle';
+import { makeName, voiceOf } from './names';
 import type { Sim } from './sim';
-import { HAIR, NAMES_F, NAMES_M, SKIN, STAT_KEYS, Sex, Skill, Villager } from './model';
+import { HAIR, SKIN, STAT_KEYS, Sex, Skill, Villager } from './model';
 
-export function freshName(sim: Sim, sex: Sex, rnd: () => number): string {
-  const pool = (sex === 'm' ? NAMES_M : NAMES_F).filter((n) => !sim.villagers.some((v) => v.name === n));
-  const list = pool.length ? pool : sex === 'm' ? NAMES_M : NAMES_F;
-  return list[Math.floor(rnd() * list.length)];
+/** A name for a new person: our own people never share one; the people of a tribe sound like their tribe (names.ts). */
+export function freshName(sim: Sim, sex: Sex, rnd: () => number, team: Team = 'player'): string {
+  return makeName(sex, voiceOf(team), rnd, new Set(sim.villagers.map((v) => v.name)));
 }
 
 export function spawn(sim: Sim, x: number, y: number, sex: Sex): Villager {
@@ -30,15 +30,15 @@ export function makeVillager(sim: Sim, x: number, y: number, sex: Sex, team: Tea
   const { stars, fac } = rollFactors(r), stats = legacyStats((s) => rawValue(fac, s)) as Stats;
   const potential = {} as Record<WorkJob, number>, skill = {} as Record<WorkJob, Skill>;
   for (const j of WORK_JOBS) {
-    // hunting and fighting come from the body, not from a random draw, so earlier random streams stay the same
-    if (j === 'hunt' || j === 'fight' || j === 'research' || j === 'tame') { const k = j === 'hunt' || j === 'tame' ? stats.agi : j === 'research' ? stats.sta : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
+    // hunting, fighting and mining come from the body, not from a random draw, so earlier random streams stay the same
+    if (j === 'hunt' || j === 'fight' || j === 'research' || j === 'tame' || j === 'mine' || j === 'herd') { const k = j === 'hunt' || j === 'tame' || j === 'herd' ? stats.agi : j === 'research' ? stats.sta : stats.str; potential[j] = k >= 9 ? 3 : k >= 6 ? 2 : 1; skill[j] = { xp: 0, level: 0 }; continue; }
     const p = r(); potential[j] = p < 0.45 ? 1 : p < 0.85 ? 2 : 3; skill[j] = { xp: 0, level: 0 };
   }
   return {
-    id: sim.nextVid++, name: freshName(sim, sex, rnd),
+    id: sim.nextVid++, name: freshName(sim, sex, rnd, team),
     look: { sex, skin: pick(SKIN), hair: pick(HAIR), hide: '#8b6a45', pants: '#3f63a8' },
     x: x + 0.5, y: y + 0.5, path: [], slide: null, facing: 'front', speed: rawValue(fac, 'move'), animClock: 0, tx: -1, ty: -1,
-    stats, potential, skill, tools: emptyToolSet(), job: 'idle', arm: 'foot', phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, frac: 0, timer: 0, order: null,
+    stats, potential, skill, tools: emptyToolSet(), job: 'idle', arm: 'foot', rank: 1, phase: 'idle', slot: 0, target: -1, prefer: -1, progress: 0, timer: 0, order: null,
     carry: null, health: Math.round(rawValue(fac, 'hp')), anim: 'idle', hold: null, bad: new Map(), bed: -1, post: -1, nightOwl: false, energy: 100, strain: 0, shift: 'day', torch: null, lockUntil: 0, lit: false, manualGear: false, inside: null, orderCd: 0, squad: -1, stars, fac, statClock: 0, born: { ...stats }, train: null, mount: null, guard: false, guardAt: null, breaks: null, gear: { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false },
     team, maxHealth: Math.round(rawValue(fac, 'hp')), weapon: null, armor: null, stance: 'aggressive',
     fight: { mode: 'none', target: null, dest: null, anchor: null, repath: 0, scan: 0 }, queue: [], atkCd: 0, down: 0, rescue: 0, fleeT: 0, calm: 99, loot: -1, leader: false, swing: null, flinch: 0, ai: null,
@@ -60,6 +60,7 @@ export function tickVillager(sim: Sim, v: Villager, dt: number): void {
   if (v.health < v.maxHealth && v.calm > 10) v.health = Math.min(v.maxHealth, v.health + dt * 0.0015 * v.maxHealth * (1 - sim.foodPenalty) * healFactor(sim, v));
   if (v.health <= 0) { sim.kill(v); return; }
   v.orderCd = Math.max(0, v.orderCd - dt);
+  if (sim.legionHolds(v)) { sim.animate(v, dt); return; } // a soldier of the marching army is moved by the army (legion.tickLegion): no work, no sleep, no brain of his own
   sim.tickEnergy(v, dt);
   const held = sim.heldTool(v);
   if (held && TOOL_OF_JOB[v.job as WorkJob] !== held.k) sim.returnTool(v); // the job changed: the tool goes back with its wear

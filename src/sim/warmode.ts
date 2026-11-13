@@ -15,7 +15,7 @@ export const warTribe = (sim: Sim): string | null => warPlan(sim)?.tribe ?? null
 export function army(sim: Sim): Set<number> {
   const ids = new Set<number>();
   for (const p of sim.plans) {
-    if (p.kind !== 'attack' || p.status !== 'running') continue;
+    if (p.kind !== 'attack' || p.status !== 'running' || p.skirmish) continue; // the soldiers of a skirmish are not an army on the march: no hunger, tiredness or slow (see `ranks`)
     for (const m of p.missions) { const s = sim.squadById(m.squad); if (s) for (const v of sim.squadUnits(s)) ids.add(v.id); }
     for (const id of p.supplyIds) ids.add(id); // the supply soldiers march with it
   }
@@ -25,6 +25,10 @@ export function army(sim: Sim): Set<number> {
 /** Who still works while the war is on: the army, and the scouts out on a trip. Everyone else goes home and stands still. */
 export function ranks(sim: Sim, soldiers: Set<number> = army(sim)): Set<number> {
   const ids = new Set(soldiers);
+  for (const p of sim.plans) if (p.skirmish && p.status === 'running') { // a skirmish freezes nobody who soldiers (foot, throwers, riders, in any camp): the player may still send more of them in
+    for (const id of p.skirmish.ids) ids.add(id);
+    for (const v of sim.villagers) if (v.team === 'player' && v.job === 'fight' && v.health > 0) ids.add(v.id);
+  }
   for (const m of sim.scouts) for (const id of m.ids) ids.add(id);
   return ids;
 }

@@ -1,9 +1,15 @@
 {
-  "_note": "How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. huntPerDay: food-equivalent a hunter of factor 1 brings home in a day (an estimate for the card of the Chòi thợ săn); gatherDuty: share of working time a gatherer spends gathering rather than walking and carrying (estimate for the cards of the houses). Weather and season slow outdoor work: see weather.json and seasons.json (key \"work\").",
-  "gather": { "wood": 11, "stone": 17, "food": 40, "farm": 70 },
-  "bare": { "wood": 0.6, "stone": 0.5, "food": 0.9, "build": 0.8 },
+  "_note": "ore: what a stroke of mining takes, by ore: `time` seconds at speed 1 for one unit with a tool of tier `grade` or better; with a tool of a lower tier it is slower: every tier short multiplies the speed by `underTool`, so a low tool still works but takes much longer, and a better tool is quicker on the soft ores too (tool speed, tools.ts). How long things take, in one place. gather: real seconds (at 1x speed) to collect ONE unit for an average villager with a good tool (speed factor 1.0); farm is the same for one unit from a field of the first level (a higher level divides it by its craftSpeed). A day is 20 minutes, 12 of them daylight; walking, carrying and the weather come on top. bare: how well bare hands do compared with a good tool (1 = as good). Building, crafting, research and repair are measured in days of labour instead (see buildings.ts, tools.ts, research.json) because they should take about the same fraction of a day however long a day lasts. huntPerDay: food-equivalent a hunter of factor 1 brings home in a day (an estimate for the card of the Chòi thợ săn); gatherDuty: share of working time a gatherer spends gathering rather than walking and carrying (estimate for the cards of the houses). Weather and season slow outdoor work: see weather.json and seasons.json (key \"work\").",
+  "gather": { "wood": 11, "stone": 17, "mine": 32, "food": 9, "farm": 70, "flax": 95 },
+  "earlyBuff": { "days": 12, "bonus": 0.25, "jobs": ["wood", "stone"] },
+  "bare": { "wood": 0.6, "stone": 0.5, "mine": 0.4, "food": 0.9, "build": 0.8 },
   "huntPerDay": 30,
   "gatherDuty": 0.6,
-  "levelYield": [1, 1, 1.6, 2.2],
-  "outdoor": ["wood", "stone", "food", "build"]
+  "ore": { "coal": { "time": 24, "grade": 1 }, "copper_ore": { "time": 30, "grade": 2 }, "iron_ore": { "time": 32, "grade": 3 }, "rare_ore": { "time": 54, "grade": 5 } },
+  "underTool": 0.7,
+  "yield": { "wood": 3, "stone": 2, "food": 1, "iron_ore": 2, "coal": 2, "copper_ore": 2, "rare_ore": 1 },
+  "levelYield": [1, 1.25, 2.3, 3],
+  "costMult": { "wood": 2, "stone": 2, "coin": 2 },
+  "node": { "tree": 20, "rock": 28, "bush": 40, "ore": 30 },
+  "outdoor": ["wood", "stone", "mine", "food", "build"]
 }

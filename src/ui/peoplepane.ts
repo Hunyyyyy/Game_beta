@@ -1,7 +1,8 @@
-import { JOB_NAME, roleName, roleOf } from '../sim/jobs';
+import { JOB_NAME, roleOf, titleOfRole } from '../sim/jobs';
+import { isRankRole } from '../sim/ranks';
 import type { Villager } from '../sim/sim';
 import { statValue } from '../sim/statsys';
-import { TIER_NAME, TOOL_NAME, TOOL_OF_JOB } from '../sim/tools';
+import { TOOL_OF_JOB } from '../sim/tools';
 import type { WorkJob } from '../sim/jobs';
 import type { Ctx } from './ctx';
 import { SHIFT_LABEL } from './describe';
@@ -63,7 +64,7 @@ export class PeoplePane {
       if (v.inside !== null) { ctl.selectBuilding(v.inside, true); return; }
       ctl.selected.clear(); ctl.selected.add(v.id); ctl.focusSelection(); ctl.closeBuilding();
     });
-    const applyAll = h('button', { class: 'sm primary', text: 'Áp dụng cho cả nhóm', title: 'Cho mọi người cùng nghề dùng ca làm, đuốc và công cụ giống người này', onclick: () => this.applyToGroup() });
+    const applyAll = h('button', { class: 'sm primary', text: 'Áp dụng cho cả nhóm', title: 'Cho mọi người cùng nghề dùng ca làm, đuốc và công cụ giống người này (vũ khí, giáp, thú cưỡi: bấm "Trang bị" ở nhà của nghề)', onclick: () => this.applyToGroup() });
     this.personView.append(
       h('div', { class: 'dhead' }, this.face, h('div', { class: 'dwho' }, this.name, this.state), this.where),
       this.detail.body,
@@ -82,6 +83,7 @@ export class PeoplePane {
     const k = TOOL_OF_JOB[v.job as WorkJob], errs: string[] = [];
     if (k) { const e = sim.assignTool(ids, k, v.tools[k]?.tier ?? 0); if (e) errs.push(e); }
     if (v.torch) { const e = sim.giveTorch(ids); if (e) errs.push(e); }
+    // weapons, armour and beasts are not copied: the "Trang bị" button of the house hands them out
     toast(errs.length ? errs.join(' · ') : `Đã áp dụng cho ${ids.length} người cùng nghề`);
     ctl.onChange();
   }
@@ -90,19 +92,19 @@ export class PeoplePane {
 
   /** The trade a filter or a tile goes by: soldiers by arm, the rest by job (the idle are their own group). */
   private static groupOf(v: Villager): string { return roleOf(v) ?? v.job; }
+  /** What the filter list goes by: a soldier of a camp by his rank (so each rank has its own name), the rest by trade. */
+  private static filterKey(v: Villager): string { const r = roleOf(v); return r && v.job === 'fight' && isRankRole(r) ? `${r}#${v.rank ?? 1}` : PeoplePane.groupOf(v); }
 
   /** Does a villager belong to the group picked in the filter: '*civ' is the plain villagers (no soldier, hunter or scout), '*army' the soldiers, any other value one trade. */
   private static matches(v: Villager, group: string): boolean {
     if (group === '*civ') return v.job !== 'fight' && v.job !== 'hunt' && v.job !== 'scout';
     if (group === '*army') return v.job === 'fight';
-    return PeoplePane.groupOf(v) === group;
+    return PeoplePane.filterKey(v) === group;
   }
 
-  /** What a villager holds and when they work, in one line: the tool of their job, the torch and the shift. */
+  /** The torch and the shift, in one line (what they hold is in the tile itself). */
   private brief(v: Villager): string {
-    const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
     const parts: string[] = [];
-    if (k) parts.push(`${TOOL_NAME[k]}: ${t ? `${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'tay không'}`);
     parts.push(`Đuốc: ${v.torch ? 'có' : 'không'}`, `Ca làm: ${SHIFT_LABEL[v.shift].toLowerCase()}`);
     return parts.join(' · ');
   }
@@ -117,12 +119,12 @@ export class PeoplePane {
   update(): void {
     const { sim } = this.c, all = sim.villagers;
     // the trades that have somebody in them
-    const groups = [...new Set(all.map(PeoplePane.groupOf))];
+    const groups = [...new Set(all.map(PeoplePane.filterKey))];
     const civ = all.filter((o) => PeoplePane.matches(o, '*civ')).length, army = all.filter((o) => PeoplePane.matches(o, '*army')).length;
-    const gk = `${groups.join()}|${all.map(PeoplePane.groupOf).join()}`; // the groups and how many are in each
+    const gk = `${groups.join()}|${all.map(PeoplePane.filterKey).join()}`; // the groups and how many are in each
     if (gk !== this.groupKey) {
       this.groupKey = gk;
-      const label = (g: string) => { const v = all.find((o) => PeoplePane.groupOf(o) === g)!; const r = roleOf(v); return `${r ? roleName(r, sim.era) : JOB_NAME[v.job]} (${all.filter((o) => PeoplePane.groupOf(o) === g).length})`; };
+      const label = (g: string) => { const v = all.find((o) => PeoplePane.filterKey(o) === g)!; return `${titleOfRole(v, sim.era) ?? JOB_NAME[v.job]} (${all.filter((o) => PeoplePane.filterKey(o) === g).length})`; };
       this.groupSel.replaceChildren(h('option', { value: '', text: `Mọi nghề (${all.length})` }), h('option', { value: '*civ', text: `Dân thường (${civ})` }), h('option', { value: '*army', text: `Lính (${army})` }), ...groups.map((g) => h('option', { value: g, text: label(g) })));
       if (this.group && !this.group.startsWith('*') && !groups.includes(this.group)) this.group = '';
       this.groupSel.value = this.group;
@@ -157,7 +159,7 @@ export class PeoplePane {
     const fk = `${v.id}|${v.armor}`;
     if (fk !== this.faceKey) { this.faceKey = fk; this.face.replaceChildren(avatar(this.c, v)); }
     const role = roleOf(v);
-    this.name.textContent = v.name; this.state.textContent = role ? roleName(role, sim.era) : JOB_NAME[v.job]; // the job, not what they are doing
+    this.name.textContent = v.name; this.state.textContent = titleOfRole(v, sim.era) ?? JOB_NAME[v.job]; // the job, not what they are doing
     this.detail.update([v]);
     this.where.textContent = v.inside !== null ? (v.phase === 'sleep' ? 'Mở nhà đang ngủ' : 'Mở nhà đang làm') : 'Đi tới';
   }

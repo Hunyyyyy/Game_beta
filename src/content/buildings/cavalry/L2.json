@@ -1,6 +1,6 @@
 {
- "name": "Trại kỵ thú (cấp 2, chuồng rào, mái tranh)",
- "name_en": "Beast-Rider Camp (Tier 2)",
+ "name": "Trại lính kỵ (cấp 2, chuồng rào, mái tranh)",
+ "name_en": "Mount Camp (Tier 2, Rail Corral, Thatch)",
  "type": "prop",
  "size": [
   72,
@@ -16,7 +16,7 @@
   64,
   28
  ],
- "seed": 12,
+ "seed": 9,
  "params": {
   "st1": 1,
   "st2": 1,
@@ -27,151 +27,194 @@
   "line": "#2b1d10",
   "shadow": "#000000",
   "dirt": "#6a5238",
-  "earth": "#86704e",
-  "earthL": "#9a8460",
+  "dirtL": "#7e6244",
+  "dirtD": "#4e3c2a",
   "wood": "#8a6238",
   "woodL": "#aa7c48",
   "woodD": "#5e4026",
-  "log": "#6b4a28",
   "logE": "#c49a60",
   "rope": "#d8c690",
   "stone": "#8e9498",
   "stoneL": "#b9bfc2",
   "stoneD": "#60676b",
   "chip": "#d8d2c0",
-  "hide": "#a0552f",
-  "hideL": "#c06f43",
-  "hideD": "#7a3d20",
-  "stitch": "#e8d6a8",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
   "bone": "#e4dcc4",
-  "flintL": "#7c8794",
-  "door": "#2a1a0e",
-  "flag": "#b03a2e",
-  "flagD": "#7d2a20",
-  "thatch": "#c9a84e",
-  "thatchL": "#e0c670",
-  "thatchD": "#9a7c32",
-  "wattle": "#b89a58",
-  "wattleD": "#8a7038",
-  "clay": "#b08a62",
-  "clayD": "#8c6a48",
-  "green": "#6f9a3e",
-  "greenD": "#4f7a2c",
-  "greenL": "#8fba54",
-  "hay": "#d6b85a",
-  "hayD": "#a88a38",
-  "fur": "#7a5230",
-  "furD": "#553820",
-  "furL": "#9a7048",
-  "sand": "#c4ad7c",
-  "target": "#e4dcc4",
-  "flame": "#f89628",
-  "flameL": "#ffd060",
-  "water": "#5a7f9a"
+  "boneD": "#b8ac90",
+  "sand": "#b9a47a",
+  "sandL": "#cdbb94",
+  "sandD": "#9a8760",
+  "blue": "#5f7fa8",
+  "blueD": "#3f5c84",
+  "ochre": "#b0762f",
+  "red": "#a8342a",
+  "dark": "#1d1812",
+  "moss": "#5f7f3a",
+  "mossL": "#7f9f50",
+  "hide": "#d9c796",
+  "wicker": "#b08a4c",
+  "wickerL": "#c9a460",
+  "wickerD": "#7e5f30",
+  "mud": "#b98a62",
+  "mudL": "#cfa07a",
+  "mudD": "#8e6745",
+  "plaster": "#dccfb2",
+  "plasterD": "#b8a98a",
+  "thatch": "#d4b45a",
+  "thatchL": "#ecd27a",
+  "thatchD": "#a98a38",
+  "hay": "#e0c060",
+  "hayD": "#b8963a",
+  "shingle": "#55361f",
+  "shingleL": "#7a5232",
+  "shingleD": "#35200f",
+  "tile": "#9b4a34",
+  "tileL": "#c06a4a",
+  "tileD": "#6e3224",
+  "slate": "#66707c",
+  "slateL": "#8893a0",
+  "slateD": "#444c56",
+  "terra": "#b5593b",
+  "terraL": "#d27a52",
+  "terraD": "#7e3a26",
+  "glass": "#9bc4d8",
+  "glassD": "#5f8aa0",
+  "gold": "#d9b13a",
+  "bannerR": "#b8322a",
+  "iron": "#5d6068",
+  "ironL": "#8a8e96",
+  "clay": "#a8683e",
+  "clayD": "#7a4a2a",
+  "cut": "#a7adb1",
+  "cutL": "#c9ced1",
+  "cutD": "#6f757a",
+  "plank": "#c8a468",
+  "plankD": "#9a7a44",
+  "ink": "#2c4466",
+  "green": "#5f8f3a",
+  "greenL": "#86b04c",
+  "greenD": "#3f6a28",
+  "hideG": "#6f8a4a",
+  "hideGL": "#8fae62",
+  "hideGD": "#4c6532",
+  "hideR": "#a8342a",
+  "hideRL": "#c8523f",
+  "hideRD": "#7a2220",
+  "tent": "#a5502e",
+  "tentL": "#c06a40",
+  "tentD": "#7a3a22",
+  "tentK": "#2a1a10",
+  "tentR": "#8f3a2c",
+  "beast": "#6a4426",
+  "beastL": "#8a6038",
+  "beastD": "#44281a",
+  "beastT": "#b08a58",
+  "straw": "#d8b85a",
+  "strawL": "#ecd27a",
+  "strawD": "#a98a38",
+  "white": "#efe6cf"
  },
  "layers": [
   {
-   "shape": "ellipse",
-   "cx": 36,
-   "cy": 55,
-   "rx": 30,
-   "ry": 6,
+   "shape": "poly",
+   "points": [
+    [
+     4,
+     57
+    ],
+    [
+     56,
+     57
+    ],
+    [
+     69,
+     50
+    ],
+    [
+     16,
+     50
+    ]
+   ],
    "color": "shadow",
    "alpha": 0.25
-  },
-  {
-   "shape": "rect",
-   "x": 8,
-   "y": 36,
-   "w": 56,
-   "h": 18,
-   "color": "dirt",
-   "alpha": 0.55,
-   "ifNot": "st1"
-  },
-  {
-   "shape": "rect",
-   "x": 7,
-   "y": 36,
-   "w": 2,
-   "h": 5,
-   "color": "wood",
-   "ifNot": "st1"
-  },
-  {
-   "shape": "rect",
-   "x": 63,
-   "y": 36,
-   "w": 2,
-   "h": 5,
-   "color": "wood",
-   "ifNot": "st1"
-  },
-  {
-   "shape": "rect",
-   "x": 7,
-   "y": 50,
-   "w": 2,
-   "h": 5,
-   "color": "wood",
-   "ifNot": "st1"
-  },
-  {
-   "shape": "rect",
-   "x": 63,
-   "y": 50,
-   "w": 2,
-   "h": 5,
-   "color": "wood",
-   "ifNot": "st1"
-  },
-  {
-   "shape": "line",
-   "from": [
-    9,
-    37
-   ],
-   "to": [
-    62,
-    37
-   ],
-   "w": 1,
-   "color": "rope",
-   "ifNot": "st1"
   },
   {
    "shape": "group",
    "if": "st1",
    "layers": [
     {
-     "shape": "ellipse",
-     "cx": 36,
-     "cy": 47,
-     "rx": 30,
-     "ry": 8,
-     "color": "earth"
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       16,
+       47
+      ]
+     ],
+     "color": "dirt"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 54,
+     "w": 48,
+     "h": 2,
+     "color": "dirtD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       64,
+       49
+      ],
+      [
+       54,
+       56
+      ]
+     ],
+     "color": "dirtD"
     },
     {
      "shape": "scatter",
-     "count": 34,
+     "count": 26,
      "area": [
-      6,
-      40,
-      60,
-      14
+      8,
+      47,
+      54,
+      7
      ],
      "size": [
       1,
       2
      ],
      "colors": [
-      "dirt",
-      "chip",
-      "earthL",
-      "stoneD"
+      "dirtL",
+      "dirtD",
+      "plank"
      ],
      "onlyOver": [
-      "earth"
+      "dirt"
      ]
     }
    ]
@@ -182,146 +225,360 @@
    "layers": [
     {
      "shape": "rect",
-     "x": 8,
-     "y": 36,
+     "x": 10,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 8,
-     "y": 50,
+     "x": 10,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 16,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
      "x": 16,
-     "y": 36,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 22,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 16,
-     "y": 50,
+     "x": 22,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 28,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 24,
-     "y": 36,
+     "x": 28,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 34,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 24,
-     "y": 50,
-     "w": 2,
-     "h": 6,
-     "color": "wood"
+     "x": 34,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
     },
     {
      "shape": "rect",
-     "x": 32,
-     "y": 36,
+     "x": 40,
+     "y": 46,
      "w": 2,
-     "h": 6,
-     "color": "wood"
-    },
-    {
-     "shape": "rect",
-     "x": 32,
-     "y": 50,
-     "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
      "x": 40,
-     "y": 36,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 40,
-     "y": 50,
+     "x": 46,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 52,
+     "y": 46,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 48,
-     "y": 36,
-     "w": 2,
-     "h": 6,
-     "color": "wood"
+     "x": 52,
+     "y": 46,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
     },
     {
      "shape": "rect",
-     "x": 48,
-     "y": 50,
+     "x": 56,
+     "y": 45,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
      "x": 56,
-     "y": 36,
+     "y": 45,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 59,
+     "y": 43,
      "w": 2,
-     "h": 6,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 56,
-     "y": 50,
+     "x": 59,
+     "y": 43,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 61,
+     "y": 41,
      "w": 2,
-     "h": 6,
+     "h": 9,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 61,
+     "y": 41,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 64,
+     "y": 39,
+     "w": 2,
+     "h": 9,
      "color": "wood"
     },
     {
      "shape": "rect",
      "x": 64,
-     "y": 36,
+     "y": 39,
+     "w": 1,
+     "h": 9,
+     "color": "woodL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      10,
+      48
+     ],
+     "to": [
+      54,
+      48
+     ],
+     "w": 1,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      10,
+      51
+     ],
+     "to": [
+      54,
+      51
+     ],
+     "w": 1,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      48
+     ],
+     "to": [
+      64,
+      41
+     ],
+     "w": 1,
+     "color": "woodD",
+     "alpha": 0.9
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      51
+     ],
+     "to": [
+      64,
+      44
+     ],
+     "w": 1,
+     "color": "woodD",
+     "alpha": 0.9
+    },
+    {
+     "shape": "rect",
+     "x": 10,
+     "y": 30,
      "w": 2,
-     "h": 6,
+     "h": 17,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 64,
-     "y": 50,
+     "x": 10,
+     "y": 30,
+     "w": 1,
+     "h": 17,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 11,
+     "y": 30,
+     "w": 1,
+     "h": 17,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 30,
+     "y": 30,
      "w": 2,
-     "h": 6,
+     "h": 17,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 30,
+     "y": 30,
+     "w": 1,
+     "h": 17,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 31,
+     "y": 30,
+     "w": 1,
+     "h": 17,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 35,
+     "w": 3,
+     "h": 19,
      "color": "wood"
     },
     {
      "shape": "rect",
      "x": 8,
-     "y": 40,
-     "w": 2,
-     "h": 11,
+     "y": 35,
+     "w": 1,
+     "h": 19,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 10,
+     "y": 35,
+     "w": 1,
+     "h": 19,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 26,
+     "y": 35,
+     "w": 3,
+     "h": 19,
      "color": "wood"
     },
     {
      "shape": "rect",
-     "x": 62,
-     "y": 40,
-     "w": 2,
-     "h": 11,
+     "x": 26,
+     "y": 35,
+     "w": 1,
+     "h": 19,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 28,
+     "y": 35,
+     "w": 1,
+     "h": 19,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 33,
+     "w": 22,
+     "h": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 33,
+     "w": 22,
+     "h": 1,
      "color": "wood"
     }
    ]
@@ -331,118 +588,105 @@
    "if": "st3",
    "layers": [
     {
-     "shape": "line",
-     "from": [
-      9,
-      38
+     "shape": "poly",
+     "points": [
+      [
+       30,
+       33
+      ],
+      [
+       40,
+       26
+      ],
+      [
+       35,
+       22
+      ]
      ],
-     "to": [
-      63,
-      38
-     ],
-     "w": 1,
-     "color": "woodL"
-    },
-    {
-     "shape": "line",
-     "from": [
-      9,
-      52
-     ],
-     "to": [
-      63,
-      52
-     ],
-     "w": 1,
-     "color": "woodL"
-    },
-    {
-     "shape": "line",
-     "from": [
-      9,
-      41
-     ],
-     "to": [
-      9,
-      52
-     ],
-     "w": 1,
-     "color": "woodL"
-    },
-    {
-     "shape": "line",
-     "from": [
-      63,
-      41
-     ],
-     "to": [
-      63,
-      52
-     ],
-     "w": 1,
-     "color": "woodL"
-    },
-    {
-     "shape": "line",
-     "from": [
-      9,
-      45
-     ],
-     "to": [
-      9,
-      45
-     ],
-     "w": 1,
-     "color": "woodL"
-    },
-    {
-     "shape": "rect",
-     "x": 12,
-     "y": 18,
-     "w": 2,
-     "h": 24,
      "color": "woodD"
     },
     {
-     "shape": "rect",
-     "x": 34,
-     "y": 18,
-     "w": 2,
-     "h": 24,
-     "color": "woodD"
+     "shape": "line",
+     "from": [
+      30,
+      33
+     ],
+     "to": [
+      35,
+      22
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      35,
+      22
+     ],
+     "to": [
+      40,
+      26
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.7
     },
     {
      "shape": "poly",
      "points": [
       [
-       8,
+       6,
+       34
+      ],
+      [
+       32,
+       34
+      ],
+      [
+       37,
        22
       ],
       [
-       24,
-       10
-      ],
-      [
-       40,
+       12,
        22
       ]
      ],
      "color": "thatch"
     },
     {
-     "shape": "poly",
-     "points": [
+     "shape": "line",
+     "from": [
+      7.2,
+      31.6
+     ],
+     "to": [
+      33.0,
+      31.6
+     ],
+     "w": 1,
+     "color": "thatchD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
       [
-       8,
-       22
+       14,
+       32
       ],
       [
-       24,
-       10
+       17,
+       32
       ],
       [
-       24,
-       22
+       25,
+       32
+      ],
+      [
+       33,
+       32
       ]
      ],
      "color": "thatchL"
@@ -450,58 +694,213 @@
     {
      "shape": "line",
      "from": [
-      24,
-      10
+      8.4,
+      29.2
      ],
      "to": [
-      40,
+      34.0,
+      29.2
+     ],
+     "w": 1,
+     "color": "thatchD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       13,
+       30
+      ],
+      [
+       21,
+       30
+      ],
+      [
+       24,
+       30
+      ],
+      [
+       32,
+       30
+      ]
+     ],
+     "color": "thatchL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      9.6,
+      26.8
+     ],
+     "to": [
+      35.0,
+      26.8
+     ],
+     "w": 1,
+     "color": "thatchD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       17,
+       27
+      ],
+      [
+       20,
+       27
+      ],
+      [
+       28,
+       27
+      ],
+      [
+       31,
+       27
+      ]
+     ],
+     "color": "thatchL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      10.8,
+      24.4
+     ],
+     "to": [
+      36.0,
+      24.4
+     ],
+     "w": 1,
+     "color": "thatchD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       16,
+       25
+      ],
+      [
+       24,
+       25
+      ],
+      [
+       27,
+       25
+      ],
+      [
+       35,
+       25
+      ]
+     ],
+     "color": "thatchL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      12,
+      22
+     ],
+     "to": [
+      37,
       22
      ],
      "w": 1,
+     "color": "thatchL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      11,
+      23
+     ],
+     "to": [
+      38,
+      23
+     ],
+     "w": 1,
+     "color": "thatchD",
+     "alpha": 0.5
+    },
+    {
+     "shape": "scatter",
+     "count": 30,
+     "area": [
+      8,
+      23,
+      24,
+      9
+     ],
+     "size": 1,
+     "colors": [
+      "thatchL",
+      "thatchD"
+     ],
+     "onlyOver": [
+      "thatch"
+     ]
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       34
+      ],
+      [
+       32,
+       34
+      ],
+      [
+       32,
+       37
+      ],
+      [
+       6,
+       37
+      ]
+     ],
      "color": "thatchD"
     },
     {
      "shape": "line",
      "from": [
-      8,
-      22
-     ],
-     "to": [
-      40,
-      22
-     ],
-     "w": 1,
-     "color": "woodD"
-    },
-    {
-     "shape": "rect",
-     "x": 10,
-     "y": 38,
-     "w": 28,
-     "h": 2,
-     "color": "woodD"
-    },
-    {
-     "shape": "rect",
-     "x": 10,
-     "y": 30,
-     "w": 28,
-     "h": 8,
-     "color": "wattle",
-     "alpha": 0.5
-    },
-    {
-     "shape": "line",
-     "from": [
-      10,
+      6,
       34
      ],
      "to": [
-      38,
+      32,
       34
      ],
      "w": 1,
-     "color": "wattleD"
+     "color": "thatchL",
+     "alpha": 0.6
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       8,
+       38
+      ],
+      [
+       16,
+       38
+      ],
+      [
+       21,
+       38
+      ],
+      [
+       26,
+       38
+      ]
+     ],
+     "color": "thatchD"
     }
    ]
   },
@@ -510,233 +909,193 @@
    "if": "st4",
    "layers": [
     {
-     "shape": "ellipse",
-     "cx": 54,
-     "cy": 47,
-     "rx": 7,
-     "ry": 3,
-     "color": "hayD"
-    },
-    {
-     "shape": "ellipse",
-     "cx": 54,
-     "cy": 46,
-     "rx": 6,
-     "ry": 3,
-     "color": "hay"
-    },
-    {
-     "shape": "line",
-     "from": [
-      49,
-      46
-     ],
-     "to": [
-      59,
-      46
-     ],
-     "w": 1,
-     "color": "hayD",
-     "alpha": 0.7
-    },
-    {
      "shape": "rect",
-     "x": 20,
-     "y": 50,
-     "w": 14,
-     "h": 3,
-     "color": "woodD"
-    },
-    {
-     "shape": "rect",
-     "x": 21,
-     "y": 49,
-     "w": 12,
-     "h": 2,
-     "color": "woodL"
+     "x": 12,
+     "y": 44,
+     "w": 18,
+     "h": 10,
+     "color": "hide",
+     "alpha": 0.0
     },
     {
      "shape": "ellipse",
-     "cx": 28,
-     "cy": 42,
-     "rx": 7,
-     "ry": 4,
-     "color": "fur"
-    },
-    {
-     "shape": "ellipse",
-     "cx": 28,
-     "cy": 41,
-     "rx": 6,
+     "cx": 42,
+     "cy": 51,
+     "rx": 9,
      "ry": 2,
-     "color": "furL"
+     "color": "shadow",
+     "alpha": 0.25
     },
     {
-     "shape": "line",
-     "from": [
-      23,
-      45
-     ],
-     "to": [
-      23,
-      48
-     ],
+     "shape": "rect",
+     "x": 36,
+     "y": 47,
      "w": 2,
-     "color": "furD"
+     "h": 4,
+     "color": "beast"
     },
     {
-     "shape": "line",
-     "from": [
-      26,
-      45
-     ],
-     "to": [
-      26,
-      48
-     ],
+     "shape": "rect",
+     "x": 39,
+     "y": 47,
      "w": 2,
-     "color": "furD"
+     "h": 4,
+     "color": "beast"
     },
     {
-     "shape": "line",
-     "from": [
-      30,
-      45
-     ],
-     "to": [
-      30,
-      48
-     ],
+     "shape": "rect",
+     "x": 44,
+     "y": 47,
      "w": 2,
-     "color": "furD"
+     "h": 4,
+     "color": "beast"
     },
     {
-     "shape": "line",
-     "from": [
-      33,
-      45
-     ],
-     "to": [
-      33,
-      48
-     ],
+     "shape": "rect",
+     "x": 47,
+     "y": 47,
      "w": 2,
-     "color": "furD"
+     "h": 4,
+     "color": "beast"
+    },
+    {
+     "shape": "rect",
+     "x": 35,
+     "y": 41,
+     "w": 14,
+     "h": 6,
+     "color": "beast"
+    },
+    {
+     "shape": "rect",
+     "x": 35,
+     "y": 41,
+     "w": 14,
+     "h": 1,
+     "color": "beastL"
     },
     {
      "shape": "poly",
      "points": [
       [
-       33,
-       40
+       46,
+       41
       ],
       [
-       36,
-       34
-      ],
-      [
-       38,
+       49,
        36
       ],
       [
-       35,
+       52,
+       37
+      ],
+      [
+       49,
        42
       ]
      ],
-     "color": "fur"
+     "color": "beast"
     },
     {
-     "shape": "ellipse",
-     "cx": 38,
-     "cy": 35,
-     "rx": 3,
-     "ry": 2,
-     "color": "fur"
+     "shape": "rect",
+     "x": 49,
+     "y": 36,
+     "w": 5,
+     "h": 3,
+     "color": "beastL"
     },
     {
      "shape": "pixels",
      "at": [
       [
-       39,
-       34
+       50,
+       35
       ]
      ],
-     "color": "line"
+     "color": "beastD"
     },
     {
      "shape": "line",
      "from": [
-      21,
-      41
-     ],
-     "to": [
-      18,
-      45
-     ],
-     "w": 1,
-     "color": "furD"
-    },
-    {
-     "shape": "line",
-     "from": [
-      34,
-      37
+      35,
+      42
      ],
      "to": [
       32,
-      34
+      46
      ],
      "w": 1,
-     "color": "furD"
-    },
-    {
-     "shape": "line",
-     "from": [
-      62,
-      52
-     ],
-     "to": [
-      62,
-      22
-     ],
-     "w": 1,
-     "color": "woodD"
-    },
-    {
-     "shape": "poly",
-     "points": [
-      [
-       63,
-       22
-      ],
-      [
-       71,
-       24
-      ],
-      [
-       63,
-       28
-      ]
-     ],
-     "color": "flag"
+     "color": "beastD"
     },
     {
      "shape": "pixels",
      "at": [
       [
-       40,
+       37,
        45
       ],
       [
-       44,
-       49
-      ],
-      [
-       16,
-       46
+       43,
+       45
       ]
      ],
+     "color": "beastD"
+    },
+    {
+     "shape": "rect",
+     "x": 40,
+     "y": 50,
+     "w": 8,
+     "h": 2,
      "color": "hay"
+    },
+    {
+     "shape": "rect",
+     "x": 40,
+     "y": 48,
+     "w": 8,
+     "h": 2,
+     "color": "thatchL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       41,
+       48
+      ],
+      [
+       46,
+       49
+      ]
+     ],
+     "color": "hayD"
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 48,
+     "w": 7,
+     "h": 6,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 47,
+     "w": 7,
+     "h": 2,
+     "color": "wood"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       17,
+       50
+      ]
+     ],
+     "color": "ironL"
     }
    ]
   },

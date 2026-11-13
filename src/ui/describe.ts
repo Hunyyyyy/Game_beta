@@ -1,18 +1,16 @@
 import type { Shift } from '../sim/model';
 import { BUILDINGS, needsWork } from '../sim/buildings';
-import { ArmorDef, ARMORS } from '../sim/combat';
-import { gameDays } from '../sim/constants';
-import { Job, JOB_NAME, JOBS } from '../sim/jobs';
+import { ArmorDef, ARMORS, WEAPONS } from '../sim/combat';
+import { TIER_NAME, TOOL_NAME, TOOL_OF_JOB } from '../sim/tools';
+import type { WorkJob } from '../sim/jobs';
+import { dayLength, gameDays } from '../sim/constants';
+import { Job, JOB_NAME, JOBS, ORE_RES } from '../sim/jobs';
 import { RES_NAME } from '../sim/resources';
 import type { Sim, Villager } from '../sim/sim';
 
 
-/** How well armour protects: the average of what it takes off a pierce, slash and crush blow (0..1). */
-export const armorLevel = (a: ArmorDef) => (a.pierce + a.slash + a.crush) / 3;
-/** A full bar is armour that stops half of every blow. */
-export const ARMOR_FULL = 0.5;
 export const pct = (x: number) => `${Math.round(x * 100)}%`;
-export const armorText = (a: ArmorDef, named = true) => `${named ? `${a.name}: ` : ''}giảm sát thương đâm ${pct(a.pierce)} · chém ${pct(a.slash)} · đập ${pct(a.crush)}`;
+export const armorText = (a: ArmorDef, named = true) => `${named ? `${a.name}: ` : ''}thủ cận +${a.defm} · thủ xa +${a.defr}`;
 
 /** The jobs of the job buttons. Soldiers are not one of them: they are recruited and discharged at the campfire. */
 export const PLAIN_JOBS: Job[] = ['idle', 'wood', 'stone', 'food', 'hunt'];
@@ -22,9 +20,9 @@ export const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
 export function waitReason(v: Villager, sim: Sim): string | null {
   const j = v.job;
   if (j === 'build') return sim.buildings.some(needsWork) ? null : 'chờ: chưa có công trường nào cần xây';
-  if (j === 'wood' || j === 'stone' || j === 'food') {
-    const res = JOBS[j].res!;
-    if (!v.carry && sim.stock[res] >= sim.capacity(res)) return `chờ: kho đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho`;
+  if (j === 'wood' || j === 'stone' || j === 'mine' || j === 'food') {
+    const res = JOBS[j].res!, full = (r: typeof res) => sim.stock[r] >= sim.capacity(r);
+    if (!v.carry && (j === 'mine' ? ORE_RES.every(full) : full(res))) return `chờ: kho đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho`;
     return 'chờ: chưa thấy nguồn nào gần đó, hãy khám phá thêm';
   }
   return null;
@@ -32,7 +30,7 @@ export function waitReason(v: Villager, sim: Sim): string | null {
 
 /** What a villager is doing, in words. */
 export function describe(v: Villager, sim?: Sim): string {
-  const carry = v.carry && v.carry.amount > 0 ? ` · mang ${v.carry.amount} ${RES_NAME[v.carry.res].toLowerCase()}` : '';
+  const carry = v.carry && v.carry.amount > 0 ? ` · mang ${Math.round(v.carry.amount * 10) / 10} ${RES_NAME[v.carry.res].toLowerCase()}` : '';
   let t: string;
   switch (v.phase) {
     case 'move': t = 'đang đi'; break;
@@ -42,7 +40,7 @@ export function describe(v: Villager, sim?: Sim): string {
     case 'goSite': t = 'đi tới công trường'; break;
     case 'build': t = 'đang xây'; break;
     case 'goStaff': t = 'đi vào nhà làm việc'; break;
-    case 'inside': t = v.job === 'food' ? 'đang làm ruộng' : `đang ${JOBS[v.job as 'craft'].name.toLowerCase()} trong nhà`; break;
+    case 'inside': t = v.job === 'food' ? 'đang làm ruộng' : `đang ${(JOBS[v.job as WorkJob]?.name ?? JOB_NAME[v.job]).toLowerCase()} trong nhà`; break;
     case 'goOrder': t = 'đi đặt chế tạo'; break;
     case 'goEquip': t = 'đi lấy đồ ở kho'; break;
     case 'wait': t = (sim && waitReason(v, sim)) || 'chờ việc'; break;
@@ -53,7 +51,7 @@ export function describe(v: Villager, sim?: Sim): string {
     }
     case 'fight': t = 'đang chiến đấu'; break;
     case 'flee': t = 'đang bỏ chạy'; break;
-    case 'down': t = `bị thương, còn ${gameDays(v.down)}`; break;
+    case 'down': t = `bị thương, còn ${gameDays(v.down, sim ? sim.dayLen : dayLength('stone'))}`; break;
     case 'goCarcass': t = 'đi lột da'; break;
     case 'skin': t = 'đang lột da'; break;
     case 'rescue': t = 'chạy đi cứu bạn'; break;
@@ -78,6 +76,25 @@ export function vitalsLine(sim: Sim, v: Villager): string {
   return parts.join(' · ');
 }
 
+/** What a person carries, short: "Cung ngắn - Áo da thú" for a fighter, hunter or scout, the tool of the trade ("Búa: đá") for a worker, "Tay không" when there is nothing. */
+export function equipLine(v: Villager): string {
+  if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') return `${v.weapon ? WEAPONS[v.weapon].name : 'Tay không'} - ${v.armor ? ARMORS[v.armor].name : 'không giáp'}`;
+  const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
+  return k && t ? `${TOOL_NAME[k]}: ${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'Tay không';
+}
+
+/** The two things a person carries, apart: the weapon (or the tool of the trade) and the armour (null when there is none or it does not matter). */
+export function equipParts(v: Villager): { kind: 'weapon' | 'tool'; main: string; armor: string | null } {
+  if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') return { kind: 'weapon', main: v.weapon ? WEAPONS[v.weapon].name : 'Tay không', armor: v.armor ? ARMORS[v.armor].name : null };
+  const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
+  return { kind: 'tool', main: k && t ? `${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'Tay không', armor: null };
+}
+
+/** Health and energy as now / most, nothing else: "Máu 123/123 · Sức 100/100". */
+export function vitalsShort(sim: Sim, v: Villager): string {
+  return `Máu ${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)} · Sức ${Math.round(v.energy)}/${Math.round(sim.maxEnergy(v))}`;
+}
+
 export function energyText(sim: Sim, v: Villager): string {
   const top = Math.round(sim.maxEnergy(v));
   // health, energy and the wear of the armour as now / most: they climb while the person sleeps and heals, and the armour goes down with every blow taken
@@ -86,5 +103,17 @@ export function energyText(sim: Sim, v: Villager): string {
   if (v.strain >= 5) parts.push(`mệt mỏi tích lũy <b>${Math.round(v.strain)}</b>`);
   if (v.torch) parts.push(`đuốc còn ${Math.max(1, Math.round(v.torch.dur / 60))} phút`);
   if (sim.sleepLocked(v)) parts.push(`<b>ngủ say</b>, dậy khi đạt ${v.lockUntil}%`);
+  return parts.join(' · ');
+}
+
+/** What a person holds, in one line for a list: the weapon and the armour of one who fights, hunts or scouts (with what the armour adds), the tool of one who works. Empty when he holds nothing to tell. */
+export function gearLine(v: Villager): string {
+  const parts: string[] = [];
+  if (v.job === 'fight' || v.job === 'hunt' || v.job === 'scout') {
+    parts.push(`Vũ khí: ${v.weapon ? WEAPONS[v.weapon].name : 'tay không'}`);
+    parts.push(`Giáp: ${v.armor ? armorText(ARMORS[v.armor]) : 'không'}`);
+  }
+  const k = TOOL_OF_JOB[v.job as WorkJob], t = k ? v.tools[k] : null;
+  if (k) parts.push(`${TOOL_NAME[k]}: ${t ? `${TIER_NAME[t.tier].toLowerCase()}${t.dur <= 0 ? ' (hỏng)' : ''}` : 'tay không'}`);
   return parts.join(' · ');
 }

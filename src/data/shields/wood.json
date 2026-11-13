@@ -1,0 +1,80 @@
+{
+ "_note": "The wooden shield of the stone-age guards (Lính gác, Lính canh): planks bound with rawhide, a bone boss and an ochre mark. Same layout as heater.json: poses are rows of letters drawn with the grip at (0,0) after (ox, oy); rest / guard are seen from the side, restFront / guardFront from the front.",
+ "name": "Wooden shield",
+ "palette": {
+  "rim": "#6a4a2a",
+  "rimH": "#a98456",
+  "face": "#b98a52",
+  "faceD": "#8a6236",
+  "boss": "#e6dfc8",
+  "mark": "#a8452a",
+  "markD": "#7a3320"
+ },
+ "legend": {
+  "R": "rim",
+  "H": "rimH",
+  "F": "face",
+  "f": "faceD",
+  "B": "boss",
+  "E": "mark",
+  "e": "markD"
+ },
+ "poses": {
+  "rest": {
+   "ox": -1,
+   "oy": -3,
+   "rows": [
+    ".RR.",
+    "RHFR",
+    "RFER",
+    "RFER",
+    "RfFR",
+    "RffR",
+    ".RR."
+   ]
+  },
+  "guard": {
+   "ox": -3,
+   "oy": -4,
+   "rows": [
+    "..RRR..",
+    ".RHFFR.",
+    "RHFFFFR",
+    "RFFEFFR",
+    "RFEBEFR",
+    "RFFEFFR",
+    "RfFFFfR",
+    ".RfffR.",
+    "..RRR.."
+   ]
+  },
+  "restFront": {
+   "ox": -1,
+   "oy": -3,
+   "rows": [
+    ".RR.",
+    "RHFR",
+    "RFER",
+    "RFER",
+    "RfFR",
+    "RffR",
+    ".RR."
+   ]
+  },
+  "guardFront": {
+   "ox": -3,
+   "oy": -4,
+   "rows": [
+    "..RRR..",
+    ".RHFFR.",
+    "RHFFFFR",
+    "RFFEFFR",
+    "RFEBEFR",
+    "RFFEFFR",
+    "RfFFFfR",
+    ".RfffR.",
+    "..RRR.."
+   ]
+  }
+ }
+}

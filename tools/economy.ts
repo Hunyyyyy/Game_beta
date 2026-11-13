@@ -4,7 +4,8 @@
  *   npm run economy
  */
 import { Sim } from '../src/sim/sim';
-import { DAY_LENGTH } from '../src/sim/constants';
+import { dayLength } from '../src/sim/constants';
+const DAY_LENGTH = dayLength('stone');
 import { BUILDINGS, levelCapByFire, POP_BY_FIRE } from '../src/sim/buildings';
 import { SEASON_DEF } from '../src/sim/calendar';
 import { rationAt } from '../src/sim/resources';

@@ -4,6 +4,7 @@ import { homeKind, isFree } from './idle';
 import { engage, entX, entY, HUNT_BACK, isFighter, resolve, threatsOf, weaponOf } from './battle';
 import type { Threat } from './battle';
 import { PLAYER } from './fightpolicy';
+import { perkPct } from './research';
 import { huntBrain } from './hunting';
 import type { Sim, Villager } from './sim';
 
@@ -33,12 +34,13 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
   // a unit that is hitting a chosen target and is not wavering needs no new look round him every tick: that is what makes a battle of hundreds heavy
   const looking = scanNow || v.phase === 'flee' || (v.phase === 'fight' && !v.fight.target);
   const sight = v.team === 'player' ? sim.sightOf(v) : SIGHT; // our soldiers see as far as they see: night and weather cut it, a torch brings it back
-  const threats = looking ? threatsOf(sim, v, sight + 1) : [];
+  const rally = v.guard && guardRallyOn(sim), reach = rally ? Math.max(sight, PLAYER.guardRally) : sight; // the research Báo động toàn tuyến: while the village is fought for every guard looks as far as the rally goes
+  const threats = looking ? threatsOf(sim, v, reach + 1) : [];
 
   if (rest) { // a threat wakes the sleeper; only a soldier then stays up for the night, everyone else runs and goes back to bed
     if (v.job === 'supply' && v.inTent) return false; // the supply soldiers sleep through it: they do not fight
     const watch = isFighter(v) && (v.guard || v.post >= 0 || sim.warIds.has(v.id)); // guards, the men of a tower and the army in the field wake at anything that comes within their sight
-    if (scanNow && threats.length && threats[0].d < (watch ? sight : 7)) {
+    if (scanNow && threats.length && threats[0].d < (watch ? reach : 7)) {
       if (isFighter(v)) v.nightOwl = true;
       if (v.post >= 0 && v.inside !== null && v.phase === 'sleep') { v.phase = 'inside'; return false; } // a tower man wakes where he lies and shoots from the tower (tickTowers)
       sim.resetTask(v);
@@ -48,11 +50,13 @@ export function brainPlayer(sim: Sim, v: Villager, dt: number): boolean {
 
   if (v.breaks && sim.breakBrain(v, dt)) return true; // hacking down a tree or an enemy work in a war
   const fighter = isFighter(v);
+  // a hunter is no soldier: with the village under attack he runs home and hides like the villagers (unless the player sent him somewhere: that order was handled above)
+  if (v.job === 'hunt' && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && scanNow && sim.attackReason() !== null && !v.fight.obey) { startFlee(sim, v, 8, threats[0]); return true; }
   if (!fighter) {
     // Civilians do not fight: anything hostile within sight sends them running to the campfire
     if (threats.length && threats[0].d < FEAR && v.phase !== 'fight') { startFlee(sim, v, 8, threats[0]); return true; }
-    // far from the danger, a villager with no trade still goes to a Nhà dân with a bed free while the village is under attack (none free: he stays where he is)
-    if (scanNow && isFree(v) && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && sim.attackReason() !== null && refugeOf(sim, v)) { startFlee(sim, v, 8); return true; }
+    // the village is under attack: every civilian runs home (a house with a bed free, else the fire or the soldiers), whether he sees the enemy or not
+    if (scanNow && isFree(v) && v.inside === null && v.phase !== 'sleep' && v.phase !== 'goHome' && sim.attackReason() !== null) { startFlee(sim, v, 8); return true; }
     return assistBrain(sim, v);
   }
   return fightBrain(sim, v, dt, threats);
@@ -76,6 +80,9 @@ function fleeSpot(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[
   const spot = sim.nearestFree(Math.floor(gx), Math.floor(gy), new Set());
   return spot ? sim.pathTo(v, spot[0], spot[1], 4000) : [];
 }
+
+/** Who runs into a house when it is dangerous: the villagers and the hunters (soldiers retreat to the fire or a comrade). */
+const shelters = (v: Villager): boolean => !isFighter(v) || v.job === 'hunt';
 
 /** How near a danger must be for a civilian to run from it, in tiles. */
 const FEAR = PLAYER.fear;
@@ -114,9 +121,9 @@ function runToRefuge(sim: Sim, v: Villager): boolean {
   return true;
 }
 
-/** No room anywhere: he runs on, away from the danger. */
+/** No room anywhere: he runs on, away from the danger (or round the village when it has no direction). */
 function runAway(sim: Sim, v: Villager, from?: { x: number; y: number }): Step[] {
-  const ax = from ? v.x - from.x : 0, ay = from ? v.y - from.y : 1, len = Math.hypot(ax, ay) || 1;
+  const ang = sim.rnd() * Math.PI * 2, ax = from ? v.x - from.x : Math.cos(ang), ay = from ? v.y - from.y : Math.sin(ang), len = Math.hypot(ax, ay) || 1;
   const spot = sim.nearestFree(Math.floor(v.x + (ax / len) * 12), Math.floor(v.y + (ay / len) * 12), new Set());
   return spot ? sim.pathTo(v, spot[0], spot[1], 4000) : [];
 }
@@ -128,13 +135,13 @@ export function startFlee(sim: Sim, v: Villager, secs: number, from?: { x: numbe
   v.phase = 'flee'; v.fleeT = secs;
   // a civilian runs into the house of his trade (the Nhà dân if he has none) and hides there until it is safe again; with no bed free he runs on.
   // Soldiers and hunters who retreat run to the fire or to a comrade
-  if (!isFighter(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = runAway(sim, v, from); return; }
+  if (shelters(v)) { sim.dangerAt = sim.time; if (runToRefuge(sim, v)) return; v.path = runAway(sim, v, from); return; }
   v.path = fleeSpot(sim, v, from);
 }
 
 function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
   if (v.phase !== 'flee') { startFlee(sim, v, 8, threats[0]); return true; }
-  const civilian = !isFighter(v), refuge = civilian && v.target >= 0 ? sim.getBuilding(v.target) : undefined;
+  const civilian = shelters(v), refuge = civilian && v.target >= 0 ? sim.getBuilding(v.target) : undefined;
   if (civilian) sim.dangerAt = sim.time;
   if (refuge && refuge.done) {
     const d = BUILDINGS[refuge.kind];
@@ -148,6 +155,7 @@ function fleeBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolea
     }
   }
   v.fleeT -= dt;
+  if (civilian && sim.attackReason() !== null) v.fleeT = Math.max(v.fleeT, 3); // he stays hidden for as long as the attack goes on
   if (threats.length && threats[0].d < FEAR) v.fleeT = Math.max(v.fleeT, 3); // keep running while they are close
   v.timer -= dt;
   if (v.timer <= 0) {
@@ -180,7 +188,6 @@ export function endOrder(sim: Sim, v: Villager): void {
   const f = v.fight;
   if (v.job !== 'fight') f.mode = 'none';
   else if (v.guard) { f.mode = 'guard'; f.anchor = homeSpot(sim, v) ?? { x: v.x, y: v.y }; }
-  else if (v.team === 'player' && v.squad < 0) { f.mode = 'none'; f.anchor = null; }
   else { f.mode = 'guard'; f.anchor = { x: v.x, y: v.y }; }
 }
 
@@ -203,9 +210,14 @@ function beastsAbout(sim: Sim): boolean {
   return on;
 }
 
+/** The research Báo động toàn tuyến (guard_ms3): while the village is fought for (an alarm, a fight, a raid or a pack at the village) every guard comes to the fight, however far he sees, if it is not farther than `PLAYER.guardRally` tiles. */
+export function guardRallyOn(sim: Sim): boolean {
+  return perkPct(sim.researched, 'guard_rally') > 0 && (sim.alarmUntil > sim.time || sim.battle.on || beastsAbout(sim));
+}
+
 function mayEngage(sim: Sim, v: Villager): boolean {
   if (v.job !== 'fight' || v.guard || v.team !== 'player') return true;
-  return sim.alarmUntil > sim.time || beastsAbout(sim) || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
+  return sim.alarmUntil > sim.time || beastsAbout(sim) || sim.battle.on || v.fight.mode === 'attack' || v.fight.mode === 'attackMove' || sim.inSkirmish(v) || (v.squad >= 0 && sim.plans.some((p) => p.status === 'running'));
 }
 
 function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boolean {
@@ -243,7 +255,8 @@ function fightBrain(sim: Sim, v: Villager, dt: number, threats: Threat[]): boole
     if (threats.length && threats[0].d < 8) { startFlee(sim, v, 6, threats[0]); return true; }
   } else if (threats.length && f.scan >= 0) {
     // a soldier of a camp, with no alarm and no order, only defends himself against what comes close
-    const range = !mayEngage(sim, v) ? Math.min(DEFENSIVE, sim.sightOf(v)) : f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
+    const own = !mayEngage(sim, v) ? Math.min(DEFENSIVE, sim.sightOf(v)) : f.mode === 'hold' ? weaponOf(v).range + 1.5 : v.stance === 'defensive' ? Math.min(DEFENSIVE, sim.sightOf(v)) : sim.sightOf(v);
+    const range = v.guard && guardRallyOn(sim) ? Math.max(own, PLAYER.guardRally) : own; // a guard of the rally goes for what he does not see himself
     // a guard goes for what harms the village: a stranger with a weapon, or a beast that is really attacking
     const pick = threats.find((t) => (!v.guard || t.t.kind === 'unit' || sim.animalById.get(t.t.id)?.state === 'attack') && t.d <= range && (!f.anchor || v.stance !== 'defensive' || Math.hypot(t.x - f.anchor.x, t.y - f.anchor.y) < DEFENSIVE + 2));
     if (pick) { f.target = pick.t; const e = resolve(sim, pick.t); if (e) { engage(sim, v, e, dt); return true; } }

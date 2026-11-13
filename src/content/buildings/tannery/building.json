@@ -1,0 +1,63 @@
+{
+ "kind": "tannery",
+ "name": "Xưởng thuộc da và dệt",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 4,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Bãi hố thuộc da",
+    "cost": {
+     "wood": 120,
+     "stone": 90
+    },
+    "buildTime": 320,
+    "cap": 0,
+    "craftSpeed": 1,
+    "slots": 2,
+    "hp": 430,
+    "sight": 0
+   },
+   {
+    "name": "Nhà tranh và gác phơi",
+    "cost": {
+     "wood": 195,
+     "stone": 165,
+     "iron": 6,
+     "hardwood": 8
+    },
+    "buildTime": 480,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 3,
+    "hp": 640,
+    "sight": 0
+   },
+   {
+    "name": "Xưởng nhuộm",
+    "cost": {
+     "wood": 255,
+     "stone": 315,
+     "iron": 14,
+     "hardwood": 14,
+     "leather": 10
+    },
+    "buildTime": 700,
+    "cap": 0,
+    "craftSpeed": 1.5,
+    "slots": 4,
+    "hp": 900,
+    "sight": 0
+   }
+  ]
+ }
+}

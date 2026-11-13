@@ -43,7 +43,7 @@ export class WarBar {
   }
 
   /** The attack that is deployed, if any. */
-  plan(): Plan | undefined { return this.c.sim.plans.find((p) => p.kind === 'attack' && p.status === 'running'); }
+  plan(): Plan | undefined { return this.c.sim.plans.find((p) => p.kind === 'attack' && p.status === 'running' && !p.skirmish); } // a skirmish (the player's own orders) shows no war bar
   get active(): boolean { return !!this.plan(); }
 
   /** A squad that cannot go on along its arrow: what is in the way, and the soldiers to send to break it down (they work fast and gather nothing). */

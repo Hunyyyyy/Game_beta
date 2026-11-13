@@ -33,16 +33,22 @@ export function playerCap(level: number): { economy: number; military: number; t
   return { economy, military, total: cfg.power.economy * economy + cfg.power.military * military };
 }
 
-/** What one tribe should be worth at a campfire level of the player: its share of (the player's best / playerEdge), split into economy and army. `k` is the tribe's own strength factor. */
-export function tribeTarget(level: number, tribe: { share: number; military: number }, k: number): { economy: number; military: number } {
-  const total = (playerCap(level).total / cfg.playerEdge) * tribe.share * k;
-  return { military: (total * tribe.military) / cfg.power.military, economy: (total * (1 - tribe.military)) / cfg.power.economy };
-}
+export type TierId = 'weak' | 'normal' | 'medium' | 'boss' | 'rebel' | 'raider';
+export const TIERS = cfg.tiers;
 
-/** What a boss village is worth at a campfire level of the player: one step above him (the top level stays the top), at `boss.power` of the most army he can field there and `boss.economy` of his economy. */
-export function bossTarget(level: number): { economy: number; military: number } {
-  const cap = playerCap(clampLevel(level + 1));
-  return { military: cap.military * cfg.boss.power, economy: cap.economy * cfg.boss.economy };
+/** The camp level of a village of a tier when the player's campfire is at `fire`: his plus the tier's edge, from 1 up to the tier's top level (so that a weak village stays easy and the boss stays a step above). */
+export const tierLevel = (fire: number, tier: TierId): number => Math.max(1, Math.min(TIERS[tier].capLevel, Math.round(fire) + TIERS[tier].edge));
+
+/**
+ * What a village of a tier is worth when the player's campfire is at `fire`: the tier's strength of the most the player can field at the level of its camp
+ * (tierLevel: below his fire for a weak village, level with it for a normal one, a step above for a medium one; a boss is worth boss.power of the most he can field a step above him,
+ * and boss.economy of his economy).
+ */
+export function tierTarget(fire: number, tier: TierId): { economy: number; military: number } {
+  const t = TIERS[tier];
+  if (tier === 'boss' || tier === 'rebel') { const cap = playerCap(tierLevel(fire, tier)), share = tier === 'rebel' ? cfg.capture.rebel.share : 1; return { military: cap.military * cfg.boss.power * share, economy: cap.economy * cfg.boss.economy * share }; }
+  const cap = playerCap(tierLevel(fire, tier)), strength = (t as { strength: number }).strength;
+  return { military: cap.military * strength, economy: cap.economy * strength };
 }
 
 /** The army power a raid of this ratio brings: the ratio of the player's army now, never under `raid.floor` nor over `raid.ceiling` of the most the player can field at this campfire level. */
@@ -55,8 +61,8 @@ export function raidPower(playerMilitary: number, ratio: number, level: number):
  * The percent of every combat stat (army) and of the speed of work (economy) the people of a tribe need on top of the plain person to be worth their target,
  * given how many soldiers and workers it has. An army's worth grows with the cube of the percent (health, strength and defence all rise), a worker's with the first power.
  */
-export function tribeBonuses(level: number, tribe: { share: number; military: number }, k: number, soldiers: number, workers: number, boss = false): { mil: number; eco: number } {
-  const t = boss ? bossTarget(level) : tribeTarget(level, tribe, k), [lo, hi] = cfg.bonusClamp, clamp = (x: number) => Math.max(lo, Math.min(hi, x));
+export function tribeBonuses(level: number, tier: TierId, soldiers: number, workers: number): { mil: number; eco: number } {
+  const t = tierTarget(level, tier), [lo, hi] = cfg.bonusClamp, clamp = (x: number) => Math.max(lo, Math.min(hi, x));
   return { mil: soldiers > 0 ? clamp(Math.cbrt(t.military / soldiers) - 1) : 0, eco: workers > 0 ? clamp(t.economy / workers - 1) : 0 };
 }
 

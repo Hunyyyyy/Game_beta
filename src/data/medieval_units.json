@@ -1,0 +1,243 @@
+{
+  "_note": "Lính thời Trung cổ (bản vẽ). armor: src/data/armors; tool: công cụ cầm tay (kind/tier, shield: src/data/shields); anims: động tác dùng cho từng hành động (src/data/anims.json); mount: loài thú cưỡi (src/data/animals/bodies.json) với bộ yên cương (gear), clips: động tác của thú tương ứng mỗi hành động, lift/dx: người ngồi cao và lệch bao nhiêu điểm ảnh so với chân thú. Xem bằng npm run viewer -> dist/medieval-viewer.html.",
+  "footman": {
+    "name": "Bộ binh cấp 1",
+    "tier": 1,
+    "armor": "footman",
+    "tool": {
+      "tier": 4,
+      "shield": "heater"
+    },
+    "anims": {
+      "idle": "shield_idle",
+      "walk": "shield_walk",
+      "run": "shield_run",
+      "attack": "shield_attack",
+      "guard": "shield_guard"
+    }
+  },
+  "archer": {
+    "name": "Cung thủ cấp 1",
+    "tier": 1,
+    "armor": "archer",
+    "tool": {
+      "tier": 1,
+      "kind": "composite_bow"
+    },
+    "anims": {
+      "idle": "shoot_idle",
+      "walk": "shoot_walk",
+      "run": "shoot_run",
+      "attack": "shoot_attack",
+      "guard": "shoot_guard"
+    }
+  },
+  "rider": {
+    "name": "Kỵ binh cấp 1",
+    "tier": 1,
+    "armor": "rider",
+    "tool": {
+      "tier": 4
+    },
+    "anims": {
+      "idle": "rider_idle",
+      "walk": "rider_walk",
+      "run": "rider_run",
+      "attack": "rider_attack",
+      "guard": "rider_guard"
+    },
+    "alt": {
+      "attack": "rider_slash"
+    },
+    "mount": {
+      "species": "horse",
+      "lift": 19,
+      "dx": -8,
+      "gear": {
+        "saddle": "#6a4424",
+        "blanket": "#8a2a24",
+        "chest": "#5a3a1e",
+        "stud": "#c3ccd2",
+        "bridle": "#3a2410"
+      },
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "run",
+        "guard": "idle"
+      }
+    }
+  },
+  "guard": {
+    "name": "Hộ vệ hoàng gia (bậc 2)",
+    "tier": 2,
+    "armor": "guard",
+    "tool": {
+      "tier": 5,
+      "shield": "tower",
+      "kind": "greatsword"
+    },
+    "anims": {
+      "idle": "shield_idle",
+      "walk": "shield_walk",
+      "run": "shield_run",
+      "attack": "shield_attack",
+      "guard": "shield_guard"
+    }
+  },
+  "marksman": {
+    "name": "Cung tiễn hoàng gia (bậc 2)",
+    "tier": 2,
+    "armor": "marksman",
+    "tool": {
+      "tier": 5,
+      "kind": "longbow"
+    },
+    "anims": {
+      "idle": "shoot_idle",
+      "walk": "shoot_walk",
+      "run": "shoot_run",
+      "attack": "shoot_attack",
+      "guard": "shoot_guard"
+    }
+  },
+  "royalrider": {
+    "name": "Kỵ binh hoàng gia (bậc 2)",
+    "tier": 2,
+    "armor": "royalrider",
+    "tool": {
+      "tier": 5,
+      "kind": "heavy_lance"
+    },
+    "anims": {
+      "idle": "rider_idle",
+      "walk": "rider_walk",
+      "run": "rider_run",
+      "attack": "rider_attack",
+      "guard": "rider_guard"
+    },
+    "mount": {
+      "species": "horse_armored",
+      "lift": 19,
+      "dx": -8,
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "run",
+        "guard": "idle"
+      }
+    }
+  },
+  "templar": {
+    "name": "Dũng sĩ thánh giáo (bậc 3)",
+    "tier": 3,
+    "armor": "templar",
+    "tool": {
+      "tier": 5,
+      "kind": "knight_sword",
+      "shield": "aegis"
+    },
+    "anims": {
+      "idle": "shield_idle",
+      "walk": "shield_walk",
+      "run": "shield_run",
+      "attack": "shield_attack",
+      "guard": "shield_guard"
+    }
+  },
+  "sniper": {
+    "name": "Lính bắn tỉa (bậc 3)",
+    "tier": 3,
+    "armor": "sniper",
+    "tool": {
+      "tier": 5,
+      "kind": "alloy_crossbow"
+    },
+    "anims": {
+      "idle": "xbow_idle",
+      "walk": "xbow_walk",
+      "run": "xbow_run",
+      "attack": "xbow_attack",
+      "guard": "xbow_guard"
+    }
+  },
+  "paladin": {
+    "name": "Thánh kỵ sĩ (bậc 3)",
+    "tier": 3,
+    "armor": "paladin",
+    "tool": {
+      "tier": 5,
+      "kind": "paladin_lance"
+    },
+    "anims": {
+      "idle": "rider_idle",
+      "walk": "rider_walk",
+      "run": "rider_run",
+      "attack": "rider_attack",
+      "guard": "rider_guard"
+    },
+    "mount": {
+      "species": "horse_silver",
+      "lift": 19,
+      "dx": -8,
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "run",
+        "guard": "idle"
+      }
+    }
+  },
+  "watchman": {
+    "name": "Tuần đinh (lính gác bậc 1)",
+    "tier": 1,
+    "armor": "watchman",
+    "tool": {
+      "tier": 4,
+      "kind": "short_spear",
+      "shield": "wood"
+    },
+    "anims": {
+      "idle": "gpost_spear_idle",
+      "walk": "post_spear_walk",
+      "run": "post_spear_walk",
+      "attack": "post_spear_attack",
+      "guard": "post_spear_guard"
+    }
+  },
+  "sergeant": {
+    "name": "Lính gác chuyên nghiệp (lính gác bậc 2)",
+    "tier": 2,
+    "armor": "sergeant",
+    "tool": {
+      "tier": 5,
+      "kind": "pike"
+    },
+    "anims": {
+      "idle": "gpost_pike_idle",
+      "walk": "thrust_walk",
+      "run": "thrust_walk",
+      "attack": "thrust_attack",
+      "guard": "thrust_guard"
+    }
+  },
+  "warden": {
+    "name": "Cận vệ thành trì (lính gác bậc 3)",
+    "tier": 3,
+    "armor": "warden",
+    "tool": {
+      "tier": 5,
+      "kind": "ward_sword"
+    },
+    "anims": {
+      "idle": "gpost_sword_idle",
+      "walk": "gpost_sword_walk",
+      "run": "gpost_sword_walk",
+      "attack": "shield_attack",
+      "guard": "shield_guard"
+    }
+  }
+}

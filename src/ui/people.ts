@@ -1,9 +1,10 @@
 /** How a villager looks in a list of a house: one tile, the same everywhere (the houses of a role, the beds, the staff of a house). Change it here. */
-import { roleName, roleOf } from '../sim/jobs';
-import { CHAINS } from '../sim/research';
+import { roleName, roleOf, titleOfRole } from '../sim/jobs';
+import { CHAINS, researchRoles, statsFor } from '../sim/research';
 import type { Villager } from '../sim/model';
 import type { Ctx } from './ctx';
-import { describe, vitalsLine } from './describe';
+import { describe, equipParts, gearLine, vitalsLine } from './describe';
+import { icon } from './icons';
 import { dlg } from './gamedialog';
 import { h, iconCanvas } from './dom';
 import { statIcon } from './resicons';
@@ -30,7 +31,7 @@ const faces = new Map<string, HTMLCanvasElement>();
  * Drawn once for each look and kept; every call gives a fresh copy to put in the page.
  */
 export function avatar(c: Ctx, v: Villager): HTMLElement {
-  const key = `${v.look.sex}|${v.look.skin}|${v.look.hair}|${v.armor ?? '-'}`;
+  const key = `${v.look.sex}|${v.look.skin}|${v.look.hair}|${v.armor ?? c.sprites.outfitOf(v) ?? '-'}`;
   let face = faces.get(key);
   if (!face) {
     const still = { ...v, facing: 'front', anim: 'idle', animClock: 0, hold: null, carry: null, lit: false } as Villager;
@@ -54,20 +55,45 @@ export function personTile(c: Ctx, v: Villager, o: PersonOptions = {}): HTMLElem
   const pills = o.stats ? h('div', { class: 'dpills' }, ...o.stats.map((id) => statPill(sim, v, id))) : o.vitals === false ? null : h('div', { class: 'dpills' },
     dlg.pill(statIcon('hp'), `${Math.ceil(v.health)}`, hp < 0.35 ? 'bad' : hp < 0.7 ? 'warn' : undefined, 'Máu hiện có'),
     dlg.pill(statIcon('sta'), `${Math.round(v.energy)}%`, v.energy < 20 ? 'bad' : v.energy < 50 ? 'warn' : undefined, 'Sức còn lại'));
-  const trade = o.trade && role ? dlg.chip(roleName(role, sim.era)) : null;
-  return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === '' ? null : dlg.more(o.note ?? describe(v, sim)), o.stats ? dlg.more(vitalsLine(sim, v)) : null, pills], o.actions?.some(Boolean) ? h('div', { class: 'dacts' }, ...o.actions) : null);
+  const trade = o.trade && role ? dlg.chip(titleOfRole(v, sim.era) ?? roleName(role, sim.era)) : null;
+  return dlg.tile({ pic: avatar(c, v), name: v.name, chip: trade, state: o.state }, [o.note === '' ? null : dlg.more(o.note ?? describe(v, sim)), gearLine(v) ? dlg.more(gearLine(v)) : null, o.stats ? dlg.more(vitalsLine(sim, v)) : null, pills], o.actions?.some(Boolean) ? h('div', { class: 'dacts' }, ...o.actions) : null);
+}
+
+/** The strip along the edge of a row: `add` (an arrow to the right, at the right edge) or `remove` (an arrow to the left, at the left edge); it is as tall as the row. */
+export interface RowStrip { kind: 'add' | 'remove'; onclick: () => void; title: string; disabled?: boolean }
+
+/**
+ * A short row for a villager in the two lists of a house: the name (and a chip), what they carry (weapon or tool, armour), health and energy on the line of the name, icon buttons at the right and an arrow strip along the edge that moves them to the other list. A tap on the row opens the detail.
+ */
+export function personRow(c: Ctx, v: Villager, o: { chip?: string; strip?: RowStrip; actions?: Array<HTMLElement | null> } = {}): HTMLElement {
+  const { sim } = c, acts = o.actions?.filter(Boolean) ?? [], maxE = sim.maxEnergy(v), eq = equipParts(v);
+  const part = (name: 'weapon' | 'tool' | 'equip' | 'hp' | 'energy', text: string, o2: { low?: boolean; title: string }) => h('span', { class: `pstat${o2.low ? ' low' : ''}`, title: o2.title }, icon(name, 13), text);
+  const strip = o.strip ? h('button', { class: `pstrip ${o.strip.kind}`, type: 'button', title: o.strip.title, 'aria-label': o.strip.title, disabled: !!o.strip.disabled, onclick: o.strip.onclick }, icon(o.strip.kind === 'add' ? 'next' : 'prev', 18)) : null;
+  const body = h('div', { class: 'pbody', title: 'Bấm để xem chi tiết và giao việc' },
+    h('div', { class: 'phead' },
+      h('div', { class: 'dname' }, h('b', { text: v.name }), o.chip ? dlg.chip(o.chip) : null),
+      h('div', { class: 'pvit' },
+        part('hp', `${Math.max(0, Math.ceil(v.health))}/${Math.round(v.maxHealth)}`, { low: v.health / v.maxHealth < 0.35, title: 'Máu' }),
+        part('energy', `${Math.round(v.energy)}/${Math.round(maxE)}`, { low: v.energy < 20, title: 'Sức' }))),
+    h('div', { class: 'pmeta' }, part(eq.kind, eq.main, { title: eq.kind === 'weapon' ? 'Vũ khí' : 'Dụng cụ' }), eq.armor ? part('equip', eq.armor, { title: 'Giáp' }) : null));
+  body.addEventListener('click', () => openDetail(c, v));
+  return h('div', { class: `dtile prow${o.strip ? ` has-${o.strip.kind}` : ''}` }, o.strip?.kind === 'remove' ? strip : null, body, acts.length ? h('div', { class: 'dacts' }, ...acts) : null, o.strip?.kind === 'add' ? strip : null);
 }
 
 /** The button that opens the detail dialog of a villager. */
 export function detailButton(c: Ctx, v: Villager, title = 'Giao việc và chi tiết'): HTMLButtonElement {
+  return dlg.button('⚙', () => openDetail(c, v), { icon: true, title });
+}
+
+/** Open the detail dialog of a villager (it comes back to this house when closed). */
+export function openDetail(c: Ctx, v: Villager): void {
   const { ctl } = c;
-  return dlg.button('⚙', () => { ctl.detailFrom = ctl.selectedBuilding; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding(); }, { icon: true, title });
+  ctl.detailFrom = ctl.selectedBuilding; ctl.selected.clear(); ctl.selected.add(v.id); ctl.openDetail = true; ctl.closeBuilding();
 }
 
 /** The stats that matter for a role: the line of the research tree it belongs to (the soldiers also have the stats of the weapon in their hand). */
 export function roleStats(role: string): StatId[] {
-  if (role === 'guard') role = 'foot';
-  const chain = Object.values(CHAINS).find((ch) => ch.roles.includes(role));
-  const ids = (chain?.order ?? []) as StatId[];
-  return role === 'foot' || role === 'cavalry' || role === 'archer' ? [...ids, 'aspd', 'crit', 'critd'] : ids;
+  const chain = Object.values(CHAINS).find((ch) => researchRoles(role).some((r) => ch.roles.includes(r)));
+  const own = researchRoles(role).find((r) => chain?.roles.includes(r)) ?? role;
+  return chain ? (statsFor(chain, own) as StatId[]) : [];
 }

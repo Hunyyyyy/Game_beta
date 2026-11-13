@@ -14,8 +14,8 @@
  "limit": [
   0,
   1,
-  2,
-  4
+  3,
+  6
  ],
  "levels": {
   "stone": [
@@ -41,34 +41,39 @@
     "cap": 0,
     "craftSpeed": 1,
     "slots": 3,
-    "hp": 700,
+    "hp": 600,
     "sight": 13
    },
    {
     "name": "Chòi cao gia cố",
     "cost": {
-     "wood": 45,
-     "stone": 11
+     "wood": 57,
+     "stone": 13
     },
-    "buildTime": 211,
+    "buildTime": 277,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 4,
-    "hp": 1200,
-    "sight": 16
-   },
+    "hp": 750,
+    "sight": 18
+   }
+  ],
+  "ancient": [
    {
-    "name": "Chòi cao kiên cố",
+    "name": "Gạch ngói (trung cổ)",
     "cost": {
-     "wood": 68,
-     "stone": 15
+     "wood": 123,
+     "stone": 27,
+     "iron": 15,
+     "steel": 6,
+     "hardwood": 8
     },
-    "buildTime": 342,
+    "buildTime": 513,
     "cap": 0,
-    "craftSpeed": 1,
-    "slots": 4,
-    "hp": 1800,
-    "sight": 19
+    "craftSpeed": 1.25,
+    "slots": 5,
+    "hp": 1200,
+    "sight": 21
    }
   ]
  }

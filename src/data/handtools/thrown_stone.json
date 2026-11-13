@@ -1,0 +1,31 @@
+{
+ "name": "Thrown stone",
+ "handle": {
+  "length": 0,
+  "width": 1,
+  "color": "wood"
+ },
+ "head": [
+  {
+   "x": -1,
+   "y": -3,
+   "w": 3,
+   "h": 3,
+   "color": "head"
+  },
+  {
+   "x": -1,
+   "y": -3,
+   "w": 2,
+   "h": 1,
+   "color": "light"
+  },
+  {
+   "x": 1,
+   "y": -1,
+   "w": 1,
+   "h": 1,
+   "color": "dark"
+  }
+ ]
+}

@@ -5,6 +5,7 @@
   <canvas id="view" tabindex="0" aria-label="Bản đồ làng"></canvas>
 
   <div class="top">
+    <button class="sm cog" id="btnSettings" title="Cài đặt: âm thanh, hiệu ứng thời tiết, chỉ số">⚙</button>
     <div class="hud" id="resBar">
       <span class="res" id="rFood" title="Thức ăn"><i style="background:#c2573a"></i><b>0</b><small>/0</small></span>
       <span class="res" id="rWood" title="Gỗ"><i style="background:#9a6a35"></i><b>0</b><small>/0</small></span>
@@ -19,21 +20,24 @@
       <span class="res" id="rPop" title="Số dân"><i style="background:#e8c4a0"></i><b>0</b><small>/40</small></span>
     </div>
     <button class="sm speedbtn" id="btnSpeed" title="Tốc độ game: bấm để đổi 1× → 2× → 4× → 16× rồi về 1× (Q E R T chọn nhanh, P tạm dừng)">1×</button>
+    <div class="daybar" id="daybar" title="Thời gian trong ngày: thanh sáng là ban ngày, thanh tối là đêm; vạch trắng là bây giờ"><canvas id="daybarCanvas" width="132" height="18"></canvas><small id="daybarText"></small></div>
+    <button class="sm" id="btnLegion" aria-pressed="false" hidden title="Điều khiển đội quân hành quân: bật lên rồi chạm đất để cả đội đi tới đó, giữ nguyên đội hình">⚑ Đội quân</button>
     <button class="sm" id="btnSkip" title="Tua qua đêm: chạy nhanh tới sáng, chỉ khi cả làng đã ngủ và không ai tấn công; dừng ngay nếu có chuyện" hidden>⏭ Qua đêm</button>
-    <div class="hud" id="clockLine"><span class="clock" id="clock">Ngày 1</span></div>
+    <button class="sm" id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
     <span class="spacer"></span>
-    <button id="btnFull" title="Toàn màn hình và khóa ngang" aria-pressed="false">⛶</button>
-    <button id="btnBuild" class="primary" title="Xây dựng (B)">🔨 Xây</button>
-    <button id="btnStats" title="Chỉ số đã nghiên cứu cho từng loại dân, nghề và lính">📊 Chỉ số</button>
-    <button id="btnMenu" title="Menu (Tab)">☰ Menu</button>
+    <button class="sm" id="btnMap" title="Bản đồ: nơi đã khám phá, các làng, và chọn nơi cho dân khai thác (phím M)">🗺</button>
+    <button class="sm" id="btnDev" title="Menu: công trình đã dựng, ván chơi (lưu/tải), công cụ dev (phím Tab)">🛠</button>
   </div>
 
   <button class="qbtn" id="btnQuest" title="Nhiệm vụ" aria-pressed="false">📜<i class="dot" hidden>!</i></button>
   <div id="qpanel" hidden></div>
   <div id="spanel" hidden></div>
+  <div id="epanel" hidden></div>
   <button class="qbtn nbtn" id="btnNotice" title="Thông báo: việc sắp tới hoặc đang diễn ra trong làng" aria-pressed="false">🔔<i class="dot" hidden>!</i></button>
   <div id="npanel" hidden></div>
-  <canvas id="mini" aria-label="Bản đồ nhỏ, bấm để mở bản đồ lớn" title="Bấm để mở bản đồ lớn"></canvas>
+  <canvas id="mini" hidden aria-label="Bản đồ nhỏ" title="Bản đồ nhỏ"></canvas>
+  <button class="buildfab" id="btnBuild" title="Xây dựng (B)" aria-label="Xây dựng"></button>
+  <div id="dlgscene" hidden></div>
   <div class="toast" id="toast" role="status"></div>
 
   <div class="bbar" id="bbar" hidden></div>
@@ -44,6 +48,13 @@
   <div id="udetail" hidden></div>
 
   <div class="warbar" id="warbar" hidden></div>
+
+  <!-- hold the mouse (or a finger) on the map: this ring opens round it; let go over a button to press it -->
+  <div id="radial" hidden>
+    <span class="rdot"></span>
+    <button class="ico" id="btnArmy" aria-pressed="false" title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">⚔</button>
+    <button class="ico" id="btnNone" title="Bỏ chọn (Esc)">✕</button>
+  </div>
 
   <div class="sheet" id="sheet">
     <div class="card" id="placeBar" hidden>
@@ -56,12 +67,9 @@
     <div id="tcard" hidden></div>
     <div id="ucard" hidden></div>
     <div class="selbar">
-      <button id="btnMulti" aria-pressed="false" title="Bật để chạm từng dân hoặc kéo khung chọn nhiều dân">Chọn nhiều</button>
-      <button id="btnArmy" aria-pressed="false" title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">Gọi quân</button>
-      <button id="btnAll" title="Chọn tất cả dân (Ctrl+A)">Chọn hết</button>
-      <button id="btnNone" title="Bỏ chọn (Esc)">Bỏ chọn</button>
       <button id="btnHome" hidden title="Đưa camera về lửa trại">⌂ Về làng</button>
-      <button id="btnFold" aria-pressed="false" title="Ẩn các bảng thông tin để thấy rõ bản đồ">Ẩn bảng</button>
+      <button id="btnArmyBar" class="mini" hidden title="Gọi quân đội ra khỏi trại (bấm lại để cho về)">⚔</button>
+      <span id="selPill" class="selpill" hidden><button id="btnSelCount" type="button" title="Số người đang chọn (bấm để đưa camera tới họ)">▣ 0</button><button id="btnSelNone" type="button" title="Bỏ chọn (Esc)" aria-label="Bỏ chọn">✕</button></span>
     </div>
   </div>
 
@@ -77,7 +85,9 @@
     <div class="wrap">
       <canvas id="bigmapCanvas"></canvas>
       <button class="close" id="btnCloseMap">✕ Đóng</button>
-      <div class="hint maphint"><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button><p class="sub hintbody" hidden>Chạm vào bản đồ để nhảy tới đó.</p></div>
+      <div class="mapzoom"><button class="sm" id="btnMapZoomIn" type="button" title="Phóng to (lăn chuột lên)">＋</button><button class="sm" id="btnMapZoomOut" type="button" title="Thu nhỏ (lăn chuột xuống)">－</button><button class="sm" id="btnMapZoomReset" type="button" title="Về cỡ ban đầu">⟲</button></div>
+      <div class="mapbar" id="mapbar"><small id="mapInfo">Chạm vào bản đồ để chọn một điểm.</small><span class="btns"><button class="sm" id="btnMapGather" type="button" disabled>⛏ Khai thác quanh đây</button><button class="sm" id="btnMapClear" type="button" disabled>Bỏ ưu tiên</button></span></div>
+      <div class="hint maphint"><button class="q" type="button" aria-label="Hướng dẫn" aria-expanded="false">?</button><p class="sub hintbody" hidden>Vùng đen: chưa biết, hãy chọn dân rồi chạm đất ở rìa để đi khám phá. Vùng tối: đã đi qua. Chấm cam/đỏ: làng đã thấy; dấu ☁: có khói bếp quanh đó. Chạm một điểm đã khám phá rồi bấm “Khai thác quanh đây” để dân đốn gỗ, đào đá, hái lượm ở đó.</p></div>
     </div>
   </div>
 

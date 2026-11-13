@@ -30,7 +30,7 @@
     },
     "buildTime": 110,
     "cap": 0,
-    "craftSpeed": 1,
+    "craftSpeed": 1.1,
     "slots": 3,
     "hp": 270,
     "sight": 0
@@ -38,27 +38,31 @@
    {
     "name": "Đá",
     "cost": {
-     "wood": 60,
-     "stone": 50
+     "wood": 66,
+     "stone": 67
     },
-    "buildTime": 160,
+    "buildTime": 197,
     "cap": 0,
-    "craftSpeed": 1,
-    "slots": 3,
-    "hp": 360,
-    "sight": 0
-   },
-   {
-    "name": "Đá gia cố",
-    "cost": {
-     "wood": 72,
-     "stone": 83
-    },
-    "buildTime": 233,
-    "cap": 0,
-    "craftSpeed": 1,
+    "craftSpeed": 1.25,
     "slots": 4,
-    "hp": 450,
+    "hp": 405,
+    "sight": 0
+   }
+  ],
+  "ancient": [
+   {
+    "name": "Gạch ngói (trung cổ)",
+    "cost": {
+     "wood": 130,
+     "stone": 150,
+     "iron": 20,
+     "hardwood": 15
+    },
+    "buildTime": 350,
+    "cap": 0,
+    "craftSpeed": 1.45,
+    "slots": 5,
+    "hp": 675,
     "sight": 0
    }
   ]

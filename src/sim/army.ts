@@ -1,7 +1,7 @@
 /** The army: squads (đội), their formations (trận pháp) and mastery, how formations change a blow, clusters (cụm) and the log of a fight. */
 import { COMMAND, SQUAD_MAX, clusterize, FORMATIONS, FormationId, FORMATION_IDS, formationOffsets, masteryFactor, placeOffset, armOfWeapon, iconCount } from './formations';
-import { DAY_LENGTH } from './constants';
 import { armOf, effWeapon, Ent } from './battle';
+import { ANIMALS } from './combat';
 import { RESEARCH, unlockedMax } from './research';
 import { CELLS_DEFAULT, SQUADS_DEFAULT } from './progression';
 import type { Sim } from './sim';
@@ -139,22 +139,19 @@ export function trainSquad(sim: Sim, squadId: number, on: boolean): string | nul
   const s = squadById(sim, squadId);
   if (!s) return 'Không có đội này';
   if (!on) { s.training = false; return null; }
-  const field = sim.building('drill');
-  if (!field) return 'Cần dựng Bãi tập';
-  s.training = true;
-  squadMove(sim, s, field.x + 1.5, field.y + 1.5, 'hold');
-  return null;
+  return 'Bãi tập không còn luyện đội hình: dùng tab "Hành quân" của Bãi tập để lập quân'; // the drill ground is the place where the army is formed and set marching now (legion.ts)
 }
 
 /** Drill raises the mastery of the formation in use; what is not used is slowly forgotten. */
 export function tickTraining(sim: Sim, dt: number): void {
+  if (dt >= 0) return; // switched off: mastery no longer rises or fades (the Bãi tập is for the march now)
   const field = sim.building('drill');
   for (const s of sim.squads) {
     const us = squadUnits(sim, s);
     const near = field && us.length ? us.filter((v) => Math.hypot(v.x - (field.x + 1.5), v.y - (field.y + 1.5)) < 7).length >= Math.ceil(us.length / 2) : false;
     for (const f of FORMATION_IDS) {
       if (f === s.formation && s.training && near) s.mastery[f] = Math.min(100, s.mastery[f] + COMMAND.mastery.perSecond * dt);
-      else s.mastery[f] = Math.max(0, s.mastery[f] - (COMMAND.mastery.decayPerDay * dt) / DAY_LENGTH);
+      else s.mastery[f] = Math.max(0, s.mastery[f] - (COMMAND.mastery.decayPerDay * dt) / sim.dayLen);
     }
     if (s.training && !field) s.training = false;
   }
@@ -217,26 +214,51 @@ export function drawnFigures(sim: Sim): Set<number> | null {
 
 // ---------------------------------------------------------------- the log of a fight
 export type BattleEvent = 'ours' | 'foes' | 'breach' | 'shot' | 'note';
-/** Count a happening in the fight that is on. */
+/** Count a happening in the fight that is on (and the words of it, for the war that is on). */
 export function noteBattle(sim: Sim, kind: BattleEvent, text = ''): void {
+  if (kind === 'note' && text) sim.warNote(text);
   const b = sim.battle;
   if (!b.on) return;
   if (kind === 'ours') b.ourDead++; else if (kind === 'foes') b.foeDead++; else if (kind === 'breach') b.breaches++; else if (kind === 'shot') b.shots++;
   else if (text && b.notes.length < 12) b.notes.push(text);
 }
 
-/** A fight starts when raiders are on the field and ends ten seconds after the last is gone: it is written up in words. */
-export function tickBattle(sim: Sim, dt: number): void {
-  const b = sim.battle, hostile = sim.foes.some((f) => f.ai?.role === 'raider' && f.health > 0);
-  if (hostile && !b.on) { Object.assign(b, { on: true, since: sim.time, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [] }); return; }
+/** One of ours fell in the fight that is on: a soldier counts by his arm, anybody else (a villager) apart. */
+export function noteLoss(sim: Sim, v: Villager): void {
+  const b = sim.battle;
   if (!b.on) return;
+  if (v.job === 'fight') { b.ourDead++; b.ourDeadArm[armOf(v)]++; } else b.civDead++;
+}
+
+/** The sum of the blows of the fight that is on: struck by ours (`dealt`) or taken. */
+export function noteDamage(sim: Sim, dealt: boolean, n: number): void {
+  const b = sim.battle;
+  if (!b.on || n <= 0) return;
+  if (dealt) b.dmgDealt += n; else b.dmgTaken += n;
+}
+
+const packOf = (sim: Sim) => sim.animals.filter((a) => a.raid && a.state !== 'dead');
+
+/** A fight starts when raiders (or a raiding pack) are on the field and ends ten seconds after the last is gone: it is written up in words and kept in the log. */
+export function tickBattle(sim: Sim, dt: number): void {
+  const b = sim.battle, raiders = sim.foes.filter((f) => f.ai?.role === 'raider' && f.health > 0), pack = packOf(sim), here = raiders.length + pack.length, hostile = here > 0;
+  if (hostile && !b.on) {
+    const t = sim.tribes.find((x) => x.raid && x.raid.phase === 'march'), sp = pack[0] ? ANIMALS[pack[0].species].name : '';
+    Object.assign(b, { on: true, since: sim.time, quiet: 0, ourDead: 0, foeDead: 0, breaches: 0, shots: 0, notes: [], kind: raiders.length ? 'raid' : 'beasts', name: raiders.length ? (t?.def.name ?? 'Kẻ địch') : sp, startDay: sim.day, night: sim.restTime, peak: here, ourDeadArm: { foot: 0, archer: 0, cavalry: 0 }, civDead: 0, dmgDealt: 0, dmgTaken: 0 });
+    return;
+  }
+  if (!b.on) return;
+  b.peak = Math.max(b.peak, here);
   b.quiet = hostile ? 0 : b.quiet + dt;
   if (b.quiet < 10) return;
   b.on = false; sim.alarmUntil = 0;
-  const lines = [`Trận kéo dài ${Math.max(1, Math.round((sim.time - b.since) / 60))} phút: ta mất ${b.ourDead}, địch mất ${b.foeDead}.`];
+  const minutes = Math.max(1, Math.round((sim.time - b.since) / 60));
+  const lines = [`Trận kéo dài ${minutes} phút: ta mất ${b.ourDead}, địch mất ${b.foeDead}.`];
   if (b.breaches) lines.push(`${b.breaches} đoạn hàng rào hoặc cổng bị phá.`);
   if (b.shots) lines.push(`Cung thủ trên chòi bắn ${b.shots} phát.`);
   lines.push(...b.notes);
   sim.battleReports.push({ at: sim.time, lines }); if (sim.battleReports.length > 8) sim.battleReports.shift();
+  sim.battleLog.push({ id: sim.battleLog.length + 1, kind: b.kind === 'raid' ? 'defense' : 'beasts', name: b.name, startDay: b.startDay, endDay: sim.day, night: b.night, minutes, peak: b.peak, ourDead: b.ourDead, foeDead: b.foeDead, ourDeadArm: { ...b.ourDeadArm }, civDead: b.civDead, breaches: b.breaches, shots: b.shots, dmgDealt: Math.round(b.dmgDealt), dmgTaken: Math.round(b.dmgTaken), notes: [...b.notes] });
+  if (sim.battleLog.length > 60) sim.battleLog.shift();
   for (const l of lines) sim.say(l);
 }

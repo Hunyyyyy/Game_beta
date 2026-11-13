@@ -7,15 +7,15 @@
   1
  ],
  "buildable": true,
- "unlockFire": 3,
+ "unlockFire": 2,
  "requires": [
   "builder"
  ],
  "limit": [
- 40,
-  80,
-  120,
-  150
+  168,
+  168,
+  221,
+  256
  ],
  "repeat": true,
  "levels": {
@@ -48,27 +48,31 @@
    {
     "name": "Hàng rào đôi gia cố",
     "cost": {
-     "wood": 8,
-     "stone": 2
+     "wood": 12,
+     "stone": 3
     },
-    "buildTime": 41,
+    "buildTime": 56,
     "cap": 0,
     "craftSpeed": 1,
     "slots": 0,
-    "hp": 1200,
+    "hp": 1600,
     "sight": 0
-   },
+   }
+  ],
+  "ancient": [
    {
-    "name": "Hàng rào đôi kiên cố",
+    "name": "Gạch ngói (trung cổ)",
     "cost": {
-     "wood": 16,
-     "stone": 4
+     "wood": 29,
+     "stone": 8,
+     "iron": 3,
+     "hardwood": 2
     },
-    "buildTime": 70,
+    "buildTime": 105,
     "cap": 0,
-    "craftSpeed": 1,
+    "craftSpeed": 1.25,
     "slots": 0,
-    "hp": 2000,
+    "hp": 3000,
     "sight": 0
    }
   ]

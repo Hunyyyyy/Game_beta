@@ -16,8 +16,7 @@
    {
     "name": "Chuồng cọc",
     "cost": {
-     "wood": 30,
-     "hide": 6
+     "wood": 30
     },
     "buildTime": 90,
     "cap": 0,
@@ -30,12 +29,11 @@
     "name": "Chuồng gỗ",
     "cost": {
      "wood": 40,
-     "hide": 8,
      "stone": 10
     },
     "buildTime": 140,
     "cap": 0,
-    "craftSpeed": 1,
+    "craftSpeed": 1.1,
     "slots": 2,
     "hp": 270,
     "sight": 0
@@ -43,29 +41,33 @@
    {
     "name": "Chuồng đá",
     "cost": {
-     "wood": 45,
-     "stone": 35,
-     "hide": 12
+     "wood": 49,
+     "stone": 53
     },
-    "buildTime": 200,
+    "buildTime": 243,
     "cap": 0,
-    "craftSpeed": 1,
+    "craftSpeed": 1.25,
     "slots": 3,
-    "hp": 360,
+    "hp": 405,
     "sight": 0
-   },
+   }
+  ],
+  "ancient": [
    {
-    "name": "Chuồng đá gia cố",
+    "name": "Gạch ngói (trung cổ)",
     "cost": {
-     "wood": 52,
-     "stone": 70,
-     "hide": 18
+     "wood": 94,
+     "stone": 126,
+     "hide": 33,
+     "iron": 15,
+     "hardwood": 12,
+     "leather": 6
     },
-    "buildTime": 286,
+    "buildTime": 429,
     "cap": 0,
-    "craftSpeed": 1,
-    "slots": 3,
-    "hp": 450,
+    "craftSpeed": 1.45,
+    "slots": 4,
+    "hp": 675,
     "sight": 0
    }
   ]

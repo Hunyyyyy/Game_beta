@@ -17,6 +17,7 @@ function houseNear(t: Tribe, f: Villager, within = Infinity): Tribe['props'][num
 
 /** Hiding or running for a house takes the civilian's turn: true when it did (a civilian who is neither is left to the common brain). */
 export function civilianBrain(sim: Sim, f: Villager, t: Tribe, ai: NonNullable<Villager['ai']>, dt: number, free: boolean, scanNow: boolean, threats: Array<{ d: number }>): boolean {
+  if (ai.tower) return false; // a man of a tower is hidden in it (`inTent`) until the tower falls (brainfoe clears `ai.tower` then): he is no civilian who left his house
   // a civilian who ran into a house stays in it (out of sight, nobody can hit him) until nobody hostile is about, or the house is gone
   if (f.inTent) {
     f.phase = 'idle'; f.path = []; f.slide = null;

@@ -2,7 +2,7 @@
  * What research has added so far, for everyone of a kind: each trade, each kind of soldier, the houses of work and the weapons, with the percent each stat has gained
  * and the tier opened (not for one villager: the same for all who have that role). The page of the menu "Chỉ số".
  */
-import { CHAINS, PLAN_TECH, TECH_BY_ID, lineLevel, soldierTier, statBonus, statLevels, STAT_DEF, TREE_ROLES } from '../sim/research';
+import { CHAINS, PLAN_TECH, statsFor, TECH_BY_ID, lineLevel, soldierTier, statBonus, statLevels, STAT_DEF, TREE_ROLES } from '../sim/research';
 import type { LineStat } from '../sim/research';
 import { h } from './dom';
 import { statIcon } from './resicons';
@@ -28,20 +28,20 @@ export class StatsOverview {
 
   /** Draw again when the research done has changed. */
   update(): void {
-    const { sim } = this.c, key = `${sim.researched.size}|${sim.advanced}`;
+    const { sim } = this.c, key = `${sim.researched.size}|${sim.era === 'ancient'}`;
     if (key === this.key) return;
     this.key = key;
     const kids: Node[] = [h('p', { class: 'dsub', text: 'Tổng chỉ số đã nghiên cứu cho từng loại dân, nghề và lính (cộng thêm vào chỉ số gốc của mỗi người). Số bên trái mỗi chỉ số là phần trăm cộng thêm, số bên phải là cấp đã nghiên cứu.' })];
     for (const g of GROUPS) {
-      if (!sim.advanced && (g.chains.includes('march') || g.chains.includes('tactic'))) continue; // the war research is of the medieval layer
+      if (sim.era !== 'ancient' && (g.chains.includes('march') || g.chains.includes('tactic'))) continue; // the war research is of the medieval layer
       const rows: HTMLElement[] = [];
       for (const cn of g.chains) {
         const chain = CHAINS[cn];
         if (!chain) continue;
         for (const role of chain.roles) {
-          if (!TREE_ROLES[role] || (role === 'scout' && !sim.advanced)) continue; // the scouts are of the medieval layer
+          if (!TREE_ROLES[role] || (role === 'scout' && sim.era !== 'ancient')) continue; // the scouts are of the medieval layer
           const tier = soldierTier(sim.researched, role);
-          const pills = chain.order.map((stat) => {
+          const pills = statsFor(chain, role).map((stat) => {
             const bonus = statBonus(sim.researched, role, stat as LineStat), lv = lineLevel(sim.researched, role, stat), top = statLevels(stat);
             return h('span', { class: `spill${bonus > 0 ? '' : ' zero'}`, title: `${STAT_DEF[stat as LineStat].name}: ${pct(bonus)} (cấp ${lv}/${top})` }, h('span', { class: 'ico-wrap' }, statIcon(stat)), h('b', { text: pct(bonus) }), h('small', { text: `${lv}/${top}` }));
           });
@@ -51,7 +51,7 @@ export class StatsOverview {
       if (rows.length) kids.push(h('section', {}, h('h3', { text: g.title }), h('p', { class: 'dsub', text: g.note }), ...rows));
     }
     // what the war plan has opened (the Kế hoạch chiến đấu research)
-    if (sim.advanced) {
+    if (sim.era === 'ancient') {
     const open = (Object.entries(PLAN_TECH) as Array<[keyof typeof PLAN_TECH, string]>).map(([f, id]) => h('span', { class: `spill${sim.planOpen(f) ? '' : ' zero'}`, title: TECH_BY_ID[id].desc }, h('b', { text: TECH_BY_ID[id].name }), h('small', { text: sim.planOpen(f) ? '✓' : '🔒' })));
     kids.push(h('section', {}, h('h3', { text: 'Kế hoạch tác chiến' }), h('p', { class: 'dsub', text: 'Các phần của bảng kế hoạch và báo cáo trận đã mở.' }), h('div', { class: 'spills' }, ...open)));
     }

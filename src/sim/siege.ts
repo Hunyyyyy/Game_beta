@@ -4,7 +4,7 @@
  * some soldiers to break the thing down; and at the end of the arrow, the squad going for what the arrow points at, and once that is gone, for everything about.
  */
 import { RULES, SIEGE } from './combat';
-import { swingCycle, weaponDamage } from './statsys';
+import { armPerk, swingCycle, weaponDamage } from './statsys';
 import type { WeaponDef } from './combat';
 import { armOf, swingTimes, threatsOf, weaponOf } from './battle';
 import { FORMATIONS, formationOffsets, placeOffset } from './formations';
@@ -12,7 +12,7 @@ import { Tile } from './world';
 import type { Sim } from './sim';
 import type { Breaking, Mission, Obstacle, Plan, Pt, Squad, Villager } from './model';
 
-export const NODE_NAME = { tree: 'cây', rock: 'đá', bush: 'bụi quả' } as const;
+export const NODE_NAME = { tree: 'cây', rock: 'đá', bush: 'bụi quả', ore: 'mạch quặng' } as const;
 export const PROP_NAME: Record<string, string> = { fire: 'Đống lửa', pile: 'Kho lương', tower: 'Chòi canh', fence: 'Hàng rào', gate: 'Cổng', house: 'Nhà' };
 
 type Tribe = Sim['tribes'][number];
@@ -32,7 +32,7 @@ export function obstacleAt(sim: Sim, x: number, y: number): Obstacle | null {
   const w = sim.world, N = w.size;
   if (!w.inBounds(x, y)) return { kind: 'wall', x, y, label: 'rìa bản đồ', clear: false };
   const node = w.nodeAt(x, y);
-  if (node) return { kind: node.kind, x, y, label: NODE_NAME[node.kind], clear: true };
+  if (node) return { kind: node.kind === 'ore' ? 'rock' : node.kind, x, y, label: NODE_NAME[node.kind], clear: true }; // a seam of ore is broken like a rock
   const t = w.at(x, y);
   if (t === Tile.Water) return { kind: 'water', x, y, label: 'nước', clear: false };
   if (w.occ[y * N + x]) {
@@ -166,7 +166,7 @@ export function breachFor(sim: Sim, v: Villager, tx: number, ty: number): boolea
   const dmg = weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str, cycle = swingCycle(sim, v, w), N = sim.world.size;
   let best: { t: Tribe; p: Prop } | null = null, bestTime = Infinity;
   for (const t of sim.tribes) {
-    if (t.state === 'adopted' || t.state === 'destroyed') continue;
+    if (t.state === 'destroyed') continue;
     const towers = t.props.filter((q) => q.kind === 'tower');
     for (const p of t.props) {
       if (p.kind === 'fire' || p.kind === 'pile' || !sim.world.occ[p.y * N + p.x]) continue; // only what shuts the way: an open gate does not
@@ -195,12 +195,16 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   const b = v.breaks;
   if (!b) return false;
   const box = breakBox(sim, b);
-  if (!box) { stopBreaking(v); return false; }
+  if (!box) { // gone: an ordered one goes on to the target he was sent to when it was a wall in the way
+    const next = b.then; stopBreaking(v);
+    if (next && breakBox(sim, next)) { v.breaks = next; v.progress = 0; return true; }
+    return false;
+  }
   v.fight.chaseT = 0; // he is at his task: he has not given up the chase
   const w = weaponOf(v);
   v.fight.scan -= dt;
   // an enemy near turns him from a tree or a rock; at a wall he turns only to fight back, when one who can strike him is hurting him (the archers of a tower shoot on, and he works on under their arrows)
-  if (v.fight.scan <= 0) { v.fight.scan = 0.4; if (b.kind === 'prop' ? v.flinch > 0 && threatsOf(sim, v, w.range + 1).length : threatsOf(sim, v, 3.5).length) { stopBreaking(v); return false; } }
+  if (v.fight.scan <= 0) { v.fight.scan = 0.4; if (!b.ordered && (b.kind === 'prop' ? v.flinch > 0 && threatsOf(sim, v, w.range + 1).length : threatsOf(sim, v, 3.5).length)) { stopBreaking(v); return false; } }
   const dx = Math.max(box.x - v.x, 0, v.x - (box.x + box.w)), dy = Math.max(box.y - v.y, 0, v.y - (box.y + box.h));
   if (Math.hypot(dx, dy) <= SIEGE.reach + (b.kind === 'prop' && !w.ranged ? w.range * 0.5 : 0)) {
     v.path = []; v.slide = null; v.phase = 'fight'; v.facing = box.x + box.w / 2 >= v.x ? 'right' : 'left';
@@ -208,7 +212,8 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
       const { hitAt, end } = swingTimes(w.anim);
       v.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it
       v.atkCd = swingCycle(sim, v, w);
-      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind));
+      if (b.kind === 'prop') sim.addSfx(w.id, !!w.ranged, b.x, b.y); // the blow on a work sounds as the weapon of the one who strikes
+      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind) * (1 + armPerk(sim, v, 'siege') / 100)); // the research of siege
     }
     if (b.kind === 'node') {
       const kind = sim.world.nodeAt(b.x, b.y)!.kind;
@@ -223,8 +228,10 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
   if (!v.path.length && v.fight.repath <= 0 && sim.pathLeft > 0) {
     sim.pathLeft--; v.fight.repath = 1;
     if (sim.routeTo(v, sim.ringTiles(v, box.x, box.y, box.w, box.h), 3) < 0) { // no way up to it: the fence or the gate in the way is the thing to break first
+      const orig = b.ordered ? (b.then ?? b) : null; // what the player sent him to: it stands, whatever is in the way
       stopBreaking(v);
-      if (b.kind === 'prop') breachFor(sim, v, box.x + box.w / 2, box.y + box.h / 2);
+      if (b.kind === 'prop' && breachFor(sim, v, box.x + box.w / 2, box.y + box.h / 2)) { if (orig && v.breaks) { v.breaks.ordered = true; v.breaks.then = orig; } return true; }
+      if (orig) { v.breaks = orig; v.progress = 0; v.fight.repath = 3; return true; } // nothing to break through yet: he waits and tries again
       return false;
     }
   }
@@ -361,9 +368,12 @@ export function rampage(sim: Sim, plan: Plan, s: Squad): void {
     const sight = sim.sightOf(v), dist = (x: number, y: number) => Math.hypot(x - v.x, y - v.y);
     const seen = (p: Prop) => dist(p.x + p.w / 2, p.y + p.h / 2) <= sight;
     const nearest = <T>(list: T[], at: (o: T) => [number, number]): T | undefined => list.slice().sort((a, b) => dist(...at(a)) - dist(...at(b)))[0];
-    const tower = nearest(t.props.filter((q) => q.kind === 'tower' && seen(q)), (q) => [q.x, q.y]);
-    if (tower) { breakProp(v, tower); continue; }
+    // by arm: the riders as ever (a tower in sight first); archers pick a soldier first; the foot seek a tower out, in sight or not
+    const arm = armOf(v), towers = t.props.filter((q) => q.kind === 'tower');
+    const tower = nearest(arm === 'foot' ? towers : towers.filter(seen), (q) => [q.x, q.y]);
     const foe = nearest(foes.filter((u) => dist(u.x, u.y) <= sight), (u) => [u.x, u.y]);
+    if (arm === 'archer' && foe) { sim.orderAttack([v.id], { kind: 'unit', id: foe.id }); continue; }
+    if (tower) { breakProp(v, tower); continue; }
     if (foe) { sim.orderAttack([v.id], { kind: 'unit', id: foe.id }); continue; }
     const house = nearest(t.props.filter((q) => q.kind === 'house' && seen(q)), (q) => [q.x, q.y]);
     if (house) { breakProp(v, house); continue; }

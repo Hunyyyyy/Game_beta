@@ -1,66 +1,418 @@
 {
-  "name": "Bãi chế tạo (cấp 1, bãi đá đơn sơ)",
-  "name_en": "Crafting Ground (Tier 1, Rough Stone Ground)",
-  "type": "prop",
-  "size": [72, 64],
-  "anchor": [36, 58],
-  "footprint": [4, 32, 64, 28],
-  "seed": 9,
-  "params": {"st1": 1, "st2": 1, "st3": 1, "st4": 1},
-  "palette": { "line": "#2b1d10", "shadow": "#000000", "dirt": "#6a5238", "earth": "#86704e", "earthL": "#9a8460", "wood": "#8a6238", "woodL": "#aa7c48", "woodD": "#5e4026", "log": "#6b4a28", "logE": "#c49a60", "rope": "#d8c690", "stone": "#8e9498", "stoneL": "#b9bfc2", "stoneD": "#60676b", "chip": "#d8d2c0", "hide": "#a0552f", "hideL": "#c06f43", "hideD": "#7a3d20", "stitch": "#e8d6a8", "sack": "#c9b27a", "sackD": "#9d8756", "wicker": "#b89a58", "wickerD": "#8a7038", "berry": "#c23a3a", "berryL": "#f08a7a", "herb": "#6f7d3a", "herbD": "#4e5a28", "mat": "#7a5a38", "matL": "#8e6c46", "matD": "#5e4428", "fire": "#f08a2a", "fireL": "#ffd27a", "fireD": "#6a1e0e", "smoke": "#c8ccd0", "flint": "#3a3f48", "flintL": "#7c8794", "bone": "#e4dcc4", "boneD": "#b8ac90" },
-  "layers": [
-    { "shape": "ellipse", "cx": 36, "cy": 55, "rx": 30, "ry": 6, "color": "shadow", "alpha": 0.25 },
-    { "shape": "rect", "x": 8, "y": 36, "w": 56, "h": 18, "color": "dirt", "alpha": 0.55, "ifNot": "st1" },
-    { "shape": "rect", "x": 7, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1" },
-    { "shape": "rect", "x": 63, "y": 36, "w": 2, "h": 5, "color": "wood", "ifNot": "st1" },
-    { "shape": "rect", "x": 7, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1" },
-    { "shape": "rect", "x": 63, "y": 50, "w": 2, "h": 5, "color": "wood", "ifNot": "st1" },
-    { "shape": "line", "from": [9, 37], "to": [62, 37], "w": 1, "color": "rope", "ifNot": "st1" },
-    {"shape": "group", "if": "st1", "layers": [
-      { "shape": "ellipse", "cx": 36, "cy": 47, "rx": 30, "ry": 8, "color": "earth" },
-      { "shape": "scatter", "count": 34, "area": [6, 40, 60, 14], "size": [1, 2], "colors": ["dirt", "chip", "earthL", "stoneD"], "onlyOver": ["earth"] },
-      { "shape": "ellipse", "cx": 22, "cy": 48, "rx": 9, "ry": 3, "color": "stoneD", "alpha": 0.6 },
-      { "shape": "ellipse", "cx": 22, "cy": 47, "rx": 8, "ry": 2, "color": "stone" },
-      { "shape": "scatter", "count": 8, "area": [14, 45, 16, 5], "size": 1, "colors": ["stoneL", "flint"], "onlyOver": ["stone"] },
-      { "shape": "ellipse", "cx": 48, "cy": 50, "rx": 7, "ry": 3, "color": "mat" },
-      { "shape": "scatter", "count": 8, "area": [42, 48, 12, 4], "size": [2, 1], "colors": ["matL", "matD"], "onlyOver": ["mat"] }
-    ] },
-    {"shape": "group", "if": "st2", "layers": [
-      { "shape": "rect", "x": 9, "y": 42, "w": 12, "h": 5, "color": "log" },
-      { "shape": "rect", "x": 9, "y": 42, "w": 12, "h": 1, "color": "woodL" },
-      { "shape": "rect", "x": 12, "y": 42, "w": 1, "h": 5, "color": "woodD" },
-      { "shape": "ellipse", "cx": 9, "cy": 44, "rx": 2, "ry": 2, "color": "logE" },
-      { "shape": "ellipse", "cx": 38, "cy": 44, "rx": 7, "ry": 5, "color": "stoneD" },
-      { "shape": "ellipse", "cx": 38, "cy": 43, "rx": 6, "ry": 4, "color": "stone" },
-      { "shape": "ellipse", "cx": 38, "cy": 42, "rx": 3, "ry": 2, "color": "stoneL" },
-      { "shape": "scatter", "count": 6, "area": [30, 46, 16, 4], "size": 1, "colors": ["flint", "chip"], "onlyOver": ["earth"] }
-    ] },
-    {"shape": "group", "if": "st3", "layers": [
-      { "shape": "poly", "points": [[14, 38], [26, 37], [28, 41], [16, 42]], "color": "hideD" },
-      { "shape": "poly", "points": [[14, 36], [26, 35], [28, 39], [16, 40]], "color": "hide" },
-      { "shape": "line", "from": [14, 36], "to": [26, 35], "w": 1, "color": "hideL" },
-      { "shape": "pixels", "at": [[18, 38], [22, 37]], "color": "stitch" },
-      { "shape": "poly", "points": [[50, 36], [62, 35], [63, 39], [51, 40]], "color": "wickerD" },
-      { "shape": "poly", "points": [[50, 34], [62, 33], [63, 37], [51, 38]], "color": "wicker" },
-      { "shape": "scatter", "count": 6, "area": [52, 34, 10, 4], "size": 1, "colors": ["wickerD", "sackD"] },
-      { "shape": "ellipse", "cx": 34, "cy": 51, "rx": 6, "ry": 2, "color": "stoneD" },
-      { "shape": "scatter", "count": 10, "area": [26, 50, 18, 4], "size": 1, "colors": ["flint", "flintL", "chip", "boneD"], "onlyOver": ["earth", "stoneD"] }
-    ] },
-    {"shape": "group", "if": "st4", "layers": [
-      { "shape": "poly", "points": [[30, 41], [42, 40], [44, 44], [32, 45]], "color": "woodD" },
-      { "shape": "poly", "points": [[30, 39], [42, 38], [44, 42], [32, 43]], "color": "wood" },
-      { "shape": "line", "from": [30, 39], "to": [42, 38], "w": 1, "color": "woodL" },
-      { "shape": "ellipse", "cx": 36, "cy": 41, "rx": 4, "ry": 2, "color": "stone" },
-      { "shape": "ellipse", "cx": 36, "cy": 40, "rx": 2, "ry": 1, "color": "flintL" },
-      { "shape": "ellipse", "cx": 56, "cy": 46, "rx": 6, "ry": 3, "color": "fireD" },
-      { "shape": "ellipse", "cx": 56, "cy": 45, "rx": 4, "ry": 2, "color": "fire" },
-      { "shape": "ellipse", "cx": 56, "cy": 44, "rx": 2, "ry": 1, "color": "fireL" },
-      { "shape": "scatter", "count": 6, "area": [52, 42, 8, 3], "size": 1, "colors": ["smoke"], "alpha": 0.5 },
-      { "shape": "poly", "points": [[16, 52], [26, 52], [25, 54], [17, 54]], "color": "bone" },
-      { "shape": "line", "from": [9, 52], "to": [15, 50], "w": 1, "color": "boneD" },
-      { "shape": "ellipse", "cx": 45, "cy": 51, "rx": 2, "ry": 1, "color": "flint" },
-      { "shape": "scatter", "count": 8, "area": [8, 47, 56, 6], "size": 1, "colors": ["chip", "stoneL", "boneD"], "onlyOver": ["earth"] }
-    ] },
-    { "shape": "outline", "color": "line" }
-  ]
+ "name": "Bãi chế tạo (cấp 1, bãi đá đơn sơ)",
+ "name_en": "Workbench Ground (Tier 1)",
+ "type": "prop",
+ "size": [
+  72,
+  64
+ ],
+ "anchor": [
+  36,
+  58
+ ],
+ "footprint": [
+  4,
+  32,
+  64,
+  28
+ ],
+ "seed": 9,
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "dirtL": "#7e6244",
+  "dirtD": "#4e3c2a",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
+  "bone": "#e4dcc4",
+  "boneD": "#b8ac90",
+  "sand": "#b9a47a",
+  "sandL": "#cdbb94",
+  "sandD": "#9a8760",
+  "blue": "#5f7fa8",
+  "blueD": "#3f5c84",
+  "ochre": "#b0762f",
+  "red": "#a8342a",
+  "dark": "#1d1812",
+  "moss": "#5f7f3a",
+  "mossL": "#7f9f50",
+  "hide": "#d9c796",
+  "wicker": "#b08a4c",
+  "wickerL": "#c9a460",
+  "wickerD": "#7e5f30",
+  "mud": "#b98a62",
+  "mudL": "#cfa07a",
+  "mudD": "#8e6745",
+  "plaster": "#dccfb2",
+  "plasterD": "#b8a98a",
+  "thatch": "#d4b45a",
+  "thatchL": "#ecd27a",
+  "thatchD": "#a98a38",
+  "hay": "#e0c060",
+  "hayD": "#b8963a",
+  "shingle": "#55361f",
+  "shingleL": "#7a5232",
+  "shingleD": "#35200f",
+  "tile": "#9b4a34",
+  "tileL": "#c06a4a",
+  "tileD": "#6e3224",
+  "slate": "#66707c",
+  "slateL": "#8893a0",
+  "slateD": "#444c56",
+  "terra": "#b5593b",
+  "terraL": "#d27a52",
+  "terraD": "#7e3a26",
+  "glass": "#9bc4d8",
+  "glassD": "#5f8aa0",
+  "gold": "#d9b13a",
+  "bannerR": "#b8322a",
+  "iron": "#5d6068",
+  "ironL": "#8a8e96",
+  "clay": "#a8683e",
+  "clayD": "#7a4a2a",
+  "cut": "#a7adb1",
+  "cutL": "#c9ced1",
+  "cutD": "#6f757a",
+  "plank": "#c8a468",
+  "plankD": "#9a7a44",
+  "ink": "#2c4466",
+  "green": "#5f8f3a",
+  "greenL": "#86b04c",
+  "greenD": "#3f6a28",
+  "hideG": "#6f8a4a",
+  "hideGL": "#8fae62",
+  "hideGD": "#4c6532",
+  "hideR": "#a8342a",
+  "hideRL": "#c8523f",
+  "hideRD": "#7a2220",
+  "tent": "#a5502e",
+  "tentL": "#c06a40",
+  "tentD": "#7a3a22",
+  "tentK": "#2a1a10",
+  "tentR": "#8f3a2c",
+  "beast": "#6a4426",
+  "beastL": "#8a6038",
+  "beastD": "#44281a",
+  "beastT": "#b08a58",
+  "straw": "#d8b85a",
+  "strawL": "#ecd27a",
+  "strawD": "#a98a38",
+  "white": "#efe6cf",
+  "glow": "#ff9a3a",
+  "glowL": "#ffd27a",
+  "smoke": "#9a9aa0",
+  "horn": "#e8dcc0",
+  "hornD": "#b8a888",
+  "glowD": "#c85a1a"
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     4,
+     57
+    ],
+    [
+     56,
+     57
+    ],
+    [
+     69,
+     50
+    ],
+    [
+     16,
+     50
+    ]
+   ],
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       16,
+       47
+      ]
+     ],
+     "color": "dirt"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 54,
+     "w": 48,
+     "h": 2,
+     "color": "dirtD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       64,
+       49
+      ],
+      [
+       54,
+       56
+      ]
+     ],
+     "color": "dirtD"
+    },
+    {
+     "shape": "scatter",
+     "count": 26,
+     "area": [
+      8,
+      47,
+      54,
+      7
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "dirtL",
+      "dirtD",
+      "chip"
+     ],
+     "onlyOver": [
+      "dirt"
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       44,
+       52
+      ],
+      [
+       54,
+       47
+      ],
+      [
+       54,
+       40
+      ],
+      [
+       44,
+       45
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "rect",
+     "x": 18,
+     "y": 45,
+     "w": 26,
+     "h": 7,
+     "color": "stone"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       18,
+       45
+      ],
+      [
+       44,
+       45
+      ],
+      [
+       54,
+       40
+      ],
+      [
+       28,
+       40
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 18,
+     "y": 45,
+     "w": 26,
+     "h": 1,
+     "color": "stoneL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       22,
+       48
+      ],
+      [
+       30,
+       47
+      ],
+      [
+       38,
+       48
+      ]
+     ],
+     "color": "stoneD"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 48,
+     "y": 52,
+     "w": 5,
+     "h": 3,
+     "color": "stone"
+    },
+    {
+     "shape": "rect",
+     "x": 50,
+     "y": 50,
+     "w": 4,
+     "h": 3,
+     "color": "stoneL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       14,
+       54
+      ],
+      [
+       24,
+       55
+      ],
+      [
+       12,
+       51
+      ]
+     ],
+     "color": "chip"
+    },
+    {
+     "shape": "line",
+     "from": [
+      24,
+      43
+     ],
+     "to": [
+      28,
+      39
+     ],
+     "w": 1,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 27,
+     "y": 37,
+     "w": 4,
+     "h": 3,
+     "color": "iron"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       44,
+       55
+      ],
+      [
+       30,
+       55
+      ],
+      [
+       10,
+       53
+      ]
+     ],
+     "color": "chip"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 50,
+     "w": 7,
+     "h": 4,
+     "color": "stoneD"
+    },
+    {
+     "shape": "rect",
+     "x": 8,
+     "y": 49,
+     "w": 7,
+     "h": 2,
+     "color": "stone"
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ]
 }

@@ -9,6 +9,8 @@ export interface SaveMeta {
   population: number;
   seed: number;
   version: number;
+  /** The name the player gave the save (none: it is shown by its day). */
+  name?: string;
 }
 
 /**

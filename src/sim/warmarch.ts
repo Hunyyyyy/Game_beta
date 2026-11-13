@@ -4,13 +4,12 @@
  * Food and energy are multiplied by `base + (slow - slowMin)`: one soldier eats `base` times his ration, the biggest army more.
  */
 import warJson from '../data/war.json';
-import { DAY_LENGTH } from './constants';
 import type { Plan } from './model';
 import { rationAt } from './resources';
 import { statBonus } from './research';
 import type { Sim } from './sim';
 
-export const WAR_DATA = warJson as { advanced: boolean; advancedBuildings: string[]; march: { slowMin: number; slowMax: number; perSquad: number; perSoldier: number; slowFloor: number; paceScale: number; maxCut: number; foodBase: number; energyBase: number }; research: Record<string, number>; supply: { load: number; trail: number; defaultDays: number; maxDays: number; hungerSmooth: number }; tent: { woodBase: number; hideBase: number; perLevel: number; buildSeconds: number; buildReach: number; refund: number; weight: number; near: number }; tired: { below: number; maxPenalty: number }; harass: { first: number; every: number; base: number; perWarriors: number; max: number; range: number; minFromVillage: number; spawnDist: number; life: number; maxAlive: number } };
+export const WAR_DATA = warJson as { advanced: boolean; advancedBuildings: string[]; retreat: { graceSeconds: number; doneShare: number }; skirmish: { idleSeconds: number; bossFactor: number; territory: number; stingMin: number }; march: { slowMin: number; slowMax: number; perSquad: number; perSoldier: number; slowFloor: number; paceScale: number; maxCut: number; foodBase: number; energyBase: number }; research: Record<string, number>; supply: { load: number; trail: number; defaultDays: number; maxDays: number; hungerSmooth: number }; tent: { woodBase: number; hideBase: number; perLevel: number; buildSeconds: number; buildReach: number; refund: number; weight: number; near: number }; tired: { below: number; maxPenalty: number }; harass: { first: number; every: number; base: number; perWarriors: number; max: number; range: number; minFromVillage: number; spawnDist: number; life: number; maxAlive: number } };
 
 export interface March { squads: number; soldiers: number; slow: number; speed: number; food: number; energy: number }
 /** How much one supply soldier carries: the base load and what the research Tải hậu cần adds. */
@@ -25,8 +24,8 @@ export function slowCut(sim: Pick<Sim, 'researched'>): number {
 }
 
 /** How a march of this many squads and soldiers goes. */
-export function marchOf(sim: Pick<Sim, 'researched' | 'advanced'>, squads: number, soldiers: number): March {
-  if (!sim.advanced) return { squads, soldiers, slow: 0, speed: 1, food: 1, energy: 1 }; // the quick war of the stone age: the army is not slowed, and eats what a soldier eats
+export function marchOf(sim: Pick<Sim, 'researched' | 'era'>, squads: number, soldiers: number): March {
+  if (sim.era !== 'ancient') return { squads, soldiers, slow: 0, speed: 1, food: 1, energy: 1 }; // the quick war of the stone age: the army is not slowed, and eats what a soldier eats
   const k = WAR_DATA.march, load = Math.max(0, Math.min(1, k.perSquad * Math.max(0, squads - 1) + k.perSoldier * Math.max(0, soldiers - 1)));
   const raw = k.slowMin + (k.slowMax - k.slowMin) * load;
   const slow = Math.max(k.slowFloor, raw * (1 - slowCut(sim))); // however much research cuts, the army never marches faster than this
@@ -49,7 +48,7 @@ export function marchOfPlan(sim: Sim, plan: Plan): March {
 }
 
 const pct = (x: number): string => `${Math.round(x * 100)}%`;
-const days1 = (sec: number): string => `${Math.max(0.1, Math.round((sec / DAY_LENGTH) * 10) / 10).toLocaleString('vi')} ngày`;
+const days1 = (sim: Sim, sec: number): string => `${Math.max(0.1, Math.round((sec / sim.dayLen) * 10) / 10).toLocaleString('vi')} ngày`;
 
 /** What the war council says of the march: the slow, what a soldier eats and how tired he gets, how many days each way and what the army eats in all. */
 export function marchLines(sim: Sim, plan: Plan): string[] {
@@ -66,7 +65,7 @@ export function marchLines(sim: Sim, plan: Plan): string[] {
   }
   if (longest > 0) {
     const trip = longest * 2;
-    out.push(`Thời gian: đi khoảng ${days1(longest)}, về tương tự (cả chuyến chưa kể đánh nhau: ${days1(trip)}). Quân ăn khoảng ${Math.round((m.soldiers * ration * m.food * trip) / DAY_LENGTH)} thức ăn trong cả chuyến.`);
+    out.push(`Thời gian: đi khoảng ${days1(sim, longest)}, về tương tự (cả chuyến chưa kể đánh nhau: ${days1(sim, trip)}). Quân ăn khoảng ${Math.round((m.soldiers * ration * m.food * trip) / sim.dayLen)} thức ăn trong cả chuyến.`);
   }
   return out;
 }

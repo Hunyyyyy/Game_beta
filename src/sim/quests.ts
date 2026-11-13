@@ -104,7 +104,7 @@ export function questViews(sim: Sim, ui: QuestUi): QuestView[] {
   // only a quest that is open can be done: one met early (a trade given before its turn) waits until the ones before it are
   // a quest about a building of the medieval layer (the watchtower) is skipped while it is shut away
   const WAR_ONLY = ['scoutSent', 'hasMap', 'planDefense', 'planArrow', 'createSquad', 'squadSize', 'squadFormation'];
-  const shut = (q: Quest): boolean => ('kind' in q.done && typeof q.done.kind === 'string' && eraLocked(q.done.kind as BuildingKind, sim)) || (!sim.advanced && (WAR_ONLY.includes(q.done.type) || (q.done.type === 'researchTech' && /^(signal|form_)/.test(q.done.id)))); // the plan, the scouts and the formations are of the medieval layer
+  const shut = (q: Quest): boolean => ('kind' in q.done && typeof q.done.kind === 'string' && eraLocked(q.done.kind as BuildingKind, sim)) || (sim.era !== 'ancient' && (WAR_ONLY.includes(q.done.type) || (q.done.type === 'researchTech' && /^(signal|form_)/.test(q.done.id)))); // the plan, the scouts and the formations are of the medieval layer
   for (const q of QUESTS) if (!sim.questSeen.has(q.id) && q.after.every((a) => sim.questSeen.has(a))) { const [have, need] = measure(sim, q.done, ui); if (have >= need || shut(q)) sim.questSeen.add(q.id); }
   return QUESTS.map((quest) => {
     const done = sim.questSeen.has(quest.id), open = !done && quest.after.every((a) => sim.questSeen.has(a));

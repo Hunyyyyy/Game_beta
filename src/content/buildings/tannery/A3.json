@@ -1,0 +1,2432 @@
+{
+ "name": "Xưởng thuộc da và dệt (cấp 3, xưởng nhuộm)",
+ "name_en": "Tannery and Weaver (Tier 3, Dye Works)",
+ "type": "prop",
+ "size": [
+  72,
+  64
+ ],
+ "anchor": [
+  36,
+  58
+ ],
+ "footprint": [
+  4,
+  32,
+  64,
+  28
+ ],
+ "seed": 9,
+ "params": {
+  "st1": 1,
+  "st2": 1,
+  "st3": 1,
+  "st4": 1
+ },
+ "palette": {
+  "line": "#2b1d10",
+  "shadow": "#000000",
+  "dirt": "#6a5238",
+  "dirtL": "#7e6244",
+  "dirtD": "#4e3c2a",
+  "wood": "#8a6238",
+  "woodL": "#aa7c48",
+  "woodD": "#5e4026",
+  "logE": "#c49a60",
+  "rope": "#d8c690",
+  "stone": "#8e9498",
+  "stoneL": "#b9bfc2",
+  "stoneD": "#60676b",
+  "chip": "#d8d2c0",
+  "sack": "#c9b27a",
+  "sackD": "#9d8756",
+  "bone": "#e4dcc4",
+  "boneD": "#b8ac90",
+  "sand": "#b9a47a",
+  "sandL": "#cdbb94",
+  "sandD": "#9a8760",
+  "blue": "#5f7fa8",
+  "blueD": "#3f5c84",
+  "ochre": "#b0762f",
+  "red": "#a8342a",
+  "dark": "#1d1812",
+  "moss": "#5f7f3a",
+  "mossL": "#7f9f50",
+  "hide": "#d9c796",
+  "wicker": "#b08a4c",
+  "wickerL": "#c9a460",
+  "wickerD": "#7e5f30",
+  "mud": "#b98a62",
+  "mudL": "#cfa07a",
+  "mudD": "#8e6745",
+  "plaster": "#dccfb2",
+  "plasterD": "#b8a98a",
+  "thatch": "#d4b45a",
+  "thatchL": "#ecd27a",
+  "thatchD": "#a98a38",
+  "hay": "#e0c060",
+  "hayD": "#b8963a",
+  "shingle": "#55361f",
+  "shingleL": "#7a5232",
+  "shingleD": "#35200f",
+  "tile": "#9b4a34",
+  "tileL": "#c06a4a",
+  "tileD": "#6e3224",
+  "slate": "#66707c",
+  "slateL": "#8893a0",
+  "slateD": "#444c56",
+  "terra": "#b5593b",
+  "terraL": "#d27a52",
+  "terraD": "#7e3a26",
+  "glass": "#9bc4d8",
+  "glassD": "#5f8aa0",
+  "gold": "#d9b13a",
+  "bannerR": "#b8322a",
+  "iron": "#5d6068",
+  "ironL": "#8a8e96",
+  "clay": "#a8683e",
+  "clayD": "#7a4a2a",
+  "cut": "#a7adb1",
+  "cutL": "#c9ced1",
+  "cutD": "#6f757a",
+  "plank": "#c8a468",
+  "plankD": "#9a7a44",
+  "ink": "#2c4466",
+  "green": "#5f8f3a",
+  "greenL": "#86b04c",
+  "greenD": "#3f6a28",
+  "hideG": "#6f8a4a",
+  "hideGL": "#8fae62",
+  "hideGD": "#4c6532",
+  "hideR": "#a8342a",
+  "hideRL": "#c8523f",
+  "hideRD": "#7a2220",
+  "awnR": "#b8392e",
+  "awnRD": "#8a2620",
+  "awnW": "#eadfc4",
+  "awnWD": "#c9bb98",
+  "shellC": "#f1ead6",
+  "shellD": "#cfc5a8",
+  "tent": "#a5502e",
+  "tentL": "#c06a40",
+  "tentD": "#7a3a22",
+  "tentK": "#2a1a10",
+  "tentR": "#8f3a2c",
+  "beast": "#6a4426",
+  "beastL": "#8a6038",
+  "beastD": "#44281a",
+  "beastT": "#b08a58",
+  "straw": "#d8b85a",
+  "strawL": "#ecd27a",
+  "strawD": "#a98a38",
+  "white": "#efe6cf",
+  "glow": "#ff9a3a",
+  "glowL": "#ffd27a",
+  "smoke": "#9a9aa0",
+  "horn": "#e8dcc0",
+  "hornD": "#b8a888",
+  "glowD": "#c85a1a",
+  "ember": "#ff7a2a",
+  "coal": "#2a2623",
+  "coalL": "#4a423b",
+  "rust": "#8a4a2a",
+  "rustL": "#b0643a",
+  "brick": "#a5503a",
+  "brickL": "#c46a4c",
+  "brickD": "#733526",
+  "ingot": "#b9bec4",
+  "ingotD": "#7d838b",
+  "leath": "#8a5a2e",
+  "leathL": "#b07c46",
+  "leathD": "#5c3a1c",
+  "clothR": "#b2453a",
+  "clothB": "#4a6fa5",
+  "clothY": "#d9b94e",
+  "clothW": "#e8e0cc",
+  "dyeB": "#35538a",
+  "dyeR": "#8e2f2a",
+  "liquid": "#5a4630",
+  "water": "#5c93b8",
+  "waterL": "#9fcbe0",
+  "sawdust": "#e6cf9a",
+  "steam": "#d9d9d9",
+  "bark": "#7a5a34",
+  "barkD": "#523a20",
+  "pitL": "#7a5e3e",
+  "pitD": "#3e2c1a",
+  "dyeY": "#d9b94e",
+  "dyeYD": "#a98a2e"
+ },
+ "layers": [
+  {
+   "shape": "poly",
+   "points": [
+    [
+     4,
+     57
+    ],
+    [
+     56,
+     57
+    ],
+    [
+     69,
+     50
+    ],
+    [
+     16,
+     50
+    ]
+   ],
+   "color": "shadow",
+   "alpha": 0.25
+  },
+  {
+   "shape": "group",
+   "if": "st1",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       6,
+       54
+      ],
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       16,
+       47
+      ]
+     ],
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 6,
+     "y": 54,
+     "w": 48,
+     "h": 2,
+     "color": "stoneD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       47
+      ],
+      [
+       64,
+       49
+      ],
+      [
+       54,
+       56
+      ]
+     ],
+     "color": "stoneD"
+    },
+    {
+     "shape": "scatter",
+     "count": 26,
+     "area": [
+      8,
+      47,
+      54,
+      7
+     ],
+     "size": [
+      1,
+      2
+     ],
+     "colors": [
+      "chip",
+      "stone",
+      "stoneD"
+     ],
+     "onlyOver": [
+      "stoneL"
+     ]
+    },
+    {
+     "shape": "rect",
+     "x": 0,
+     "y": 0,
+     "w": 0,
+     "h": 0,
+     "color": "stone"
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st2",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       54,
+       54
+      ],
+      [
+       64,
+       48
+      ],
+      [
+       64,
+       16
+      ],
+      [
+       54,
+       22
+      ]
+     ],
+     "color": "brickD"
+    },
+    {
+     "shape": "rect",
+     "x": 28,
+     "y": 22,
+     "w": 26,
+     "h": 32,
+     "color": "brick"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       28,
+       22
+      ],
+      [
+       54,
+       22
+      ],
+      [
+       64,
+       16
+      ],
+      [
+       38,
+       16
+      ]
+     ],
+     "color": "brickL"
+    },
+    {
+     "shape": "rect",
+     "x": 28,
+     "y": 22,
+     "w": 26,
+     "h": 1,
+     "color": "brickL"
+    },
+    {
+     "shape": "rect",
+     "x": 28,
+     "y": 22,
+     "w": 1,
+     "h": 32,
+     "color": "brickL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      26
+     ],
+     "to": [
+      54,
+      26
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      26
+     ],
+     "to": [
+      64,
+      20
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       31,
+       24
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       39,
+       24
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       47,
+       24
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      30
+     ],
+     "to": [
+      54,
+      30
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      30
+     ],
+     "to": [
+      64,
+      24
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       35,
+       28
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       43,
+       28
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       51,
+       28
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      34
+     ],
+     "to": [
+      54,
+      34
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      34
+     ],
+     "to": [
+      64,
+      28
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       31,
+       32
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       39,
+       32
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       47,
+       32
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      38
+     ],
+     "to": [
+      54,
+      38
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      38
+     ],
+     "to": [
+      64,
+      32
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       35,
+       36
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       43,
+       36
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       51,
+       36
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      42
+     ],
+     "to": [
+      54,
+      42
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      42
+     ],
+     "to": [
+      64,
+      36
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       31,
+       40
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       39,
+       40
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       47,
+       40
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      46
+     ],
+     "to": [
+      54,
+      46
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      46
+     ],
+     "to": [
+      64,
+      40
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       35,
+       44
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       43,
+       44
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       51,
+       44
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      28,
+      50
+     ],
+     "to": [
+      54,
+      50
+     ],
+     "w": 1,
+     "color": "brickD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      50
+     ],
+     "to": [
+      64,
+      44
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       31,
+       48
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       39,
+       48
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       47,
+       48
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.8
+    },
+    {
+     "shape": "rect",
+     "x": 34,
+     "y": 40,
+     "w": 12,
+     "h": 14,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 35,
+     "y": 41,
+     "w": 10,
+     "h": 13,
+     "color": "plank"
+    },
+    {
+     "shape": "line",
+     "from": [
+      40,
+      41
+     ],
+     "to": [
+      40,
+      54
+     ],
+     "w": 1,
+     "color": "plankD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 40,
+     "cy": 41,
+     "rx": 5,
+     "ry": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 33,
+     "y": 40,
+     "w": 1,
+     "h": 14,
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 40,
+     "w": 1,
+     "h": 14,
+     "color": "stoneL"
+    },
+    {
+     "shape": "rect",
+     "x": 31,
+     "y": 28,
+     "w": 5,
+     "h": 6,
+     "color": "glassD"
+    },
+    {
+     "shape": "rect",
+     "x": 32,
+     "y": 29,
+     "w": 3,
+     "h": 4,
+     "color": "glass"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 28,
+     "w": 5,
+     "h": 6,
+     "color": "glassD"
+    },
+    {
+     "shape": "rect",
+     "x": 47,
+     "y": 29,
+     "w": 3,
+     "h": 4,
+     "color": "glass"
+    },
+    {
+     "shape": "rect",
+     "x": 28,
+     "y": 36,
+     "w": 26,
+     "h": 1,
+     "color": "stone"
+    },
+    {
+     "shape": "line",
+     "from": [
+      54,
+      36
+     ],
+     "to": [
+      64,
+      30
+     ],
+     "w": 1,
+     "color": "line",
+     "alpha": 0.3
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st3",
+   "layers": [
+    {
+     "shape": "poly",
+     "points": [
+      [
+       24,
+       23
+      ],
+      [
+       58,
+       23
+      ],
+      [
+       68,
+       17
+      ],
+      [
+       34,
+       17
+      ]
+     ],
+     "color": "tileD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       24,
+       23
+      ],
+      [
+       41,
+       6
+      ],
+      [
+       58,
+       23
+      ]
+     ],
+     "color": "tile"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       58,
+       23
+      ],
+      [
+       41,
+       6
+      ],
+      [
+       51,
+       0
+      ],
+      [
+       68,
+       17
+      ]
+     ],
+     "color": "tileD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      24,
+      23
+     ],
+     "to": [
+      41,
+      6
+     ],
+     "w": 1,
+     "color": "tileL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      41,
+      6
+     ],
+     "to": [
+      51,
+      0
+     ],
+     "w": 1,
+     "color": "tileL",
+     "alpha": 0.8
+    },
+    {
+     "shape": "line",
+     "from": [
+      27.4,
+      19.6
+     ],
+     "to": [
+      54.6,
+      19.6
+     ],
+     "w": 1,
+     "color": "tileD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      30.8,
+      16.2
+     ],
+     "to": [
+      51.2,
+      16.2
+     ],
+     "w": 1,
+     "color": "tileD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      34.2,
+      12.8
+     ],
+     "to": [
+      47.8,
+      12.8
+     ],
+     "w": 1,
+     "color": "tileD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "line",
+     "from": [
+      37.6,
+      9.399999999999999
+     ],
+     "to": [
+      44.4,
+      9.399999999999999
+     ],
+     "w": 1,
+     "color": "tileD",
+     "alpha": 0.7
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       30,
+       21
+      ],
+      [
+       41,
+       9
+      ],
+      [
+       52,
+       21
+      ]
+     ],
+     "color": "brick"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       30,
+       21
+      ],
+      [
+       41,
+       9
+      ],
+      [
+       52,
+       21
+      ]
+     ],
+     "color": "brickD",
+     "alpha": 0.0
+    },
+    {
+     "shape": "rect",
+     "x": 37,
+     "y": 14,
+     "w": 8,
+     "h": 5,
+     "color": "glassD"
+    },
+    {
+     "shape": "rect",
+     "x": 38,
+     "y": 15,
+     "w": 6,
+     "h": 3,
+     "color": "glass"
+    },
+    {
+     "shape": "line",
+     "from": [
+      41,
+      15
+     ],
+     "to": [
+      41,
+      18
+     ],
+     "w": 1,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 3,
+     "w": 5,
+     "h": 8,
+     "color": "brick"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 3,
+     "w": 1,
+     "h": 8,
+     "color": "brickL"
+    },
+    {
+     "shape": "rect",
+     "x": 51,
+     "y": 4,
+     "w": 2,
+     "h": 7,
+     "color": "brickD"
+    },
+    {
+     "shape": "rect",
+     "x": 45,
+     "y": 1,
+     "w": 7,
+     "h": 2,
+     "color": "stoneL"
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      0
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 48.0,
+       "cy": -2.0,
+       "rx": 1.35,
+       "ry": 1.1700000000000002,
+       "color": "smoke",
+       "alpha": 0.9
+      },
+      {
+       "shape": "ellipse",
+       "cx": 49.512,
+       "cy": -6.2,
+       "rx": 1.9548,
+       "ry": 1.6614000000000002,
+       "color": "smoke",
+       "alpha": 0.69
+      },
+      {
+       "shape": "ellipse",
+       "cx": 51.024,
+       "cy": -10.4,
+       "rx": 2.5596000000000005,
+       "ry": 2.1528000000000005,
+       "color": "smoke",
+       "alpha": 0.48
+      },
+      {
+       "shape": "ellipse",
+       "cx": 52.536,
+       "cy": -14.600000000000001,
+       "rx": 3.1644000000000005,
+       "ry": 2.6442000000000005,
+       "color": "smoke",
+       "alpha": 0.27
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      1
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 48.378,
+       "cy": -3.05,
+       "rx": 1.5011999999999999,
+       "ry": 1.29285,
+       "color": "smoke",
+       "alpha": 0.85
+      },
+      {
+       "shape": "ellipse",
+       "cx": 49.89,
+       "cy": -7.25,
+       "rx": 2.106,
+       "ry": 1.78425,
+       "color": "smoke",
+       "alpha": 0.64
+      },
+      {
+       "shape": "ellipse",
+       "cx": 51.402,
+       "cy": -11.450000000000001,
+       "rx": 2.7108000000000003,
+       "ry": 2.27565,
+       "color": "smoke",
+       "alpha": 0.43
+      },
+      {
+       "shape": "ellipse",
+       "cx": 52.914,
+       "cy": -15.650000000000002,
+       "rx": 3.3156000000000008,
+       "ry": 2.7670500000000007,
+       "color": "smoke",
+       "alpha": 0.22
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      2
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 48.756,
+       "cy": -4.1,
+       "rx": 1.6524,
+       "ry": 1.4157,
+       "color": "smoke",
+       "alpha": 0.8
+      },
+      {
+       "shape": "ellipse",
+       "cx": 50.268,
+       "cy": -8.3,
+       "rx": 2.2572,
+       "ry": 1.9071000000000002,
+       "color": "smoke",
+       "alpha": 0.58
+      },
+      {
+       "shape": "ellipse",
+       "cx": 51.78,
+       "cy": -12.5,
+       "rx": 2.8619999999999997,
+       "ry": 2.3985000000000003,
+       "color": "smoke",
+       "alpha": 0.38
+      },
+      {
+       "shape": "ellipse",
+       "cx": 53.292,
+       "cy": -16.700000000000003,
+       "rx": 3.4668000000000005,
+       "ry": 2.8899000000000004,
+       "color": "smoke",
+       "alpha": 0.16
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      3
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 49.134,
+       "cy": -5.15,
+       "rx": 1.8036,
+       "ry": 1.5385500000000003,
+       "color": "smoke",
+       "alpha": 0.74
+      },
+      {
+       "shape": "ellipse",
+       "cx": 50.646,
+       "cy": -9.350000000000001,
+       "rx": 2.4084000000000003,
+       "ry": 2.02995,
+       "color": "smoke",
+       "alpha": 0.53
+      },
+      {
+       "shape": "ellipse",
+       "cx": 52.158,
+       "cy": -13.55,
+       "rx": 3.0132,
+       "ry": 2.52135,
+       "color": "smoke",
+       "alpha": 0.32
+      },
+      {
+       "shape": "ellipse",
+       "cx": 53.67,
+       "cy": -17.75,
+       "rx": 3.6180000000000003,
+       "ry": 3.01275,
+       "color": "smoke",
+       "alpha": 0.11
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shape": "group",
+   "if": "st4",
+   "layers": [
+    {
+     "shape": "rect",
+     "x": 1,
+     "y": 28,
+     "w": 2,
+     "h": 27,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 1,
+     "y": 28,
+     "w": 1,
+     "h": 27,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 22,
+     "y": 28,
+     "w": 2,
+     "h": 27,
+     "color": "woodD"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       0,
+       28
+      ],
+      [
+       24,
+       28
+      ],
+      [
+       27,
+       23
+      ],
+      [
+       3,
+       23
+      ]
+     ],
+     "color": "tile"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       0,
+       28
+      ],
+      [
+       24,
+       28
+      ],
+      [
+       24,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ],
+     "color": "tileD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      3,
+      23
+     ],
+     "to": [
+      27,
+      23
+     ],
+     "w": 1,
+     "color": "tileL"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       4,
+       31
+      ],
+      [
+       8,
+       31
+      ],
+      [
+       {
+        "cycle": [
+         8,
+         9,
+         8,
+         7
+        ]
+       },
+       49
+      ],
+      [
+       {
+        "cycle": [
+         4,
+         5,
+         4,
+         3
+        ]
+       },
+       49
+      ]
+     ],
+     "color": "clothB"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       9,
+       31
+      ],
+      [
+       13,
+       31
+      ],
+      [
+       {
+        "cycle": [
+         13,
+         14,
+         13,
+         12
+        ]
+       },
+       52
+      ],
+      [
+       {
+        "cycle": [
+         9,
+         10,
+         9,
+         8
+        ]
+       },
+       52
+      ]
+     ],
+     "color": "clothR"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       14,
+       31
+      ],
+      [
+       18,
+       31
+      ],
+      [
+       {
+        "cycle": [
+         18,
+         19,
+         18,
+         17
+        ]
+       },
+       47
+      ],
+      [
+       {
+        "cycle": [
+         14,
+         15,
+         14,
+         13
+        ]
+       },
+       47
+      ]
+     ],
+     "color": "clothY"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       19,
+       31
+      ],
+      [
+       22,
+       31
+      ],
+      [
+       {
+        "cycle": [
+         22,
+         23,
+         22,
+         21
+        ]
+       },
+       50
+      ],
+      [
+       {
+        "cycle": [
+         19,
+         20,
+         19,
+         18
+        ]
+       },
+       50
+      ]
+     ],
+     "color": "clothW"
+    },
+    {
+     "shape": "rect",
+     "x": 4,
+     "y": 31,
+     "w": 4,
+     "h": 1,
+     "color": "clothW"
+    },
+    {
+     "shape": "rect",
+     "x": 9,
+     "y": 31,
+     "w": 4,
+     "h": 1,
+     "color": "clothW"
+    },
+    {
+     "shape": "rect",
+     "x": 14,
+     "y": 31,
+     "w": 4,
+     "h": 1,
+     "color": "clothW"
+    },
+    {
+     "shape": "line",
+     "from": [
+      4,
+      31
+     ],
+     "to": [
+      22,
+      31
+     ],
+     "w": 1,
+     "color": "rope"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       5,
+       36
+      ],
+      [
+       10,
+       40
+      ],
+      [
+       15,
+       38
+      ],
+      [
+       6,
+       44
+      ],
+      [
+       16,
+       43
+      ]
+     ],
+     "color": "ink",
+     "alpha": 0.2
+    },
+    {
+     "shape": "rect",
+     "x": 3,
+     "y": 49,
+     "w": 10,
+     "h": 7,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 3,
+     "y": 49,
+     "w": 1,
+     "h": 7,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 12,
+     "y": 49,
+     "w": 1,
+     "h": 7,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      3,
+      51
+     ],
+     "to": [
+      12,
+      51
+     ],
+     "w": 1,
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      3,
+      54
+     ],
+     "to": [
+      12,
+      54
+     ],
+     "w": 1,
+     "color": "ironL"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 8,
+     "cy": 49,
+     "rx": 5,
+     "ry": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 8,
+     "cy": 49,
+     "rx": 4,
+     "ry": 1.4,
+     "color": "dyeB"
+    },
+    {
+     "shape": "rect",
+     "x": 17,
+     "y": 49,
+     "w": 10,
+     "h": 7,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 17,
+     "y": 49,
+     "w": 1,
+     "h": 7,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 26,
+     "y": 49,
+     "w": 1,
+     "h": 7,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      17,
+      51
+     ],
+     "to": [
+      26,
+      51
+     ],
+     "w": 1,
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      17,
+      54
+     ],
+     "to": [
+      26,
+      54
+     ],
+     "w": 1,
+     "color": "ironL"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 22,
+     "cy": 49,
+     "rx": 5,
+     "ry": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 22,
+     "cy": 49,
+     "rx": 4,
+     "ry": 1.4,
+     "color": "dyeR"
+    },
+    {
+     "shape": "rect",
+     "x": 31,
+     "y": 50,
+     "w": 10,
+     "h": 7,
+     "color": "wood"
+    },
+    {
+     "shape": "rect",
+     "x": 31,
+     "y": 50,
+     "w": 1,
+     "h": 7,
+     "color": "woodL"
+    },
+    {
+     "shape": "rect",
+     "x": 40,
+     "y": 50,
+     "w": 1,
+     "h": 7,
+     "color": "woodD"
+    },
+    {
+     "shape": "line",
+     "from": [
+      31,
+      52
+     ],
+     "to": [
+      40,
+      52
+     ],
+     "w": 1,
+     "color": "ironL"
+    },
+    {
+     "shape": "line",
+     "from": [
+      31,
+      55
+     ],
+     "to": [
+      40,
+      55
+     ],
+     "w": 1,
+     "color": "ironL"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 36,
+     "cy": 50,
+     "rx": 5,
+     "ry": 2,
+     "color": "woodD"
+    },
+    {
+     "shape": "ellipse",
+     "cx": 36,
+     "cy": 50,
+     "rx": 4,
+     "ry": 1.4,
+     "color": "dyeY"
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      0
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 8.0,
+       "cy": 47.0,
+       "rx": 0.8999999999999999,
+       "ry": 0.78,
+       "color": "steam",
+       "alpha": 0.7
+      },
+      {
+       "shape": "ellipse",
+       "cx": 8.63,
+       "cy": 44.9,
+       "rx": 1.3032000000000001,
+       "ry": 1.1076,
+       "color": "steam",
+       "alpha": 0.49
+      },
+      {
+       "shape": "ellipse",
+       "cx": 9.26,
+       "cy": 42.8,
+       "rx": 1.7064000000000001,
+       "ry": 1.4352000000000003,
+       "color": "steam",
+       "alpha": 0.28
+      },
+      {
+       "shape": "ellipse",
+       "cx": 9.89,
+       "cy": 40.7,
+       "rx": 2.1096000000000004,
+       "ry": 1.7628000000000004,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      1
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 8.1575,
+       "cy": 46.475,
+       "rx": 1.0008,
+       "ry": 0.8619,
+       "color": "steam",
+       "alpha": 0.65
+      },
+      {
+       "shape": "ellipse",
+       "cx": 8.7875,
+       "cy": 44.375,
+       "rx": 1.404,
+       "ry": 1.1895,
+       "color": "steam",
+       "alpha": 0.44
+      },
+      {
+       "shape": "ellipse",
+       "cx": 9.4175,
+       "cy": 42.275,
+       "rx": 1.8072000000000001,
+       "ry": 1.5171000000000001,
+       "color": "steam",
+       "alpha": 0.23
+      },
+      {
+       "shape": "ellipse",
+       "cx": 10.0475,
+       "cy": 40.175,
+       "rx": 2.2104000000000004,
+       "ry": 1.8447000000000002,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      2
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 8.315,
+       "cy": 45.95,
+       "rx": 1.1016,
+       "ry": 0.9438,
+       "color": "steam",
+       "alpha": 0.59
+      },
+      {
+       "shape": "ellipse",
+       "cx": 8.945,
+       "cy": 43.85,
+       "rx": 1.5048,
+       "ry": 1.2714,
+       "color": "steam",
+       "alpha": 0.38
+      },
+      {
+       "shape": "ellipse",
+       "cx": 9.575,
+       "cy": 41.75,
+       "rx": 1.9079999999999997,
+       "ry": 1.599,
+       "color": "steam",
+       "alpha": 0.17
+      },
+      {
+       "shape": "ellipse",
+       "cx": 10.205,
+       "cy": 39.65,
+       "rx": 2.3112,
+       "ry": 1.9266,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      3
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 8.4725,
+       "cy": 45.425,
+       "rx": 1.2024,
+       "ry": 1.0257,
+       "color": "steam",
+       "alpha": 0.54
+      },
+      {
+       "shape": "ellipse",
+       "cx": 9.1025,
+       "cy": 43.325,
+       "rx": 1.6056000000000001,
+       "ry": 1.3533,
+       "color": "steam",
+       "alpha": 0.33
+      },
+      {
+       "shape": "ellipse",
+       "cx": 9.7325,
+       "cy": 41.225,
+       "rx": 2.0088,
+       "ry": 1.6808999999999998,
+       "color": "steam",
+       "alpha": 0.12
+      },
+      {
+       "shape": "ellipse",
+       "cx": 10.3625,
+       "cy": 39.125,
+       "rx": 2.4120000000000004,
+       "ry": 2.0085,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      0
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 22.0,
+       "cy": 47.0,
+       "rx": 0.8999999999999999,
+       "ry": 0.78,
+       "color": "steam",
+       "alpha": 0.7
+      },
+      {
+       "shape": "ellipse",
+       "cx": 22.63,
+       "cy": 44.9,
+       "rx": 1.3032000000000001,
+       "ry": 1.1076,
+       "color": "steam",
+       "alpha": 0.49
+      },
+      {
+       "shape": "ellipse",
+       "cx": 23.26,
+       "cy": 42.8,
+       "rx": 1.7064000000000001,
+       "ry": 1.4352000000000003,
+       "color": "steam",
+       "alpha": 0.28
+      },
+      {
+       "shape": "ellipse",
+       "cx": 23.89,
+       "cy": 40.7,
+       "rx": 2.1096000000000004,
+       "ry": 1.7628000000000004,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      1
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 22.1575,
+       "cy": 46.475,
+       "rx": 1.0008,
+       "ry": 0.8619,
+       "color": "steam",
+       "alpha": 0.65
+      },
+      {
+       "shape": "ellipse",
+       "cx": 22.7875,
+       "cy": 44.375,
+       "rx": 1.404,
+       "ry": 1.1895,
+       "color": "steam",
+       "alpha": 0.44
+      },
+      {
+       "shape": "ellipse",
+       "cx": 23.4175,
+       "cy": 42.275,
+       "rx": 1.8072000000000001,
+       "ry": 1.5171000000000001,
+       "color": "steam",
+       "alpha": 0.23
+      },
+      {
+       "shape": "ellipse",
+       "cx": 24.0475,
+       "cy": 40.175,
+       "rx": 2.2104000000000004,
+       "ry": 1.8447000000000002,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      2
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 22.315,
+       "cy": 45.95,
+       "rx": 1.1016,
+       "ry": 0.9438,
+       "color": "steam",
+       "alpha": 0.59
+      },
+      {
+       "shape": "ellipse",
+       "cx": 22.945,
+       "cy": 43.85,
+       "rx": 1.5048,
+       "ry": 1.2714,
+       "color": "steam",
+       "alpha": 0.38
+      },
+      {
+       "shape": "ellipse",
+       "cx": 23.575,
+       "cy": 41.75,
+       "rx": 1.9079999999999997,
+       "ry": 1.599,
+       "color": "steam",
+       "alpha": 0.17
+      },
+      {
+       "shape": "ellipse",
+       "cx": 24.205,
+       "cy": 39.65,
+       "rx": 2.3112,
+       "ry": 1.9266,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      3
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 22.4725,
+       "cy": 45.425,
+       "rx": 1.2024,
+       "ry": 1.0257,
+       "color": "steam",
+       "alpha": 0.54
+      },
+      {
+       "shape": "ellipse",
+       "cx": 23.1025,
+       "cy": 43.325,
+       "rx": 1.6056000000000001,
+       "ry": 1.3533,
+       "color": "steam",
+       "alpha": 0.33
+      },
+      {
+       "shape": "ellipse",
+       "cx": 23.7325,
+       "cy": 41.225,
+       "rx": 2.0088,
+       "ry": 1.6808999999999998,
+       "color": "steam",
+       "alpha": 0.12
+      },
+      {
+       "shape": "ellipse",
+       "cx": 24.3625,
+       "cy": 39.125,
+       "rx": 2.4120000000000004,
+       "ry": 2.0085,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      0
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 36.0,
+       "cy": 48.0,
+       "rx": 0.8999999999999999,
+       "ry": 0.78,
+       "color": "steam",
+       "alpha": 0.7
+      },
+      {
+       "shape": "ellipse",
+       "cx": 36.63,
+       "cy": 45.9,
+       "rx": 1.3032000000000001,
+       "ry": 1.1076,
+       "color": "steam",
+       "alpha": 0.49
+      },
+      {
+       "shape": "ellipse",
+       "cx": 37.26,
+       "cy": 43.8,
+       "rx": 1.7064000000000001,
+       "ry": 1.4352000000000003,
+       "color": "steam",
+       "alpha": 0.28
+      },
+      {
+       "shape": "ellipse",
+       "cx": 37.89,
+       "cy": 41.7,
+       "rx": 2.1096000000000004,
+       "ry": 1.7628000000000004,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      1
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 36.1575,
+       "cy": 47.475,
+       "rx": 1.0008,
+       "ry": 0.8619,
+       "color": "steam",
+       "alpha": 0.65
+      },
+      {
+       "shape": "ellipse",
+       "cx": 36.7875,
+       "cy": 45.375,
+       "rx": 1.404,
+       "ry": 1.1895,
+       "color": "steam",
+       "alpha": 0.44
+      },
+      {
+       "shape": "ellipse",
+       "cx": 37.4175,
+       "cy": 43.275,
+       "rx": 1.8072000000000001,
+       "ry": 1.5171000000000001,
+       "color": "steam",
+       "alpha": 0.23
+      },
+      {
+       "shape": "ellipse",
+       "cx": 38.0475,
+       "cy": 41.175,
+       "rx": 2.2104000000000004,
+       "ry": 1.8447000000000002,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      2
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 36.315,
+       "cy": 46.95,
+       "rx": 1.1016,
+       "ry": 0.9438,
+       "color": "steam",
+       "alpha": 0.59
+      },
+      {
+       "shape": "ellipse",
+       "cx": 36.945,
+       "cy": 44.85,
+       "rx": 1.5048,
+       "ry": 1.2714,
+       "color": "steam",
+       "alpha": 0.38
+      },
+      {
+       "shape": "ellipse",
+       "cx": 37.575,
+       "cy": 42.75,
+       "rx": 1.9079999999999997,
+       "ry": 1.599,
+       "color": "steam",
+       "alpha": 0.17
+      },
+      {
+       "shape": "ellipse",
+       "cx": 38.205,
+       "cy": 40.65,
+       "rx": 2.3112,
+       "ry": 1.9266,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "group",
+     "onFrames": [
+      3
+     ],
+     "layers": [
+      {
+       "shape": "ellipse",
+       "cx": 36.4725,
+       "cy": 46.425,
+       "rx": 1.2024,
+       "ry": 1.0257,
+       "color": "steam",
+       "alpha": 0.54
+      },
+      {
+       "shape": "ellipse",
+       "cx": 37.1025,
+       "cy": 44.325,
+       "rx": 1.6056000000000001,
+       "ry": 1.3533,
+       "color": "steam",
+       "alpha": 0.33
+      },
+      {
+       "shape": "ellipse",
+       "cx": 37.7325,
+       "cy": 42.225,
+       "rx": 2.0088,
+       "ry": 1.6808999999999998,
+       "color": "steam",
+       "alpha": 0.12
+      },
+      {
+       "shape": "ellipse",
+       "cx": 38.3625,
+       "cy": 40.125,
+       "rx": 2.4120000000000004,
+       "ry": 2.0085,
+       "color": "steam",
+       "alpha": 0.08
+      }
+     ]
+    },
+    {
+     "shape": "rect",
+     "x": 58,
+     "y": 24,
+     "w": 2,
+     "h": 31,
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 58,
+     "y": 24,
+     "w": 1,
+     "h": 31,
+     "color": "wood"
+    },
+    {
+     "shape": "poly",
+     "points": [
+      [
+       60,
+       25
+      ],
+      [
+       68,
+       27
+      ],
+      [
+       60,
+       33
+      ]
+     ],
+     "color": "clothR"
+    },
+    {
+     "shape": "line",
+     "from": [
+      60,
+      25
+     ],
+     "to": [
+      68,
+      27
+     ],
+     "w": 1,
+     "color": "clothW"
+    },
+    {
+     "shape": "rect",
+     "x": 56,
+     "y": 34,
+     "w": 7,
+     "h": 5,
+     "color": "plank"
+    },
+    {
+     "shape": "rect",
+     "x": 56,
+     "y": 34,
+     "w": 7,
+     "h": 1,
+     "color": "woodL"
+    },
+    {
+     "shape": "pixels",
+     "at": [
+      [
+       58,
+       36
+      ],
+      [
+       60,
+       36
+      ],
+      [
+       61,
+       37
+      ]
+     ],
+     "color": "woodD"
+    },
+    {
+     "shape": "rect",
+     "x": 46,
+     "y": 54,
+     "w": 8,
+     "h": 2,
+     "color": "clothB"
+    },
+    {
+     "shape": "rect",
+     "x": 47,
+     "y": 52,
+     "w": 7,
+     "h": 2,
+     "color": "clothW"
+    }
+   ]
+  },
+  {
+   "shape": "outline",
+   "color": "line"
+  }
+ ],
+ "animate": {
+  "frames": 4,
+  "fps": 4
+ }
+}

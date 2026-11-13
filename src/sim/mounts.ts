@@ -1,11 +1,11 @@
 /**
  * Mounts. Keepers working in the Chuồng thú tame beasts (a wolf, a boar, an elephant: the level of the stable decides which, and each needs its own research)
  * and the beast goes to the stock, from where it is given to a villager like a tool. A rider walks faster and takes less of a blow; a soldier with a beast counts as
- * cavalry. The soldiers of the Trại kỵ thú need no beast from the stock: they ride the one that goes with the level of their camp.
+ * cavalry. The soldiers of the Trại lính kỵ need no beast from the stock: they ride the one that goes with the level of their camp.
  */
-import { PACE } from './constants';
 import { levelDef } from './buildings';
-import { MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
+import { isHorse, MOUNT_KINDS, MOUNTS, MountKind } from './jobs';
+import { perkPct } from './research';
 import type { Sim } from './sim';
 import type { Villager } from './model';
 
@@ -52,21 +52,22 @@ export function tickTame(sim: Sim, dt: number): void {
     if (!d) { b.active = null; continue; }
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, 'tame'); sim.gainXp(v, 'tame', dt); }
-    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * PACE.work * rate * levelDef(b).craftSpeed) / d.time); // dev: done at once
+    b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim.researched, 'tameSpeed') / 100)) / d.time); // dev: done at once; the research of the tamers makes it quicker
     if (b.active.progress < 1) continue;
     if (MOUNT_KINDS.reduce((n, m) => n + tamedCount(sim, m), 0) >= STOCK_CAP) { if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say('Chuồng đã đầy thú chưa có người cưỡi: sản phẩm chờ chỗ.'); } continue; }
     sim.toolStock[stockKey(k)] = tamedCount(sim, k) + 1; b.active = null;
     sim.say(`Đã thuần xong một con ${d.name.toLowerCase()}.`);
+    if (isHorse(k)) sim.addAlert('mount'); // it neighs
   }
 }
 
-/** The beast of a camp: the level of the Trại kỵ thú decides it (a wolf, then a boar, then an elephant). */
+/** The beast of a camp: the level of the Trại lính kỵ decides it (a wolf, then a boar, then an elephant). */
 function campBeast(sim: Sim): MountKind {
   const camp = sim.building('cavalry');
   return MOUNT_KINDS[Math.max(0, Math.min(MOUNT_KINDS.length, camp?.level ?? 1) - 1)];
 }
 
-/** The beast a villager is riding now (also the riders of a village): the one he was given, or, for a rider of the Trại kỵ thú, the beast of the camp. */
+/** The beast a villager is riding now (also the riders of a village): the one he was given, or, for a rider of the Trại lính kỵ, the beast of the camp. */
 export function mountOf(sim: Sim, v: Villager): MountKind | null {
   if (v.team !== 'player') return v.mount ?? null; // the riders of a village were given their beast when they came out (tribelod.spawnOut)
   const own = v.mount ?? ((v.job === 'fight' || v.job === 'scout') && v.arm === 'cavalry' ? campBeast(sim) : null);
@@ -108,13 +109,13 @@ export function assignMount(sim: Sim, ids: readonly number[], kind: MountKind | 
   let given = 0, short = false, riders = false;
   for (const v of sim.mine(ids)) {
     if (v.mount === kind) continue;
-    if (kind && v.job === 'fight' && v.arm === 'cavalry') { riders = true; continue; } // the riders of the camp have their beast already
+    if (kind && v.job === 'fight' && v.arm !== 'cavalry') { riders = true; continue; } // foot soldiers and throwers do not ride: only the riders of the Trại lính kỵ, hunters and scouts
     if (kind && tamedCount(sim, kind) <= 0) { short = true; continue; }
     if (v.mount) sim.toolStock[stockKey(v.mount)] = tamedCount(sim, v.mount) + 1;
     if (kind) sim.toolStock[stockKey(kind)]--;
     v.mount = kind; given++;
-    if (kind) { v.speed = 1.6 + 0.1 * v.stats.agi; sim.say(`${v.name} được giao một con ${MOUNTS[kind].name.toLowerCase()} để cưỡi.`); } else sim.say(`${v.name} trả thú về chuồng.`);
+    if (kind) { if (v.job !== 'fight') v.speed = 1.6 + 0.1 * v.stats.agi; sim.say(`${v.name} được giao một con ${MOUNTS[kind].name.toLowerCase()} để cưỡi.`); } else sim.say(`${v.name} trả thú về chuồng.`);
   }
   if (given) return null;
-  return riders ? 'Kỵ binh của Trại kỵ thú đã có thú của trại' : short ? `Chuồng hết ${kind ? MOUNTS[kind].name.toLowerCase() : 'thú'} đã thuần: hãy thuần thêm` : null;
+  return riders ? 'Bộ binh và cung thủ không cưỡi thú: chỉ kỵ binh, thợ săn và trinh sát' : short ? `Chuồng hết ${kind ? MOUNTS[kind].name.toLowerCase() : 'thú'} đã thuần: hãy thuần thêm` : null;
 }

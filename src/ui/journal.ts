@@ -21,6 +21,10 @@ export class Journal {
   private noticeKey = '#'; // '#' matches no real key, so an empty list is still drawn once
   private readonly noticeSeen = new Set<string>();
   private readonly noticeLines = new Map<string, { when: HTMLElement; body: HTMLElement }>();
+  /** The notice window has two tabs: the notices, and the time and weather (what the top bar used to say). */
+  private noticeTab: 'list' | 'weather' = 'list';
+  private weatherKey = '';
+  weather: () => { head: string; rows: Array<[string, string]> } = () => ({ head: '', rows: [] });
   private views: QuestView[] = [];
   private notes: Notice[] = [];
   private readonly win: Record<Which, GameDialog>;
@@ -56,9 +60,10 @@ export class Journal {
     this.dot.quests.hidden = this.open === 'quests' || !cur || cur.quest.id === this.questSeen;
 
     if (this.open === 'notices') {
-      const key = notes.map((n) => `${n.id}|${n.level}`).join(',');
+      const key = this.noticeTab + notes.map((n) => `${n.id}|${n.level}`).join(',');
       if (key !== this.noticeKey) { this.noticeKey = key; this.drawNotices(notes); }
-      for (const n of notes) { const l = this.noticeLines.get(n.id); if (l) { l.when.textContent = n.when; l.body.textContent = n.body; } this.noticeSeen.add(`${n.id}|${n.level}`); }
+      if (this.noticeTab === 'weather') this.drawWeather();
+      else for (const n of notes) { const l = this.noticeLines.get(n.id); if (l) { l.when.textContent = n.when; l.body.textContent = n.body; } this.noticeSeen.add(`${n.id}|${n.level}`); }
     }
     this.dot.notices.hidden = this.open === 'notices' || !notes.some((n) => !this.noticeSeen.has(`${n.id}|${n.level}`));
     this.dot.notices.classList.toggle('calm', !notes.some((n) => n.level === 'urgent'));
@@ -78,7 +83,7 @@ export class Journal {
     });
     this.win.quests.show(dlg.card({ wide: true, label: 'Nhiệm vụ' },
       dlg.head({ pic: '📜', title: 'Nhiệm vụ', sub: CHAPTERS.find((x) => x.id === chap)?.name, bar: cur ? { value: done, max: mine.length, label: `${done}/${mine.length}` } : undefined, onClose: () => this.close() }),
-      dlg.list(...(cur ? tiles : [dlg.empty('Đã hoàn thành kế hoạch tới Nhà chung cấp 4.')]))));
+      dlg.list(...(cur ? tiles : [dlg.empty('Đã hoàn thành kế hoạch tới Nhà chung cấp 3.')]))));
     this.win.quests.root.querySelector('.now')?.scrollIntoView({ block: 'nearest' });
   }
 
@@ -94,14 +99,33 @@ export class Journal {
       const people = n.people?.length ? dlg.button('Chi tiết', () => this.details(n.people!), { small: true }) : null;
       return dlg.tile({ state: n.level, pic: n.icon.length > 1 ? resIcon(n.icon) : n.icon, name: n.title, chip: when, title: n.tip }, [body], go && people ? h('div', { class: 'dacts' }, go, people) : go ?? people);
     });
+    const tab = (which: 'list' | 'weather', label: string) => h('button', { class: 'sm', type: 'button', text: label, pressed: this.noticeTab === which, onclick: () => { this.noticeTab = which; this.noticeKey = '#'; this.weatherKey = ''; this.update(this.views, this.notes); } });
+    this.weatherBox.replaceChildren();
     this.win.notices.show(dlg.card({ wide: true, label: 'Thông báo' },
-      dlg.head({ pic: '🔔', title: 'Thông báo', onClose: () => this.close() }),
-      dlg.list(...(tiles.length ? tiles : [dlg.empty('Không có thông báo nào.')]))));
+      dlg.head({ pic: this.noticeTab === 'list' ? '🔔' : '⛅', title: this.noticeTab === 'list' ? 'Thông báo' : 'Thời tiết', onClose: () => this.close() }),
+      h('div', { class: 'btns jtabs' }, tab('list', '🔔 Thông báo'), tab('weather', '⛅ Thời tiết')),
+      this.noticeTab === 'list' ? dlg.list(...(tiles.length ? tiles : [dlg.empty('Không có thông báo nào.')])) : this.weatherBox));
+  }
+
+  private readonly weatherBox = h('div', { class: 'jweather' });
+  /** The time and the weather: the date, the season, the part of the day, the weather and what it does. Redrawn only when the words change. */
+  private drawWeather(): void {
+    const w = this.weather(), key = JSON.stringify(w);
+    if (key === this.weatherKey) return;
+    this.weatherKey = key;
+    this.weatherBox.replaceChildren(h('div', { class: 'jclock', text: w.head }), ...w.rows.map(([k, v]) => h('p', { class: 'bline' }, h('span', { text: k }), h('b', { text: v }))));
   }
 
   /** Run the command a notice carries. */
   private run(cmd: NonNullable<Notice['command']>): void {
     const { sim, toast } = this.c;
+    if (cmd.kind === 'meet') {
+      const g = sim.guestsWaiting().find((x) => x.id === cmd.id);
+      if (!g) { toast('Người đó đã đi rồi'); return; }
+      this.close();
+      const e = sim.encounterOpen(cmd.id); if (e) toast(e);
+      return;
+    }
     if (cmd.kind === 'withdraw') { const plan = sim.plans.find((p) => p.kind === 'attack' && p.status === 'running'); const e = plan ? sim.withdrawPlan(plan) : 'Không có trận nào'; if (e) toast(e); else this.close(); }
   }
 

@@ -19,6 +19,8 @@ Village-building / tribal-warfare game. TypeScript + esbuild, runs in the browse
 - **Never read or grep `dist/`**. It holds multi-MB generated bundles. Also skip `node_modules/` and `*.gen.ts`.
 - Do not take screenshots or render the game to verify a change. Use `npm run build` (and `tsc --noEmit` if needed).
 - Prefer Grep plus partial reads (offset/limit) over reading whole files. Several files exceed 500 lines.
+- **Write all new docs (`doc/*.md`, architecture rows, notes) in English**, short and table-heavy, to save tokens. Chat replies to the user stay Vietnamese. In-game text stays Vietnamese (it is content, not documentation).
+- **Session lessons:** at the end of each work session, add what was learned about finding code and reading docs cheaply (where things live, which greps work, what not to open) to the memory file `session-token-lessons.md`, and read that file at the start of a task. Keep it short; merge duplicates and delete wrong entries.
 
 ## Where things live
 
@@ -59,6 +61,7 @@ Hard rules when editing `src/sim`:
 
 ## Conventions
 
+- **Player orders are absolute and always have the highest priority**, whatever rules are added later (only physical limits, shown as a toast, may refuse one).
 - Tools and items pivot at the **handle end**. Tool JSON is handle + head, **side view only**.
 - Config and balance numbers belong in `src/data/*.json` or `src/content/`, not hardcoded in systems.
 - Adding a building means adding a directory under `src/content/buildings/<kind>/`.

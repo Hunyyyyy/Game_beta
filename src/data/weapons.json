@@ -1,12 +1,134 @@
 {
-  "_note": "type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor (the attack speed of the weapon). Every blow or shot does the weapon damage plus the damage stat of the fighter. crit: base chance of a critical blow or shot, 0 to 1 (none have any; research gives it, never above rules.critMax). A critical one does critDamage times the damage (1.25 = 125% of a normal blow, 4 = four times), or the weapon's own critDamage. The research of each weapon (aspd, crit, critd in researchtree.json) is added to the weapon of whoever holds it: aspd by a percent, crit and critd by real points (0.5 = half a percent of chance; 100 = one more time the damage). cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see \"styles\"); anims overrides single states for one weapon; projectile: what a ranged weapon fires.",
+  "_note": "type: pierce | slash | crush. range in tiles. cycle in seconds before the agility factor (the attack speed of the weapon). Every blow or shot does the weapon damage plus the damage stat of the fighter. crit: base chance of a critical blow or shot, 0 to 1 (none have any; research gives it, never above rules.critMax). A critical one does critDamage times the damage (1.25 = 125% of a normal blow, 4 = four times), or the weapon's own critDamage. The research of each weapon (aspd, crit, critd in researchtree.json) is added to the weapon of whoever holds it: aspd by a percent, crit and critd by real points (0.5 = half a percent of chance; 100 = one more time the damage). cost/time/tier only for what the player can craft; others are used by tribes. style: which set of fighting animations the weapon uses (see \"styles\"); anims overrides single states for one weapon; projectile: what a ranged weapon fires. Thời Trung cổ (tier 4): arming_sword (style sword_shield, có khiên), composite_bow, lance (style rider_lance, ngồi trên ngựa) và giáp footman, archer, rider; chưa có công thức chế tạo, chỉ có qua dev hoặc bộ tộc. `shield`: khiên vẽ ở tay trái (src/data/shields). rank: bậc lính mang được vũ khí này (ranks.json); tier vẫn là vật liệu (màu đầu vũ khí, khóa trong kho).",
   "styles": {
-    "fist":   { "name": "Tay không",                            "idle": "idle",        "walk": "walk",        "guard": "fist_guard",   "charge": "fist_charge",   "attack": "fist_attack" },
-    "swing":  { "name": "Vung, chém, đập (gậy, chùy, rìu, kiếm)", "idle": "swing_idle",  "walk": "swing_walk",  "guard": "swing_guard",  "charge": "swing_charge",  "attack": "swing_attack" },
-    "thrust": { "name": "Đâm (giáo, thương)",                   "idle": "thrust_idle", "walk": "thrust_walk", "guard": "thrust_guard", "charge": "thrust_charge", "attack": "thrust_attack" },
-    "shoot":  { "name": "Bắn (cung, nỏ, súng)",                 "idle": "shoot_idle",  "walk": "shoot_walk",  "guard": "shoot_guard",  "charge": "shoot_charge",  "attack": "shoot_attack" },
-    "sling":  { "name": "Quăng đá (dây quăng, ná)",             "idle": "sling_idle",  "walk": "sling_walk",  "guard": "sling_guard",  "charge": "sling_charge",  "attack": "sling_attack" },
-    "throw":  { "name": "Ném (lao, phóng lao)",                 "idle": "throw_idle",  "walk": "throw_walk",  "guard": "throw_guard",  "charge": "throw_charge",  "attack": "throw_attack" }
+    "fist": {
+      "name": "Tay không",
+      "idle": "idle",
+      "walk": "walk",
+      "guard": "fist_guard",
+      "charge": "fist_charge",
+      "attack": "fist_attack"
+    },
+    "swing": {
+      "name": "Vung, chém, đập (gậy, chùy, rìu, kiếm)",
+      "idle": "swing_idle",
+      "walk": "swing_walk",
+      "guard": "swing_guard",
+      "charge": "swing_charge",
+      "attack": "swing_attack"
+    },
+    "thrust": {
+      "name": "Đâm (giáo, thương)",
+      "idle": "thrust_idle",
+      "walk": "thrust_walk",
+      "guard": "thrust_guard",
+      "charge": "thrust_charge",
+      "attack": "thrust_attack"
+    },
+    "shoot": {
+      "name": "Bắn (cung, nỏ, súng)",
+      "idle": "shoot_idle",
+      "walk": "shoot_walk",
+      "guard": "shoot_guard",
+      "charge": "shoot_charge",
+      "attack": "shoot_attack"
+    },
+    "sling": {
+      "name": "Quăng đá (dây quăng, ná)",
+      "idle": "sling_idle",
+      "walk": "sling_walk",
+      "guard": "sling_guard",
+      "charge": "sling_charge",
+      "attack": "sling_attack"
+    },
+    "throw": {
+      "name": "Ném (lao, phóng lao)",
+      "idle": "throw_idle",
+      "walk": "throw_walk",
+      "guard": "throw_guard",
+      "charge": "throw_charge",
+      "attack": "throw_attack"
+    },
+    "sword_shield": {
+      "name": "Kiếm và khiên (thời Trung cổ)",
+      "idle": "shield_idle",
+      "walk": "shield_walk",
+      "guard": "shield_guard",
+      "charge": "shield_charge",
+      "attack": "shield_attack"
+    },
+    "rider_lance": {
+      "name": "Giáo kỵ binh (ngồi trên ngựa, thời Trung cổ)",
+      "idle": "rider_idle",
+      "walk": "rider_walk",
+      "guard": "rider_guard",
+      "charge": "rider_charge",
+      "attack": "rider_attack"
+    },
+    "stone_throw": {
+      "name": "Ném đá bằng tay",
+      "idle": "stone_idle",
+      "walk": "stone_walk",
+      "guard": "stone_guard",
+      "charge": "stone_charge",
+      "attack": "stone_attack"
+    },
+    "crossbow": {
+      "name": "Nỏ (ngắm, bắn, lên dây)",
+      "idle": "xbow_idle",
+      "walk": "xbow_walk",
+      "guard": "xbow_guard",
+      "charge": "xbow_charge",
+      "attack": "xbow_attack"
+    },
+    "post_club": {
+      "name": "Người canh gác (gậy cầm thả thấp, không khiên)",
+      "idle": "post_club_idle",
+      "walk": "post_club_walk",
+      "guard": "swing_guard",
+      "charge": "swing_charge",
+      "attack": "swing_attack"
+    },
+    "post_spear": {
+      "name": "Lính gác (giáo dựng trước ngực, khiên gỗ)",
+      "idle": "post_spear_idle",
+      "walk": "post_spear_walk",
+      "guard": "post_spear_guard",
+      "charge": "post_spear_charge",
+      "attack": "post_spear_attack"
+    },
+    "guard_watch": {
+      "name": "Tuần đinh trung cổ (giáo ngắn dựng bên người, khiên gỗ)",
+      "idle": "gpost_spear_idle",
+      "walk": "post_spear_walk",
+      "guard": "post_spear_guard",
+      "charge": "post_spear_charge",
+      "attack": "post_spear_attack"
+    },
+    "guard_pike": {
+      "name": "Lính gác trung cổ (giáo dài dựng bên người, hai tay)",
+      "idle": "gpost_pike_idle",
+      "walk": "thrust_walk",
+      "guard": "thrust_guard",
+      "charge": "thrust_charge",
+      "attack": "thrust_attack"
+    },
+    "guard_sword": {
+      "name": "Cận vệ trung cổ (kiếm đeo hông khi đứng, rút kiếm khi đánh)",
+      "idle": "gpost_sword_idle",
+      "walk": "gpost_sword_walk",
+      "guard": "shield_guard",
+      "charge": "shield_charge",
+      "attack": "shield_attack"
+    },
+    "post_mace": {
+      "name": "Lính canh (chùy nâng trước vai, khiên gỗ)",
+      "idle": "post_mace_idle",
+      "walk": "post_mace_walk",
+      "guard": "post_mace_guard",
+      "charge": "post_mace_charge",
+      "attack": "post_mace_attack"
+    }
   },
   "weapons": {
     "fist": {
@@ -29,12 +151,14 @@
       "durability": 80,
       "time": 20,
       "tier": 1,
-      "style": "swing"
+      "style": "swing",
+      "postStyle": "post_club",
+      "rank": 1
     },
     "spear": {
       "name": "Giáo gỗ",
       "type": "pierce",
-      "range": 1.5,
+      "range": 1.6,
       "damage": 5,
       "cycle": 1.4,
       "cost": {
@@ -43,13 +167,69 @@
       "durability": 120,
       "time": 30,
       "tier": 1,
-      "style": "thrust"
+      "style": "thrust",
+      "postStyle": "post_spear",
+      "postShield": "wood",
+      "rank": 2
+    },
+    "sling": {
+      "name": "Dây quăng đá",
+      "type": "crush",
+      "range": 5.5,
+      "damage": 6,
+      "cycle": 2,
+      "ranged": true,
+      "cost": {
+        "wood": 5,
+        "stone": 5
+      },
+      "durability": 90,
+      "time": 60,
+      "style": "sling",
+      "projectile": "stone",
+      "tier": 1,
+      "rank": 2
+    },
+    "bow": {
+      "name": "Cung ngắn",
+      "type": "pierce",
+      "range": 8,
+      "damage": 9,
+      "cycle": 2.0,
+      "ranged": true,
+      "cost": {
+        "wood": 20,
+        "feather": 3
+      },
+      "durability": 110,
+      "time": 100,
+      "style": "shoot",
+      "projectile": "arrow",
+      "tier": 1,
+      "rank": 3
+    },
+    "thrown_stone": {
+      "name": "Đá ném",
+      "type": "crush",
+      "range": 4.5,
+      "damage": 3,
+      "cycle": 2,
+      "ranged": true,
+      "cost": {
+        "stone": 2
+      },
+      "durability": 60,
+      "time": 15,
+      "style": "stone_throw",
+      "projectile": "stone",
+      "tier": 2,
+      "rank": 1
     },
     "mace": {
       "name": "Chùy đá",
       "type": "crush",
       "range": 1,
-      "damage": 1,
+      "damage": 7,
       "cycle": 1.2,
       "cost": {
         "wood": 20,
@@ -58,7 +238,10 @@
       "durability": 120,
       "time": 100,
       "tier": 2,
-      "style": "swing"
+      "style": "swing",
+      "postStyle": "post_mace",
+      "postShield": "wood",
+      "rank": 3
     },
     "hatchet": {
       "name": "Rìu đá",
@@ -66,47 +249,214 @@
       "range": 1,
       "damage": 8,
       "cycle": 1.3,
-      "style": "swing", "anims": { "attack": "slash" },
+      "style": "swing",
+      "anims": {
+        "attack": "slash"
+      },
       "tier": 2
     },
-    "sling": {
-      "name": "Dây quăng đá",
-      "type": "crush",
-      "range": 5.5,
-      "damage": 4,
+    "bronze_spear": {
+      "cost": {"bronze": 2, "hardwood": 2},
+      "time": 70,
+      "name": "Giáo đồng",
+      "type": "pierce",
+      "range": 1.7,
+      "damage": 11,
+      "cycle": 1.3,
+      "style": "thrust",
+      "tier": 3,
+      "rank": 4,
+      "postStyle": "post_spear",
+      "postShield": "wood"
+    },
+    "bronze_sword": {
+      "cost": {"bronze": 3, "hardwood": 1},
+      "time": 80,
+      "name": "Kiếm đồng",
+      "type": "slash",
+      "range": 1.1,
+      "damage": 13,
+      "cycle": 1.1,
+      "style": "swing",
+      "anims": {
+        "attack": "slash"
+      },
+      "tier": 3,
+      "rank": 4
+    },
+    "bronze_bow": {
+      "cost": {"hardwood": 2, "sinew": 2, "feather": 2, "bronze": 1},
+      "time": 80,
+      "name": "Cung đồng",
+      "type": "pierce",
+      "range": 8.5,
+      "damage": 11,
+      "cycle": 1.8,
+      "ranged": true,
+      "style": "shoot",
+      "projectile": "arrow",
+      "tier": 3,
+      "rank": 4
+    },
+    "bronze_axe": {
+      "name": "Rìu đồng",
+      "type": "slash",
+      "range": 1,
+      "damage": 16,
+      "cycle": 1.4,
+      "style": "swing",
+      "anims": {
+        "attack": "slash"
+      },
+      "tier": 3
+    },
+    "short_spear": {
+      "cost": {"iron": 2, "hardwood": 2},
+      "time": 80,
+      "name": "Giáo ngắn tuần đinh",
+      "type": "pierce",
+      "range": 1.6,
+      "damage": 11,
+      "cycle": 1.3,
+      "style": "guard_watch",
+      "shield": "wood",
+      "tier": 4,
+      "rank": 5
+    },
+    "arming_sword": {
+      "cost": {"iron": 4, "hardwood": 2, "leather": 1},
+      "time": 100,
+      "name": "Kiếm thẳng",
+      "type": "slash",
+      "range": 1.1,
+      "damage": 15,
+      "cycle": 1.1,
+      "style": "sword_shield",
+      "shield": "heater",
+      "tier": 4,
+      "rank": 5
+    },
+    "lance": {
+      "cost": {"iron": 2, "hardwood": 3},
+      "time": 90,
+      "name": "Giáo kỵ binh",
+      "type": "pierce",
+      "range": 2.2,
+      "damage": 20,
+      "cycle": 1.5,
+      "style": "rider_lance",
+      "tier": 4,
+      "rank": 5
+    },
+    "composite_bow": {
+      "cost": {"hardwood": 2, "sinew": 3, "feather": 3, "iron": 1},
+      "time": 100,
+      "name": "Cung ghép",
+      "type": "pierce",
+      "range": 9.5,
+      "damage": 11,
+      "cycle": 1.7,
+      "ranged": true,
+      "projectile": "arrow",
+      "style": "shoot",
+      "tier": 4,
+      "rank": 5
+    },
+    "pike": {
+      "name": "Giáo dài lính gác",
+      "type": "pierce",
+      "range": 2.2,
+      "damage": 15,
+      "cycle": 1.5,
+      "style": "guard_pike",
+      "tier": 5,
+      "rank": 6
+    },
+    "heavy_lance": {
+      "name": "Trường thương kỵ binh",
+      "type": "pierce",
+      "range": 2.5,
+      "damage": 29,
+      "cycle": 1.6,
+      "style": "rider_lance",
+      "tier": 5,
+      "rank": 6
+    },
+    "greatsword": {
+      "name": "Đại kiếm",
+      "type": "slash",
+      "range": 1.3,
+      "damage": 23,
+      "cycle": 1.4,
+      "style": "sword_shield",
+      "shield": "tower",
+      "tier": 5,
+      "rank": 6
+    },
+    "longbow": {
+      "name": "Trường cung",
+      "type": "pierce",
+      "range": 12,
+      "damage": 15,
       "cycle": 2,
       "ranged": true,
-      "cost": {"wood":5, "hide": 3, "stone": 5 },
-      "durability": 90,
-      "time": 60,
-      "style": "sling", "projectile": "stone",
-      "tier": 1
+      "projectile": "arrow",
+      "style": "shoot",
+      "tier": 5,
+      "rank": 6
     },
-    "bronze_spear": { "name": "Giáo đồng", "type": "pierce", "range": 1.7, "damage": 11, "cycle": 1.3, "style": "thrust", "tier": 3 },
-    "bronze_sword": { "name": "Kiếm đồng", "type": "slash", "range": 1.1, "damage": 13, "cycle": 1.1, "style": "swing", "anims": { "attack": "slash" }, "tier": 3 },
-    "bronze_axe": { "name": "Rìu đồng", "type": "slash", "range": 1, "damage": 16, "cycle": 1.4, "style": "swing", "anims": { "attack": "slash" }, "tier": 3 },
-    "bow": {
-      "name": "Cung ngắn",
+    "ward_sword": {
+      "name": "Kiếm dài cận vệ",
+      "type": "slash",
+      "range": 1.1,
+      "damage": 17,
+      "cycle": 1.1,
+      "style": "guard_sword",
+      "tier": 5,
+      "rank": 7
+    },
+    "knight_sword": {
+      "name": "Kiếm thánh giáo",
+      "type": "slash",
+      "range": 1.3,
+      "damage": 30,
+      "cycle": 1.3,
+      "style": "sword_shield",
+      "shield": "aegis",
+      "tier": 5,
+      "rank": 7
+    },
+    "paladin_lance": {
+      "name": "Thương thánh kỵ sĩ",
       "type": "pierce",
-      "range": 8,
-      "damage": 8,
-      "cycle": 2.0,
+      "range": 2.7,
+      "damage": 42,
+      "cycle": 1.8,
+      "style": "rider_lance",
+      "tier": 5,
+      "rank": 7
+    },
+    "alloy_crossbow": {
+      "name": "Nỏ hợp kim",
+      "type": "pierce",
+      "range": 14,
+      "damage": 45,
+      "cycle": 3.0,
       "ranged": true,
-      "cost": { "wood": 30, "hide": 10,"feather": 3 },
-      "durability": 110,
-      "time": 100,
-      "style": "shoot", "projectile": "arrow",
-      "tier": 1
+      "projectile": "arrow",
+      "style": "crossbow",
+      "tier": 5,
+      "rank": 7
     }
   },
   "armor": {
+    "grass": { "name": "Áo cỏ", "defm": 10, "defr": 8, "cost": { "wood": 4 }, "durability": 120, "time": 60, "tier": 1 },
     "hide": {
       "name": "Áo da thú",
-      "pierce": 0.1,
-      "slash": 0.2,
-      "crush": 0.1,
+      "defm": 20,
+      "defr": 15,
       "cost": {
-        "hide": 30
+        "hide": 5
       },
       "durability": 200,
       "time": 100,
@@ -114,22 +464,112 @@
     },
     "bone": {
       "name": "Giáp da xương",
-      "pierce": 0.22,
-      "slash": 0.34,
-      "crush": 0.22,
+      "defm": 45,
+      "defr": 34,
       "cost": {
-        "hide": 30,
-        "bone": 20
+        "hide": 7,
+        "bone": 5
       },
       "durability": 350,
       "time": 160,
       "tier": 2
     },
-    "bronze": { "name": "Giáp đồng", "pierce": 0.38, "slash": 0.5, "crush": 0.3, "tier": 3 }
+    "bronze": {
+      "cost": {"bronze": 6, "leather": 2},
+      "time": 140,
+      "name": "Giáp đồng",
+      "defm": 75,
+      "defr": 65,
+      "tier": 3
+    },
+    "watchman": {
+      "cost": {"iron": 2, "leather": 3},
+      "time": 120,
+      "name": "Giáp tuần đinh (da cứng)",
+      "defm": 85,
+      "defr": 75,
+      "tier": 4
+    },
+    "footman": {
+      "cost": {"iron": 6, "leather": 2},
+      "time": 160,
+      "name": "Giáp xích bộ binh",
+      "defm": 95,
+      "defr": 80,
+      "tier": 4
+    },
+    "archer": {
+      "cost": {"leather": 3, "cloth": 1},
+      "time": 120,
+      "name": "Giáp da cung thủ",
+      "defm": 60,
+      "defr": 65,
+      "tier": 4
+    },
+    "rider": {
+      "cost": {"leather": 4, "iron": 2},
+      "time": 140,
+      "name": "Giáp da bọc đinh",
+      "defm": 75,
+      "defr": 75,
+      "tier": 4
+    },
+    "sergeant": {
+      "name": "Giáp lính gác chuyên nghiệp (xích + brigandine)",
+      "defm": 110,
+      "defr": 95,
+      "tier": 5
+    },
+    "warden": {
+      "name": "Giáp cận vệ thành trì (tấm 3/4)",
+      "defm": 165,
+      "defr": 145,
+      "tier": 5
+    },
+    "guard": {
+      "name": "Giáp tấm hộ vệ",
+      "defm": 150,
+      "defr": 130,
+      "tier": 5
+    },
+    "marksman": {
+      "name": "Giáp brigandine",
+      "defm": 90,
+      "defr": 100,
+      "tier": 5
+    },
+    "royalrider": {
+      "name": "Giáp tấm kỵ binh hoàng gia",
+      "defm": 140,
+      "defr": 125,
+      "tier": 5
+    },
+    "templar": {
+      "name": "Giáp tấm thánh giáo",
+      "defm": 200,
+      "defr": 175,
+      "tier": 5
+    },
+    "sniper": {
+      "name": "Giáp da cao cấp",
+      "defm": 105,
+      "defr": 125,
+      "tier": 5
+    },
+    "paladin": {
+      "name": "Giáp tấm thánh kỵ sĩ",
+      "defm": 185,
+      "defr": 160,
+      "tier": 5
+    }
   },
   "rules": {
     "backstab": 1.25,
-    "tierMult": { "2": { "damage": 1.4 } },
+    "tierMult": {
+      "2": {
+        "damage": 1.4
+      }
+    },
     "critMax": 0.1,
     "critDamage": 1.25,
     "strengthDamage": 0.6,

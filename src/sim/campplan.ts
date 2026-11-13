@@ -7,7 +7,7 @@ import { BUILDINGS, BuildingKind, Era, eraLocked, fireUnlockLevel, levelCapByFir
 
 /** What goes inside the fence first (the heart of the defence: the camps, the stores, the workshops), then what stays outside (the working houses, out by the land they work). */
 export const CORE: BuildingKind[] = ['storage', 'builder', 'workshop', 'armory', 'infantry', 'archery', 'cavalry', 'guardpost', 'lab', 'wartent', 'stable', 'house', 'toolstore', 'scouttent', 'supplycamp'];
-export const OUTSIDE: BuildingKind[] = ['lumberyard', 'quarry', 'farmhouse', 'huntlodge', 'drill'];
+export const OUTSIDE: BuildingKind[] = ['lumberyard', 'quarry', 'mine', 'ranch', 'farmhouse', 'huntlodge', 'drill'];
 
 export interface Piece { kind: BuildingKind; x: number; y: number; w: number; h: number; level: number }
 interface Rect { x: number; y: number; w: number; h: number }
@@ -32,7 +32,7 @@ export function limitAt(kind: BuildingKind, fireLevel: number): number {
 export function slotsAt(kinds: BuildingKind[], fireLevel: number, era: Era, advanced: boolean): number {
   let n = 0;
   for (const k of kinds) {
-    if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel || eraLocked(k, { advanced })) continue;
+    if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel || eraLocked(k, { era: advanced ? 'ancient' : 'stone' })) continue;
     const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapByFire(fireLevel)));
     n += limitAt(k, fireLevel) * (levelsOf(k, era)[lv - 1]?.slots ?? 0);
   }
@@ -53,7 +53,7 @@ const hits = (a: Rect, b: Rect): boolean => a.x < b.x + b.w && b.x < a.x + a.w &
 export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, advanced: boolean, taken: Rect[], blocked: (r: Rect) => boolean): Piece[] {
   const fire = { x: fx, y: fy }, cx = fx + 1, cy = fy + 1, half = fenceHalf(fireLevel), fenced = half > 0;
   const out: Piece[] = [], used: Rect[] = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
-  const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel && !eraLocked(k, { advanced });
+  const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel && !eraLocked(k, { era: advanced ? 'ancient' : 'stone' });
   const cap = levelCapByFire(fireLevel);
   const put = (kind: BuildingKind, x: number, y: number): boolean => {
     const d = BUILDINGS[kind], r = { x, y, w: d.w, h: d.h };
@@ -71,7 +71,7 @@ export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, ad
       put(d === 0 ? 'gate' : 'fence', cx + d, cy + half);
       if (Math.abs(d) < half) { put('fence', cx - half, cy + d); put('fence', cx + half, cy + d); }
     }
-    if (!eraLocked('tower', { advanced })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
+    if (!eraLocked('tower', { era: advanced ? 'ancient' : 'stone' })) for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put('tower', sx > 0 ? cx + half + 1 : cx - half - 2, sy > 0 ? cy + half + 1 : cy - half - 2);
   } else if (open('tower')) {
     for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]].slice(0, limitAt('tower', fireLevel))) put('tower', cx + sx * 8 - (sx < 0 ? 2 : 0), cy + sy * 8 - (sy < 0 ? 2 : 0));
   }
@@ -81,5 +81,21 @@ export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, ad
   for (let r = firstOutside; r <= firstOutside + 3; r++) outside.push(...ring(fire, r).sort((p, q) => Math.abs(p[1] - fy) - Math.abs(q[1] - fy))); // out by the sides, where the land is worked
   for (const kind of CORE.filter(open)) for (let n = limitAt(kind, fireLevel); n > 0; n--) { if (!(spot(kind, inside) || spot(kind, outside))) break; }
   for (const kind of OUTSIDE.filter(open)) for (let n = limitAt(kind, fireLevel); n > 0; n--) { if (!spot(kind, outside)) break; }
+  return out;
+}
+
+/**
+ * The camp of bandits: not a village, a few tents (2 by 2) scattered round the fire, at spots a little way out so that the loot piles and the fire stay clear. No fence, no gate,
+ * no tower, no houses. `tents` of them are put up, those that fit (water, mountain and what stands already are left alone).
+ */
+export function planBandits(fx: number, fy: number, tents: number, taken: Rect[], blocked: (r: Rect) => boolean): Piece[] {
+  const SPOTS: Array<[number, number]> = [[-6, -5], [5, -5], [-7, 2], [6, 3], [-1, 6], [0, -7]];
+  const out: Piece[] = [], used: Rect[] = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
+  for (const [dx, dy] of SPOTS) {
+    if (out.length >= tents) break;
+    const r = { x: fx + dx, y: fy + dy, w: 2, h: 2 };
+    if (used.some((u) => hits(u, r)) || blocked(r)) continue;
+    used.push(r); out.push({ kind: 'fieldtent', x: r.x, y: r.y, w: 2, h: 2, level: 1 });
+  }
   return out;
 }

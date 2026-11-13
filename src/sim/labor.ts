@@ -1,12 +1,14 @@
 /** Everyday work: gathering, carrying, building, and the phase machine that decides what a villager does next. */
-import { toolBonus, workSpeed } from './statsys';
+import { carryCap, strokeYield, toolBonus, workSpeed } from './statsys';
 import { SEASON_DEF, WEATHER } from './calendar';
-import { PACE } from './constants';
-import { Building, BUILDINGS, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
-import { FARM_TIME, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
-import { CARRY_CAP, RES_NAME } from './resources';
+import { Building, BUILDINGS, footOf, GATHER_HOUSE, gatherMult, holdsGoods, levelDef, maxHp, needsWork } from './buildings';
+import { FARM_TIME, FLAX_TIME, ORE_RES, oreSeconds, isStaffJob, JOBS, JOB_NAME, MAX_LEVEL, NodeKind, WorkJob, XP_LEVELS, BARE_HANDS, OUTDOOR_JOBS } from './jobs';
+import { RES_NAME } from './resources';
+import { hash2 } from './rng';
+import paceJson from '../data/pace.json';
+import NODES from '../data/nodes.json';
 import { TIER_NAME, TIER_SPEED, TIER_YIELD, TOOL_NAME, TOOL_OF_JOB } from './tools';
-import { RESEARCH } from './research';
+import { craftQuality, perkPct, RESEARCH } from './research';
 import type { Sim } from './sim';
 import { LEFT, REACH, RIGHT, Slide, Villager, XP_MULT } from './model';
 
@@ -19,17 +21,23 @@ export function outdoorFactor(sim: Sim, job: WorkJob): number {
   return OUTDOOR_JOBS.includes(job) ? WEATHER[sim.weather].work * SEASON_DEF[sim.season].work : 1;
 }
 
+/** The first days of a village: cutting wood and mining stone go a little faster, the bonus fading to nothing over `days` (pace.json `earlyBuff`). */
+function earlyBoost(sim: Sim, job: WorkJob): number {
+  const b = paceJson.earlyBuff;
+  return b.jobs.includes(job) ? 1 + b.bonus * Math.max(0, 1 - (sim.day - 1) / b.days) : 1;
+}
+
 export function workFactor(sim: Sim, v: Villager, job: WorkJob, field = false): number {
   const season = job === 'food' ? SEASON_DEF[sim.season][field ? 'farm' : 'gather'] : 1;
   const tier = TOOL_OF_JOB[job] ? sim.toolTier(v, job) : -1;
   const tool = tier < 0 ? 1 : tier === 0 ? BARE_HANDS[job] ?? TIER_SPEED[0] : TIER_SPEED[tier] * (1 + toolBonus(sim, v, job as WorkJob, 'tspd') / 100);
-  return workSpeed(sim, v) * (1 + 0.2 * v.skill[job].level) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v);
+  return workSpeed(sim, v) * (1 + 0.2 * v.skill[job].level) * tool * season * outdoorFactor(sim, job) * sim.restFactor(v) * earlyBoost(sim, job);
 }
 
 export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   const s = v.skill[job];
   if (s.level >= MAX_LEVEL) return;
-  s.xp += dt * PACE.work * XP_MULT[v.potential[job]];
+  s.xp += dt * sim.paceWork * XP_MULT[v.potential[job]];
   if (s.xp >= XP_LEVELS[s.level]) { s.level++; sim.say(`${v.name} lên cấp ${s.level} nghề ${JOB_NAME[job].toLowerCase()}.`); }
 }
 
@@ -37,7 +45,7 @@ export function gainXp(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
 export function wear(sim: Sim, v: Villager, job: WorkJob, dt: number): void {
   const k = TOOL_OF_JOB[job], t = k ? v.tools[k] : null;
   if (!k || !t || t.dur <= 0) return;
-  t.dur -= (dt * PACE.work) / (1 + toolBonus(sim, v, job, 'tdur') / 100);
+  t.dur -= (dt * sim.paceWork) / ((1 + (toolBonus(sim, v, job, 'tdur') + perkPct(sim.researched, 'toolDur')) / 100) * craftQuality(sim.building('workshop')?.level ?? 1));
   if (t.dur <= 0) { v.tools[k] = null; sim.say(`${TOOL_NAME[k]} ${TIER_NAME[t.tier].toLowerCase()} của ${v.name} đã hỏng, vứt bỏ.`); }
 }
 
@@ -104,18 +112,18 @@ export function think(sim: Sim, v: Villager, dt: number): void {
       if (!b || !needsWork(b)) { v.phase = 'idle'; return; }
       if (b.repairing && b.done && !b.upgrading) { // repair: the strength comes back at the pace the house went up
         const top = maxHp(b);
-        b.hp = Math.min(top, b.hp + top * (dt * PACE.work / levelDef(b).buildTime) * workFactor(sim, v, 'build') * sim.crewSpeed());
+        b.hp = Math.min(top, b.hp + top * (dt * sim.paceWork / levelDef(b).buildTime) * workFactor(sim, v, 'build') * sim.crewSpeed());
         gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
         if (b.hp >= top) { b.hp = top; b.repairing = false; v.phase = 'idle'; sim.say(`${BUILDINGS[b.kind].name} đã được sửa xong.`); }
         return;
       }
       const target = b.upgrading ? b.level + 1 : b.level;
-      b.progress += (dt * PACE.work / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1))) * workFactor(sim, v, 'build') * sim.crewSpeed();
+      b.progress += (dt * sim.paceWork / (levelDef(b, target).buildTime * (b.rebuild ? 0.5 : 1))) * workFactor(sim, v, 'build') * sim.crewSpeed();
       gainXp(sim, v, 'build', dt); wear(sim, v, 'build', dt);
       if (b.progress >= 1) {
         b.progress = 1;
-        if (b.upgrading) { b.level++; b.upgrading = false; b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); }
-        else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân vào làm việc, rồi nghiên cứu bản vẽ đầu tiên.'); }
+        if (b.upgrading) { b.level++; b.upgrading = false; sim.finishGrow(b); b.hp = maxHp(b); sim.say(`${BUILDINGS[b.kind].name} đã lên cấp ${b.level} (${levelDef(b).name.toLowerCase()}).`); sim.afterUpgrade(b); }
+        else { b.done = true; b.rebuild = false; sim.fogDirty = true; if (b.kind === 'builder') sim.trimCrew(); sim.say(`${BUILDINGS[b.kind].name} đã dựng xong.`); if (RESEARCH.enabled && b.kind === 'lab' && sim.researched.size === 0) sim.say('Mở Nhà nghiên cứu, đưa một dân vào làm việc, rồi nghiên cứu thứ đầu tiên.'); }
         v.phase = 'idle';
       }
       return;
@@ -151,17 +159,18 @@ function idleHome(sim: Sim, v: Villager): void {
 export function doWork(sim: Sim, v: Villager, dt: number): void {
   const job = v.job as WorkJob, def = JOBS[job], n = sim.world.nodes.get(v.target);
   if (!def.res || !n || n.amount <= 0) { leaveNode(sim, v); v.phase = 'idle'; return; }
-  v.progress += (dt * workFactor(sim, v, job)) / def.baseTime; // gathering is timed in real seconds, see pace.json
-  gainXp(sim, v, job, dt);
+  if (v.carry && v.carry.amount > 0 && v.carry.res !== n.res) { leaveNode(sim, v); planDeliver(sim, v); return; } // a miner's seam is iron ore or coal: what he carries goes down first
+  if (job === 'mine' && v.ores && !v.ores.includes(n.res)) { leaveNode(sim, v); v.phase = 'idle'; return; } // the player took this ore away from him
   const tierNow = sim.toolTier(v, job);
+  v.progress += (dt * workFactor(sim, v, job) * (job === 'mine' ? 1 + perkPct(sim.researched, 'mineSpeed') / 100 : 1)) / (job === 'mine' ? oreSeconds(n.res, tierNow) : def.baseTime); // gathering is timed in real seconds, see pace.json; an ore has its own time, and a tool below its grade is slower
+  gainXp(sim, v, job, dt);
   wear(sim, v, job, dt);
   if (v.progress < 1) return;
   v.progress -= 1;
-  // sản lượng mỗi lần theo chất lượng công cụ, phần lẻ cộng dồn sang lần sau
-  const kindOf = GATHER_HOUSE[job], res = def.res, acc = v.frac + gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (1 + toolBonus(sim, v, job as WorkJob, 'tyield') / 100), whole = Math.floor(acc);
+  // sản lượng mỗi lần: cấp nhà × chất lượng công cụ, cộng % công cụ và % nghề (nghiên cứu); số lẻ được mang đi, kho làm tròn lên khi nhận (economy.deposit)
+  const kindOf = GATHER_HOUSE[job], res = n.res, gain = strokeYield(sim, v, job, gatherMult(kindOf ? sim.building(kindOf) : undefined) * TIER_YIELD[tierNow] * (paceJson.yield as Record<string, number>)[res]); // pace.json "yield": what a stroke brings in, so that a stroke need not be quicker
   const have = v.carry && v.carry.res === res ? v.carry.amount : 0;
-  const take = Math.max(0, Math.min(whole, n.amount, CARRY_CAP[res] - have));
-  v.frac = acc - whole;
+  const take = Math.max(0, Math.min(gain, n.amount, carryCap(sim, v, res) - have));
   n.amount -= take;
   v.carry = { res, amount: have + take };
   // gatherers now and then turn up a shell (the stone age's money) among the berries
@@ -171,9 +180,9 @@ export function doWork(sim: Sim, v: Villager, dt: number): void {
   }
   if (n.amount <= 0) {
     const idx = v.target, N = sim.world.size; leaveNode(sim, v);
-    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y)); v.phase = 'idle';
+    sim.world.depleted(idx, (x, y) => sim.fog.state[y * N + x] > 0 && !sim.inZone(x, y) && ![...sim.villagers, ...sim.foes].some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.animals.some((o) => Math.floor(o.x) === x && Math.floor(o.y) === y) && !sim.buildings.some((b) => { const f = footOf(b); return x >= b.x - 2 && x < b.x + f.w + 2 && y >= b.y - 2 && y < b.y + f.h + 2; }), sim.campfire()?.level ?? 1); v.phase = 'idle';
     if (n.kind === 'tree') sim.say('Một cây đã được đốn xong.');
-  } else if (v.carry.amount >= CARRY_CAP[res] || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
+  } else if (v.carry.amount >= carryCap(sim, v, res) || sim.needTool(v, job)) { leaveNode(sim, v); v.phase = 'idle'; }
 }
 
 /** The fields work: whoever the player put inside one grows food straight into the store, faster in a field of a higher level, with a hoe, and with the season. */
@@ -182,14 +191,14 @@ export function tickFarms(sim: Sim, dt: number): void {
     if (b.kind !== 'field' || !b.done) continue;
     for (const id of b.staff) {
       const v = sim.byId.get(id);
-      if (!v || v.phase !== 'inside' || v.job !== 'food' || !sim.hasRoom('food')) continue;
-      v.progress += (dt * workFactor(sim, v, 'food', true) * levelDef(b).craftSpeed) / FARM_TIME;
+      const flax = b.crop === 'flax' && sim.era === 'ancient'; // a field sown with flax gives fibre, more slowly (the medieval age)
+      if (!v || v.phase !== 'inside' || v.job !== 'food' || !sim.hasRoom(flax ? 'fiber' : 'food')) continue;
+      v.progress += (dt * workFactor(sim, v, 'food', true) * levelDef(b).craftSpeed) / (flax ? FLAX_TIME : FARM_TIME);
       gainXp(sim, v, 'food', dt); wear(sim, v, 'food', dt);
       if (v.progress < 1) continue;
       v.progress -= 1;
-      const acc = v.frac + TIER_YIELD[sim.toolTier(v, 'food')] * (1 + toolBonus(sim, v, 'food', 'tyield') / 100), whole = Math.floor(acc);
-      v.frac = acc - whole;
-      sim.noteYield('farm', sim.deposit('food', whole));
+      if (flax) sim.noteYield('flax', sim.deposit('fiber', strokeYield(sim, v, 'food', TIER_YIELD[sim.toolTier(v, 'food')])));
+      else sim.noteYield('farm', sim.deposit('food', strokeYield(sim, v, 'food', TIER_YIELD[sim.toolTier(v, 'food')])));
     }
   }
 }
@@ -199,8 +208,8 @@ export function plan(sim: Sim, v: Villager): void {
   if (v.job === 'build') { if (!sim.planTool(v, 'build')) planBuild(sim, v); return; }
   if (isStaffJob(v.job) || (v.job === 'food' && v.post >= 0)) { sim.planStaff(v); return; }
   const def = JOBS[v.job as WorkJob], res = def.res!;
-  if (v.carry && (v.carry.res !== res || v.carry.amount >= CARRY_CAP[v.carry.res])) { planDeliver(sim, v); return; }
-  if (!sim.hasRoom(res)) {
+  if (v.carry && ((def.node === 'ore' ? !ORE_RES.includes(v.carry.res) : v.carry.res !== res) || v.carry.amount >= carryCap(sim, v, v.carry.res))) { planDeliver(sim, v); return; } // a miner may carry any ore on to the next seam: doWork puts a load down when the seam is the other one
+  if (!(def.node === 'ore' ? ORE_RES.some((r) => sim.hasRoom(r)) : sim.hasRoom(res))) { // a miner works while any ore has room
     if (v.carry) { planDeliver(sim, v); return; }
     if (sim.time - sim.lastFullWarn > 30) { sim.lastFullWarn = sim.time; sim.say(`Kho đã đầy ${RES_NAME[res].toLowerCase()}, hãy nâng cấp Kho.`); }
     wait(sim, v, 3); return;
@@ -208,22 +217,68 @@ export function plan(sim: Sim, v: Villager): void {
   if (sim.planTool(v, v.job as WorkJob)) return;
   if (findNode(sim, v, def.node!)) { trapped.delete(v); return; }
   if (v.carry) { planDeliver(sim, v); return; }
+  if (exploreFor(sim, v, def.node!)) return;
+  warnExhausted(sim, def.node!);
   freeTrapped(sim, v, sim.buildings.filter((b) => b.done && holdsGoods(b)).sort((a, b) => Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y)));
   wait(sim, v, 2);
 }
 
+/**
+ * Nothing of what he gathers is left in the land the village has seen: he goes out to look, to a spot round the fire (as far as the level of the fire allows: nodes.json exploreReach),
+ * unexplored ground first, a new direction every few seconds, as the hunters do. Walking there opens the map; when he arrives he looks again. Returns whether he set out.
+ */
+function exploreFor(sim: Sim, v: Villager, kind: NodeKind): boolean {
+  const fire = sim.campfire();
+  if (!fire || sim.pathLeft <= 0) return false;
+  let c = sim.nodeCheck[kind];
+  if (!c || sim.time - c.t > 5) { // who asks looks over the land at most every few seconds (the map holds very many things)
+    let left = false;
+    for (const [idx, n] of sim.world.nodes) if (n.kind === kind && n.amount > 0 && sim.fog.state[idx] > 0) { left = true; break; }
+    c = sim.nodeCheck[kind] = { t: sim.time, left };
+  }
+  if (c.left) return false; // something is left: they are only busy or cut off, not a reason to wander
+  const N = sim.world.size, reach = NODES.exploreReach[Math.max(0, Math.min(NODES.exploreReach.length, fire.level) - 1)], step = Math.floor(sim.time / 10), spots: Array<[number, number, boolean]> = [];
+  for (let t = 0; t < 10; t++) {
+    const ang = hash2(v.id, step * 16 + t, 83) * Math.PI * 2, rad = reach * (0.45 + 0.55 * hash2(v.id, step * 16 + t, 84));
+    const gx = Math.floor(fire.x + 1 + Math.cos(ang) * rad), gy = Math.floor(fire.y + 1 + Math.sin(ang) * rad);
+    if (sim.world.inBounds(gx, gy) && !sim.world.isBlocked(gx, gy)) spots.push([gx, gy, sim.fog.state[gy * N + gx] === 0]);
+  }
+  spots.sort((p, q) => Number(q[2]) - Number(p[2])); // the unexplored first
+  for (const [gx, gy] of spots) {
+    if (sim.pathLeft <= 0) break;
+    sim.pathLeft--;
+    const path = sim.pathTo(v, gx, gy, 3000);
+    if (path.length) { v.path = path; v.phase = 'move'; return true; }
+  }
+  return false;
+}
+
+const NODE_WORD: Record<NodeKind, string> = { tree: 'cây', rock: 'đá', bush: 'bụi quả', ore: 'quặng' };
+/** A gatherer finds nothing to work: if no source of the kind is left in the land the village has seen, tell the player to send scouts (and the gatherers go by themselves once ground with some is lit). */
+function warnExhausted(sim: Sim, kind: NodeKind): void {
+  if (sim.time - (sim.noNodeWarn[kind] ?? -999) < NODES.warnEvery) return;
+  const st = sim.fog.state;
+  for (const [idx, n] of sim.world.nodes) if (n.kind === kind && n.amount > 0 && st[idx] > 0) return; // something is left: they are only busy or cut off
+  sim.noNodeWarn[kind] = sim.time;
+  sim.say(`Xung quanh đây đã hết ${NODE_WORD[kind]}: dân sẽ tự đi tìm quanh làng (xa hơn khi lửa trại lên cấp). Muốn nhanh hơn hãy cử người đi khám phá.`);
+}
+
 export function findNode(sim: Sim, v: Villager, kind: NodeKind): boolean {
+  const job = v.job;
   const N = sim.world.size, vx = Math.floor(v.x), vy = Math.floor(v.y);
   const ok = (idx: number) => {
     const n = sim.world.nodes.get(idx);
-    return !!n && n.kind === kind && n.amount > 0 && n.workers < 2 && n.sides !== 3 && sim.fog.state[idx] > 0 && (v.bad.get(idx) ?? 0) <= sim.time;
+    return !!n && n.kind === kind && (job !== 'mine' || !v.ores || v.ores.includes(n.res)) && n.amount > 0 && n.workers < 2 && n.sides !== 3 && sim.fog.state[idx] > 0 && (v.bad.get(idx) ?? 0) <= sim.time && (n.res !== 'rare_ore' || (sim.building('mine')?.level ?? 0) >= 3); // the rare ore is for a Mỏ of level 3
   };
   const cands: Array<[number, number]> = [];
   if (v.prefer >= 0 && ok(v.prefer)) cands.push([-1, v.prefer]);
+  const fx = sim.gatherFocus.x, fy = sim.gatherFocus.y, focus = fx !== undefined && fy !== undefined; // the player pointed at a place on the big map: sources near it come first
   for (const [idx, n] of sim.world.nodes) {
     if (n.kind !== kind || n.amount <= 0 || n.workers >= 2 || n.sides === 3 || idx === v.prefer || !ok(idx)) continue;
-    const d = (idx % N - vx) ** 2 + (((idx / N) | 0) - vy) ** 2;
-    if (d <= 70 * 70) cands.push([d, idx]);
+    const x = idx % N, y = (idx / N) | 0, d = (x - vx) ** 2 + (y - vy) ** 2;
+    if (d > NODES.searchRadius ** 2) continue;
+    const df = focus ? (x - fx) ** 2 + (y - fy) ** 2 : Infinity;
+    cands.push([df <= 30 * 30 ? df - 1e7 : d, idx]); // sources within 30 tiles of the chosen place sort before all others, nearest to it first
   }
   cands.sort((a, b) => a[0] - b[0]);
   for (let c = 0; c < Math.min(4, cands.length); c++) {
@@ -311,6 +366,11 @@ export function planBuild(sim: Sim, v: Villager): void {
   let sites = sim.buildings.filter((b) => needsWork(b) && (house || b.kind === 'builder') && onSite(b) < 3);
   sites.sort((a, b) => (b.id === v.prefer ? 1 : 0) - (a.id === v.prefer ? 1 : 0) ||
     Math.hypot(a.x + 1 - v.x, a.y + 1 - v.y) - Math.hypot(b.x + 1 - v.x, b.y + 1 - v.y));
+  // nothing to build: a builder with free hands takes the materials from the stock and mends the most damaged house by himself
+  if (!sites.length && house) {
+    const hurt = sim.buildings.filter((b) => b.done && !b.upgrading && !b.repairing && b.hp < maxHp(b) - 0.5 && sim.canRepair(b) === null).sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b));
+    if (hurt.length && sim.repairBuilding(hurt[0].id) === null) sites = [hurt[0]];
+  }
   sites = sites.slice(0, 2);
   for (const b of sites) {
     const d = BUILDINGS[b.kind];
