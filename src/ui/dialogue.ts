@@ -111,12 +111,13 @@ export class Dialogue {
         this.notesEl,
         this.cardsEl)));
     let freeLast = -1;
-    const refocus = (fly: boolean): void => { // the camera looks at the visitor in the strip of the screen that the panel (and a figure standing on it) leaves clear
-      const H = window.innerHeight || 1, top = panel.getBoundingClientRect().top, b = bust.parentElement?.getBoundingClientRect();
-      const edge = b && b.width > 0 && b.bottom <= top + 40 ? Math.min(top, b.top) : top, free = Math.max(0.2, edge / H);
-      if (!fly && Math.abs(free - freeLast) < 0.04) return;
-      freeLast = free;
-      const f = this.c.sim.get(v.unitId); if (f) this.c.ctl.flyToTile(f.x, f.y, fly ? 800 : 350, free);
+    const refocus = (fly: boolean): void => { // the camera looks at the visitor in the strip of the screen that the top bar and the panel (and a figure standing on it) leave clear
+      const top = panel.getBoundingClientRect().top, b = bust.parentElement?.getBoundingClientRect();
+      const bottom = b && b.width > 0 && b.bottom <= top + 40 ? Math.min(top, b.top) : top, hud = document.getElementById('resBar')?.getBoundingClientRect().bottom ?? 0;
+      const from = Math.min(Math.max(hud, 44), bottom - 60);
+      if (!fly && Math.abs(bottom - freeLast) < 12) return;
+      freeLast = bottom;
+      const f = this.c.sim.get(v.unitId); if (f) this.c.ctl.flyToTile(f.x, f.y, fly ? 800 : 350, { top: from, bottom });
     };
     let timer = 0;
     this.watch?.disconnect(); this.watch = new ResizeObserver(() => { // (on a phone the figure stands on the top edge of the panel, whatever its height)
