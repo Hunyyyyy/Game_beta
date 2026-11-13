@@ -99,8 +99,10 @@ export interface Building {
   rebuild: boolean;
   /** Strength left of a defence work (fence, gate, tower); 0 for the other houses. */
   hp: number;
-  /** A gate lets everyone through while it is open, and stops everyone while it is shut. */
+  /** A gate lets everyone through while it is open, and stops everyone but soldiers while it is shut. */
   open: boolean;
+  /** The game time until which the guards of the gate leave it as the player set it by hand (defense.tickGates). */
+  autoHold?: number;
   /** A gate laid along a column: 1 turns its footprint a quarter (the gate is 2 × 1 tiles, standing, 1 × 2). Absent: lying along a row. */
   rot?: 0 | 1;
   /** The footprint of a building older than its kind's present size (the gates of old saves are one tile): when set it is the size, whatever the kind says. */

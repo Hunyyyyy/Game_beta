@@ -143,6 +143,8 @@ export class Menu {
 
     page.append(h('h3', { text: 'Thời gian và thời tiết' }));
     page.append(h('div', { class: 'devrow' }, btn('Sáng', () => dev.setTimeOfDay(sim, 0.3)), btn('Trưa', () => dev.setTimeOfDay(sim, 0.5)), btn('Chiều', () => dev.setTimeOfDay(sim, 0.78)), btn('Đêm', () => dev.setTimeOfDay(sim, 0.95)), btn('+1 ngày', () => dev.skipDays(sim, 1)), btn('+5 ngày', () => dev.skipDays(sim, 5))));
+    page.append(h('h3', { text: 'Người lạ ghé làng' }));
+    page.append(h('div', { class: 'devrow' }, ...['wanderer', 'peddler', 'refugees', 'pursuers', 'scout_envoy', 'extortion', 'ultimatum', 'travelers', 'ransom', 'thief_caught', 'newcomers'].map((id) => btn(id, () => toast(dev.summonVisitor(sim, id)), `Gọi ngay người lạ của kịch bản ${id} (Sáng, ngay hôm nay)`))));
     page.append(h('div', { class: 'devrow' }, ...SEASONS.map((s) => btn(SEASON_NAME[s], () => dev.setSeason(sim, s)))));
     page.append(h('div', { class: 'devrow' }, ...(Object.keys(WEATHER) as WeatherKind[]).map((k) => btn(WEATHER[k].name, () => dev.setWeather(sim, k)))));
     return page;

@@ -249,7 +249,17 @@ export function tribeAttacked(sim: Sim, id: Team, victim: Villager): void {
     t.relation = Math.max(-100, t.relation + (t.def.personality === 'peaceful' ? RELATION.attackedPeaceful : -10));
     if (sim.time - t.lastAngry > 30) { t.lastAngry = sim.time; sim.say(`${t.def.name} bị tấn công và nổi giận!`); }
   }
-  void victim;
+  if (victim.ai?.guest !== undefined) sim.guestAttacked(victim.id); // one of the strangers at our gate was struck (encounters.ts)
+}
+
+/** Strangers at our gate were struck: the armed among them take up the fight on the spot, as a raid of their village. */
+export function guestsToRaid(sim: Sim, id: TribeId, unitIds: number[]): void {
+  const t = tribeOf(sim, id), units = unitIds.map((u) => sim.get(u)).filter((f): f is Villager => !!f && f.health > 0);
+  if (!t || !units.length) return;
+  const raid = t.raid ?? (t.raid = { id: ++sim.nextRaid, phase: 'march', t: 0, max: 900, size: 0, night: undefined });
+  raid.size += units.length;
+  for (const f of units) { f.ai = { role: 'raider', camp: t.camp, wander: 0, goal: null, raid: raid.id }; f.path = []; f.phase = 'idle'; t.unitIds.push(f.id); }
+  t.relation = Math.min(t.relation, -60); t.angryUntil = sim.time + 400;
 }
 
 export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
@@ -263,6 +273,7 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
     t.relation = Math.max(-100, t.relation + (v.ai?.role === 'civ' ? RELATION.killCivilian : RELATION.killWarrior));
     t.angryUntil = sim.time + 120;
   }
+  if (v.ai?.guest !== undefined && killer?.team === 'player') sim.guestSlain(v.id); // a guest killed at the gate: the deeds and what follows (encounters.ts)
   if (v.id === t.leaderId) { t.leaderDead = true; sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`); }
   sim.onKill?.();
 }
@@ -272,6 +283,14 @@ export function giftOf(t: Pick<Tribe, 'campLevel' | 'boss'>, era: Era): Partial<
   const out: Partial<Stock> = {};
   for (const [k, n] of Object.entries(spoilsOf(t, era))) { const v = Math.round((n ?? 0) * DIFF.capture.gift.share); if (v > 0) out[k as keyof Stock] = v; }
   return out;
+}
+
+/** Add to the relation with a village (a talk, a favour): kept between -100 and 100; a better relation ends its anger. */
+export function addRelation(sim: Sim, id: TribeId, n: number): void {
+  const t = tribeOf(sim, id);
+  if (!t || t.state !== 'free') return;
+  t.relation = Math.max(-100, Math.min(100, Math.round((t.relation + n) * 10) / 10));
+  if (n > 0 && t.relation >= HOSTILE_BELOW) t.angryUntil = Math.min(t.angryUntil, sim.time);
 }
 
 /** A gift to a village we have not taken (not a boss): its relation grows by what the gift is of the bag, set against what its tier takes to win over (capture.gift.cost). Returns an error or null. */
@@ -696,7 +715,7 @@ function tickEvents(sim: Sim): void {
     }
     if (e.fired) continue;
     if (e.kind === 'raid' && e.power !== undefined && e.tribe && e.sizeDay !== sim.day) { const t = tribeOf(sim, e.tribe); if (t && t.state === 'free') { e.size = raidSizeFor(sim, t, e.power); e.sizeDay = sim.day; } }
-    if (!e.warned && sim.day >= e.warnDay && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); sim.addAlert('notice', `Sắp có biến cố: ${e.warn}`); }
+    if (!e.warned && sim.day >= e.warnDay && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); sim.addAlert('notice', `Sắp có biến cố: ${e.warn}`); if (e.kind === 'raid') sim.raidWarned(e.id, e.tribe); }
     if (sim.day < e.fireDay) continue;
     const ready = e.night ? sim.restTime : sim.tod >= 0.28 && !sim.restTime;
     if (!ready) continue;

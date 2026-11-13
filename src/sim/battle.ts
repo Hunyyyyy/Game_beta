@@ -89,7 +89,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name, fighter: isFighter(o) || (!!o.ai && o.ai.role !== 'civ') });
   }

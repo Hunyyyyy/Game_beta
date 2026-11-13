@@ -12,7 +12,7 @@ import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from './fauna';
 import * as tribeLod from './tribelod';
 import { tickFoe } from './brainfoe';
-import { adoptTribe, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribeSeen, tribesFeud, tribeWilling, tributeTribe } from './tribes';
+import { addRelation, adoptTribe, guestsToRaid, launchRaid, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribeSeen, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
 import { World } from './world';
@@ -20,6 +20,8 @@ import startJson from '../data/start.json';
 import * as construction from './construction';
 import * as economy from './economy';
 import * as market from './market';
+import * as encounters from './encounters';
+import { applyStats } from './statsys';
 import * as processing from './processing';
 import * as ranch from './ranch';
 import * as notices from './notices';
@@ -120,6 +122,8 @@ export class Sim {
   conquered = 0;
   /** The newcomers of the land (tribefrontier.ts): the day the next one arrives (0 when none is on its way), how many have come, and the last day it was looked at. */
   frontier: { next: number; late: number; day: number; bandit: Record<string, number> } = { next: 0, late: 0, day: -1, bandit: {} };
+  /** Visitors at the gate and the dialogue with them (encounters.ts); time stands still while `encounters.active` is set. */
+  encounters: encounters.EncounterState = encounters.initialEncounters();
   /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
   conquests: Conquest[] = [];
   /** The percent every stroke of work gains from the villages taken, by their strength (difficulty.json capture.yieldPerVillage). */
@@ -341,6 +345,10 @@ export class Sim {
   roleCount(role: RoleId): number { return roles.roleCount(this, role); }
   /** → tribes.foeBonus: what the strength of a tribe adds to a stat of its people */
   foeBonus(team: string, stat: import('./research').StatId): number { return foeBonus(this, team, stat); }
+  /** → brainplayer.guardRallyOn */
+  guardRallyOn(): boolean { return brainplayer.guardRallyOn(this); }
+  /** → power.militaryValue summed: what these fighters are worth together */
+  fightValue(people: readonly Villager[]): number { return people.reduce((a, v) => a + power.militaryValue(this, v), 0); }
   /** → power.powerOf for our village */
   power(): power.Power { return power.powerOf(this, this.villagers); }
   /** → power.powerOf for the people of a tribe */
@@ -410,6 +418,41 @@ export class Sim {
   startCost(kind: BuildingKind): Partial<Stock> { return construction.startCost(this, kind); }
   /** → idle.homeKind */
   homeKind(v: Villager): BuildingKind { return idle.homeKind(v); }
+  /** → encounters.guestsWaiting */
+  guestsWaiting(): encounters.Guest[] { return encounters.guestsWaiting(this); }
+  /** → encounters.openEncounter */
+  encounterOpen(visitorId: number): string | null { return encounters.openEncounter(this, visitorId); }
+  /** → encounters.encounterView */
+  encounterView(): encounters.EncounterView | null { return encounters.encounterView(this); }
+  /** → encounters.advanceEncounter */
+  encounterAdvance(): void { return encounters.advanceEncounter(this); }
+  /** → encounters.chooseEncounter */
+  encounterChoose(index: number): string | null { return encounters.chooseEncounter(this, index); }
+  /** → encounters.putOffEncounter */
+  encounterLater(): void { return encounters.putOffEncounter(this); }
+  /** A villager is carried off by strangers (encounters.abduct): gone from the village, no death, nothing said. */
+  takeAway(v: Villager): void {
+    this.leaveNode(v); this.exitBuilding(v);
+    this.villagers.splice(this.villagers.indexOf(v), 1); this.byId.delete(v.id);
+    this.fogDirty = true;
+  }
+  /** → statsys.applyStats: a foe armed and dressed (the party of a guest), at `hurt` of its health. */
+  armFoe(f: Villager, weapon: string | null, armor: boolean, hurt = 1): void { f.weapon = weapon; f.armor = armor ? 'hide' : null; applyStats(this, f); f.health = f.maxHealth * hurt; }
+  /** → tribes.launchRaid (a raid of `size` from the village `id`) */
+  raidFrom(id: string, size: number): void { const t = this.tribes.find((x) => x.id === id); if (t) launchRaid(this, t, size, false); }
+  /** → encounters.dailyArrival */
+  dailyArrival(): void { return encounters.dailyArrival(this); }
+  /** → encounters.raidWarned */
+  raidWarned(eventId: string, tribe?: string): void { return encounters.raidWarned(this, eventId, tribe); }
+  /** → encounters.guestAttacked */
+  guestAttacked(unitId: number): void { return encounters.guestAttacked(this, unitId); }
+  /** → tribes.guestsToRaid */
+  guestsToRaid(id: string, unitIds: number[]): void { return guestsToRaid(this, id as TribeId, unitIds); }
+  /** → encounters.guestSlain */
+  guestSlain(unitId: number): void { return encounters.guestSlain(this, unitId); }
+  /** → tribes.addRelation */
+  tribeRelationAdd(id: string, n: number): void { return addRelation(this, id as TribeId, n); }
+
   /** → construction.fireLevel */
   fireLevel(): number { return construction.fireLevel(this); }
   /** → construction.fireUpgradeBlock */
@@ -597,6 +640,14 @@ export class Sim {
     const role = ROLE_IDS.find((r) => ROLES[r].building === b.kind);
     return role ? { have: this.roleCount(role), slots: this.roleCapacity(role) } : null;
   }
+  /** → defense.gateGuards */
+  gateGuards(b: Building): Villager[] { return defense.gateGuards(this, b); }
+  /** → defense.gateSlots */
+  gateSlots(): number { return defense.gateSlots(); }
+  /** → defense.assignGate */
+  assignGate(ids: readonly number[], gateId: number): string | null { return defense.assignGate(this, ids, gateId); }
+  /** → defense.leaveGate */
+  leaveGate(ids: readonly number[]): void { return defense.leaveGate(this, ids); }
   /** → defense.garrison */
   garrison(b: Building): Villager[] { return defense.garrison(this, b); }
   /** → defense.assignTower */
@@ -814,7 +865,7 @@ export class Sim {
   /** Gọi mỗi khung hình với dt thực; chạy theo bước cố định, nhân với hệ số tốc độ. */
   advance(dt: number, outOfTime?: () => boolean): void {
     if (this.speed <= 0) return;
-    this.acc += Math.min(dt, 0.25) * this.speed;
+    this.acc += Math.min(dt, 0.25) * (this.encounters.active ? 1 : this.speed); // a dialogue is open: the scene runs at the plain pace (sceneTick)
     let guard = 0;
     while (this.acc >= TICK && guard++ < 400) {
       this.acc -= TICK; this.tick(TICK);
@@ -823,6 +874,7 @@ export class Sim {
   }
 
   tick(dt: number): void {
+    if (this.encounters.active) { this.sceneTick(dt); return; } // (the night skip calls tick straight)
     this.time += dt;
     this.pathLeft = this.speed >= 16 ? PATH_BUDGET_FASTEST : this.speed >= 8 ? PATH_BUDGET_FAST : PATH_BUDGET; // fast-forward: fewer searches for a way each tick (a unit waits a tick longer; the ticks are many)
     this.tickCalendar();
@@ -844,9 +896,19 @@ export class Sim {
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
+    encounters.tickEncounters(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); inventory.restock(this); mounts.fitScouts(this); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
     this.tickFog();
+  }
+
+  /** A dialogue is open: the clock, the weather, the economy, the events and everyone out of the screen stand still; the people in view (the guest, the villagers about) go on moving so the scene is alive. */
+  private sceneTick(dt: number): void {
+    this.pathLeft = PATH_BUDGET;
+    for (const v of [...this.villagers]) if (this.inView(v.x, v.y)) this.tickVillager(v, dt);
+    this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
+    for (const f of [...this.foes]) if (this.inView(f.x, f.y)) tickFoe(this, f, dt);
+    encounters.tickAgents(this, dt); // (those who slip away from a party at the gate do it while the player reads)
   }
 
   /** The fog is worked out again when the sight of the village has changed or someone has walked on, but at most every FOG_PAUSE game seconds: a quarter of a second late shows nowhere, and every tick did not come cheap (6% of a war). */

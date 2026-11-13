@@ -11,6 +11,7 @@ import { RESEARCH } from './sim/research';
 import { SettingsPanel } from './ui/settingspanel';
 import { EraDialog } from './ui/eradialog';
 import { Journal } from './ui/journal';
+import { Dialogue } from './ui/dialogue';
 import { dlg, GameDialog } from './ui/gamedialog';
 import { StatsOverview } from './ui/statsoverview';
 import { resIcon } from './ui/resicons';
@@ -264,6 +265,7 @@ soundChanged = () => settingsPanel.update();
 let settingsOpen = false;
 $('btnSettings').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); settingsOpen = false; return; } settingsPanel.opened(); statsDlg.show(settingsPanel.card); settingsOpen = true; });
 let weatherView: { head: string; rows: Array<[string, string]> } = { head: '', rows: [] };
+const dialogue = new Dialogue(ctx, $('dlgscene'));
 const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
 journal.weather = () => weatherView;
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
@@ -345,7 +347,7 @@ function updateHud(now: number) {
 ctl.onChange = () => { lastHud = 0; syncButtons(); };
 
 // ---------------------------------------------------------------- main loop
-let last = 0, drawn = 0, lastWarEnd = 0, seenLoads = 0, nextDraw = 0, activeUntil = 0, camX = cam.x, camY = cam.y, camZ = cam.zoom;
+let seenGuests = 0, last = 0, drawn = 0, lastWarEnd = 0, seenLoads = 0, nextDraw = 0, activeUntil = 0, camX = cam.x, camY = cam.y, camZ = cam.zoom;
 let celebrating: (typeof sim.plans)[number] | null = null;
 /** Frames the game may skip drawing while it runs fast-forward: the simulation needs the time, and nobody follows each step at that speed. */
 const drawEvery = (): number => (sim.speed >= 16 ? 4 : sim.speed >= 8 ? 3 : sim.speed >= 4 ? 2 : 1);
@@ -380,6 +382,8 @@ function frameBody(t: number) {
   if (started) session.tick();
   { const m = 10, z = cam.zoom; sim.view = { x0: cam.x / TILE - m, y0: cam.y / TILE - m, x1: (cam.x + renderer.w / z) / TILE + m, y1: (cam.y + renderer.h / z) / TILE + m }; } // seen: the screen and 10 tiles round it
   const simT0 = sim.time, budget = sim.speed >= 4 ? quality.fastBudgetMs : quality.simBudgetMs; // fast-forwarded, the simulation takes less of the frame so the screen and the touches are not starved
+  { const guests = started ? sim.guestsWaiting().length : 0; if (skipping && (sim.encounters.active || guests > seenGuests)) stopSkip('Có người lạ đến cổng'); seenGuests = guests; } // a visitor at the gate ends the night skip
+  dialogue.update();
   if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > budget);
   if (sim.speed !== rateSpeed) { rateSpeed = sim.speed; realRate = sim.speed; }
   if (dt > 0 && !skipping && sim.speed > 1) realRate = realRate * 0.95 + ((sim.time - simT0) / dt) * 0.05; // the speed the game really runs at

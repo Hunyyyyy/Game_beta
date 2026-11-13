@@ -56,6 +56,8 @@ export interface FoeAI {
   wander: number;          // seconds until the next stroll
   goal: { x: number; y: number } | null;
   raid: number;            // id of the raid party (0 = none)
+  /** A visitor sent to the gate (encounters.ts): the id of the visit. A guest is no enemy: the brain of the tribe leaves him alone and nobody picks him as a target on his own (a direct order of the player still reaches him). */
+  guest?: number;
   /** What he is busy with besides strolling (src/sim/tribework.ts): gathering at a node, hunting, patrolling or scouting. */
   life?: { kind: 'gather' | 'hunt' | 'patrol' | 'scout'; idx?: number; job?: string; state?: 'go' | 'work'; units?: number; id?: number; stops?: Array<[number, number]>; i?: number; t?: number };
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
@@ -178,6 +180,8 @@ export interface Villager {
   /** Ordered home by the player ("Cho quân về"): he drops the fight he is in and goes to his camp, and takes up nothing else on the way. */
   recall?: boolean;
   guardAt: { x: number; y: number } | null;
+  /** The gate (building id) he is a guard of: he stands just inside it, opens and shuts it, and goes out to stop strangers who come to it (defense.ts, encounters.ts). */
+  gate?: number;
   /** Stars (1 to 5) and the personal factor of each of the eight stats (data/stats.json); absent in a save from before, which counts as all 1. */
   stars: number;
   fac: Record<StatId, number>;
@@ -423,7 +427,9 @@ export interface Notice {
   /** A building to go to for it (the screen opens it), with the word for the button. */
   action?: { building: string; label: string };
   /** A command the notice carries as a button: the screen runs it. */
-  command?: { kind: 'withdraw'; label: string };
+  command?: { kind: 'withdraw'; label: string } | { kind: 'meet'; label: string; id: number };
+  /** Where the camera goes for this notice (tiles), with the command above. */
+  focus?: { x: number; y: number };
   /** The people the notice is about: the screen can open their details so the player can change what they do. */
   people?: number[];
 }

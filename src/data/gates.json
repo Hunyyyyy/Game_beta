@@ -1,0 +1,6 @@
+{
+  "_note": "Cổng và lính gác cổng (src/sim/defense.ts). guards: số lính gác (lính của Trại lính gác) một cổng chứa; họ đứng ngay trong cổng, tự mở cổng khi trời sáng, đóng khi trời tối lúc dân đã vào hết, và đóng khi làng bị đánh lúc dân đã vào hết (hết địch thì mở lại). Chỉ lính (job fight) đi qua cổng đóng, dân thường thì không. manualHoldDays: người chơi tự mở hoặc đóng thì lính gác để yên bấy nhiêu ngày. outsideMargin: một người đứng xa đống lửa hơn cổng bấy nhiêu ô thì tính là đang ở ngoài cổng.",
+  "guards": 2,
+  "manualHoldDays": 0.25,
+  "outsideMargin": 1.5
+}

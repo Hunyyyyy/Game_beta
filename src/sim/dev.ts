@@ -1,4 +1,5 @@
 import { SEASONS, SEASON_DAYS, Season, WeatherKind } from './calendar';
+import { SCRIPTS } from './encounterdata';
 import { ANIMALS, WEAPONS } from './combat';
 import { BUILDINGS, BuildingKind, eraLocked, fireUnlockLevel, levelCapByFire, maxHp, maxLevel, WALL_KINDS } from './buildings';
 import { CORE, OUTSIDE, ring } from './campplan';
@@ -58,6 +59,16 @@ export function researchGroup(sim: Sim, key: string): string {
 // ---- time and weather
 export function setTimeOfDay(sim: Sim, tod: number): void { sim.time = sim.timeBase + Math.floor((sim.time - sim.timeBase) / sim.dayLen) * sim.dayLen + tod * sim.dayLen; }
 export function skipDays(sim: Sim, n: number): void { sim.time += n * sim.dayLen; }
+/** A visitor of the script comes today, at once: the script is put first in the queue, it is made morning, and a visitor who stands at the gate or is on the way is sent off. Returns a word for the toast. */
+export function summonVisitor(sim: Sim, scriptId: string): string {
+  const st = sim.encounters;
+  if (st.active) return 'Đang có một cuộc nói chuyện';
+  if (st.visitors.length) return 'Đang có người lạ ở cổng hoặc trên đường tới';
+  if (!SCRIPTS.some((s) => s.id === scriptId)) return `Không có kịch bản ${scriptId}`;
+  st.queue.push({ script: scriptId, day: sim.day, priority: 99, maxDelay: 99 });
+  if (sim.tod < 0.3 || sim.tod > 0.5) setTimeOfDay(sim, 0.31);
+  return `Người lạ "${scriptId}" sẽ tới trong giây lát`;
+}
 export function setSeason(sim: Sim, season: Season): void {
   const year = Math.floor((sim.day - 1) / (SEASON_DAYS * SEASONS.length));
   const day = year * SEASON_DAYS * SEASONS.length + SEASONS.indexOf(season) * SEASON_DAYS + 1;

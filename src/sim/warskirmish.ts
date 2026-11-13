@@ -17,7 +17,7 @@ const K = WAR_DATA.skirmish;
 
 /** The village a soldier of the world belongs to, if our orders against it count as a war: a free village or camp of bandits that is not raiding us now. */
 export function foeVillage(sim: Sim, v: Villager): Tribe | undefined {
-  if (v.team === 'player' || v.team === 'wild' || v.ai?.role === 'raider') return undefined;
+  if (v.team === 'player' || v.team === 'wild' || v.ai?.role === 'raider' || v.ai?.guest !== undefined) return undefined; // strangers at our gate are a scuffle at home, not a war with their village (the village would stand still, encounters.ts)
   const t = tribeOf(sim, v.team);
   return t && t.state === 'free' && !t.raid ? t : undefined;
 }

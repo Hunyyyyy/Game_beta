@@ -119,6 +119,13 @@ export class Journal {
   /** Run the command a notice carries. */
   private run(cmd: NonNullable<Notice['command']>): void {
     const { sim, toast } = this.c;
+    if (cmd.kind === 'meet') {
+      const g = sim.guestsWaiting().find((x) => x.id === cmd.id);
+      if (!g) { toast('Người đó đã đi rồi'); return; }
+      this.close();
+      const e = sim.encounterOpen(cmd.id); if (e) toast(e);
+      return;
+    }
     if (cmd.kind === 'withdraw') { const plan = sim.plans.find((p) => p.kind === 'attack' && p.status === 'running'); const e = plan ? sim.withdrawPlan(plan) : 'Không có trận nào'; if (e) toast(e); else this.close(); }
   }
 

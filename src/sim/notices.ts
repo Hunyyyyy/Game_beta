@@ -28,6 +28,14 @@ export function noticesOf(sim: Sim): Notice[] {
       command: over ? { kind: 'withdraw', label: 'Rút quân' } : undefined,
     });
   }
+  // someone waits at the gate to be received (encounters.ts)
+  for (const g of sim.guestsWaiting()) {
+    out.push({
+      id: `guest-${g.id}`, level: 'warn', icon: '🤝', title: g.caught ? `Bắt được kẻ gian của ${g.tribe}` : `${g.tribe} có người lạ đến cổng`, when: days(Math.ceil(g.daysLeft)),
+      body: g.caught ? `${g.name} đã đầu hàng và chờ bạn quyết định.` : g.held ? `Lính gác đã chặn người lạ lại. ${g.name} chờ được tiếp.` : `${g.name} đang đứng chờ được tiếp.`, tip: 'Bấm Tiếp đón để nói chuyện. Khi đang nói, thời gian dừng lại. Có thể chọn "Để sau": người đó vẫn đợi cho tới hết hạn.',
+      command: { kind: 'meet', label: 'Tiếp đón', id: g.id }, focus: { x: g.x, y: g.y },
+    });
+  }
   // a boss village has fallen: the new age is announced for a few days (the same words as the log line, which fades)
   const fallen = sim.tribes.find((t) => t.bossDown && t.bossDownAt !== undefined && sim.time - t.bossDownAt < 3 * sim.dayLen);
   if (fallen && !sim.tribes.some((t) => t.boss && !t.bossDown)) {

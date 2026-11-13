@@ -176,5 +176,5 @@ export function routeTo(sim: Sim, v: Villager, tiles: Array<[number, number]>, t
   return -1;
 }
 
-/** Whose shut gates a walker passes: ours (the player's), the village's own ('foe'), or none (the beasts). */
-const passOf = (v: Villager): boolean | 'foe' => (v.team === 'player' ? true : v.team === 'wild' ? false : 'foe');
+/** Whose shut gates a walker passes: our soldiers', the village's own ('foe'), or none (our villagers, the beasts). */
+const passOf = (v: Villager): boolean | 'foe' => (v.team === 'player' ? v.job === 'fight' : v.team === 'wild' ? false : 'foe');
