@@ -1,5 +1,6 @@
 /** Defence works: fences and gates that stop people, and towers where archers keep watch. */
-import { Building, BUILDINGS, buildingSight, levelDef, maxHp } from './buildings';
+import gatesJson from '../data/gates.json';
+import { Building, BUILDINGS, buildingSight, footOf, levelDef, maxHp } from './buildings';
 import { swingCycle } from './statsys';
 import { effWeapon, fireProjectile, hurt, resolve, threatsOf, weaponOf } from './battle';
 import { armOfWeapon, UNIT_RULES } from './formations';
@@ -11,12 +12,15 @@ import type { Villager } from './model';
 export const isWall = (b: Pick<Building, 'kind'>) => b.kind === 'fence' || b.kind === 'gate';
 export const isDefense = (b: Pick<Building, 'kind'>) => isWall(b) || b.kind === 'tower';
 
-/** Open or shut a gate. Shut, it stops everyone, our own people too; open, it is a gap that only the men standing in it hold. */
+const GATE = gatesJson;
+
+/** Open or shut a gate by hand. Shut, it stops everyone but our soldiers; open, it is a gap that only the men standing in it hold. The player's word holds for a while: the guards of the gate leave it alone (`manualHoldDays`). */
 export function toggleGate(sim: Sim, id: number): string | null {
   const b = sim.getBuilding(id);
   if (!b || b.kind !== 'gate') return 'Đây không phải cổng';
   if (!b.done) return 'Cổng chưa dựng xong';
   b.open = !b.open;
+  b.autoHold = sim.time + GATE.manualHoldDays * sim.dayLen;
   sim.setOcc(b, 1); // shut -> blocked, open -> free (setOcc knows)
   sim.addSfx(b.open ? 'gate_open' : 'gate_shut', false, b.x, b.y);
   sim.say(b.open ? 'Cổng đã mở.' : 'Cổng đã đóng.');
@@ -25,7 +29,60 @@ export function toggleGate(sim: Sim, id: number): string | null {
 
 /** Every gate to the same state; true = open. */
 export function setGates(sim: Sim, open: boolean): void {
-  for (const b of sim.buildings) if (b.kind === 'gate' && b.done && b.open !== open) { b.open = open; sim.setOcc(b, 1); sim.addSfx(open ? 'gate_open' : 'gate_shut', false, b.x, b.y); }
+  for (const b of sim.buildings) if (b.kind === 'gate' && b.done && b.open !== open) { b.open = open; b.autoHold = sim.time + GATE.manualHoldDays * sim.dayLen; sim.setOcc(b, 1); sim.addSfx(open ? 'gate_open' : 'gate_shut', false, b.x, b.y); }
+}
+
+// ---------------------------------------------------------------- the guards of a gate
+/** How many guards a gate holds. */
+export const gateSlots = (): number => GATE.guards;
+
+/** The guards (of the Trại lính gác) posted to a gate. */
+export function gateGuards(sim: Sim, b: Building): Villager[] { return sim.villagers.filter((v) => v.gate === b.id && v.guard && v.health > 0); }
+
+/** The tiles just inside a gate (the side of the fire), side by side: where its guards stand. */
+function gateSpots(sim: Sim, b: Building): Array<[number, number]> {
+  const d = footOf(b), fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y, cx = b.x + d.w / 2, cy = b.y + d.h / 2;
+  if (d.w >= d.h) { const y = Math.floor(cy) + (fy >= cy ? 1 : -1); return [[b.x, y], [b.x + d.w - 1, y]]; }
+  const x = Math.floor(cx) + (fx >= cx ? 1 : -1);
+  return [[x, b.y], [x, b.y + d.h - 1]];
+}
+
+/** Post guards of the Trại lính gác to a gate (as many as it holds): they walk there and stand just inside it. Returns an error or null. */
+export function assignGate(sim: Sim, ids: readonly number[], gateId: number): string | null {
+  const b = sim.getBuilding(gateId);
+  if (!b || b.kind !== 'gate' || !b.done) return 'Cổng chưa dựng xong';
+  const lock = sim.warLock(); if (lock) return lock;
+  const spots = gateSpots(sim, b);
+  let err: string | null = null;
+  for (const v of sim.mine(ids)) {
+    if (v.gate === b.id) continue;
+    if (!v.guard || v.job !== 'fight') { err = `${v.name} không phải lính gác: chỉ lính gác của Trại lính gác mới gác cổng`; continue; }
+    const held = gateGuards(sim, b).length;
+    if (held >= GATE.guards) { err = `Cổng chỉ có ${GATE.guards} lính gác`; continue; }
+    v.gate = b.id;
+    const s = spots[held % spots.length];
+    sim.orderMove([v.id], s[0], s[1]); // his post is the gate now (the way the player's own order sets it)
+  }
+  return err;
+}
+
+/** Take guards off their gate (they keep standing where they are). */
+export function leaveGate(sim: Sim, ids: readonly number[]): void { for (const v of sim.mine(ids)) v.gate = undefined; }
+
+/**
+ * Once a second: a gate that has guards is opened and shut by them. By day it is open; at night it is open until everyone is in, then shut. While the village is attacked it is shut once everyone is in, and
+ * it opens again when the enemy is gone. A gate with no guard is left as it is, and the player's word on any gate holds for a while.
+ */
+export function tickGates(sim: Sim): void {
+  const gates = sim.buildings.filter((b) => b.kind === 'gate' && b.done && gateGuards(sim, b).length && sim.time >= (b.autoHold ?? 0));
+  if (!gates.length) return;
+  const fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 1 : sim.world.start.y, threat = sim.attackReason() !== null || sim.battle.on;
+  for (const b of gates) {
+    const reach = Math.hypot(b.x + 1 - fx, b.y + 0.5 - fy) + GATE.outsideMargin;
+    const outside = sim.villagers.some((v) => v.team === 'player' && v.job !== 'fight' && v.job !== 'scout' && v.job !== 'supply' && v.health > 0 && v.inside === null && Math.hypot(v.x - fx, v.y - fy) > reach);
+    const open = threat ? outside : !sim.restTime || outside;
+    if (open !== b.open) { b.open = open; sim.setOcc(b, 1); sim.addSfx(open ? 'gate_open' : 'gate_shut', false, b.x, b.y); }
+  }
 }
 
 /** The nearest finished defence work to a point, within `radius` tiles (centre to centre). With `any`, any finished house but the fire counts: raiders with no wall in their way turn on what stands there. */
@@ -108,7 +165,7 @@ export function tickTraps(sim: Sim, _dt: number): void {
     if (b.kind !== 'trap' || !b.done) continue;
     for (const f of sim.foes) {
       // b.staff remembers who has already fallen in: a man is wounded once by each pit, however long he stands in it
-      if (f.health <= 0 || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
+      if (f.health <= 0 || f.ai?.guest !== undefined || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
       b.staff.push(f.id);
       hurt(sim, { kind: 'unit', id: f.id }, 14 * b.level * (1 + statBonus(sim.researched, 'trap', 'atk') / 100), 'pierce', { x: b.x, y: b.y }, {});
       sim.noteBattle('note', 'Một hố chông đã làm địch bị thương.');

@@ -29,6 +29,7 @@ import { WarLogPane } from './warlogpane';
 import { TribesPane } from './tribespane';
 import { RolePane } from './rolepane';
 import { TowerPane } from './towerpane';
+import { GatePane } from './gatepane';
 import { dlg, GameDialog } from './gamedialog';
 
 import { MOUNT_KINDS, MOUNTS, MountKind } from '../sim/jobs';
@@ -103,6 +104,7 @@ export class BuildingPanel {
   private readonly bedHead = {} as Record<string, HTMLElement>; private readonly bedList = {} as Record<string, HTMLElement>; private readonly bedKey = {} as Record<string, string>;
   /** The archers posted on a tower. */
   private readonly towerPane: TowerPane;
+  private readonly gatePane: GatePane;
   /** What the building is, behind the ? next to its title. */
   private readonly info = h('p', { class: 'sub hintbody', hidden: true });
   private readonly staffBoxes: Record<'build' | 'craft' | 'research' | 'tame' | 'herd' | 'farm', StaffBox>;
@@ -197,7 +199,8 @@ export class BuildingPanel {
     this.tabs.scouttent = [{ label: 'Trinh sát', page: page(this.scoutPane.roster) }, { label: 'Làng đã phát hiện', page: page(this.scoutPane.villages) }];
     this.towerPane = new TowerPane(c);
     this.tabs.tower = [{ label: 'Lính chòi canh', page: page(this.towerPane.root) }];
-    this.tabs.fence = []; this.tabs.gate = [];
+    this.gatePane = new GatePane(c);
+    this.tabs.fence = []; this.tabs.gate = [{ label: 'Lính gác cổng', page: page(this.gatePane.root) }];
     this.tabs.builder = [{ label: 'Thợ xây', page: page(this.staffBoxes.build.root) }];
     this.tabs.campfire = [
       { label: 'Dân', page: page(h('div', { class: 'btns' }, this.doorBtn), this.people.root) },
@@ -421,6 +424,7 @@ export class BuildingPanel {
     if (b.kind === 'ranch' && ready) this.updateRanch(b);
     if (b.kind === 'builder' && ready) this.staffBoxes.build.update(b);
     if (b.kind === 'tower' && ready) this.towerPane.update(b);
+    if (b.kind === 'gate' && ready) this.gatePane.update(b);
     if (b.kind === 'wartent' && ready) {
       const plan = this.c.sim.era === 'ancient', want = plan ? this.war.root : this.simpleWar.root;
       if (this.warHost.firstChild !== want) this.warHost.replaceChildren(want);

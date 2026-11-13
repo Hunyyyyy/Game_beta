@@ -256,7 +256,7 @@ export function tickEnergy(sim: Sim, v: Villager, dt: number): void {
 export function quartered(sim: Sim, v: Villager): boolean {
   const soldier = v.job === 'fight' && v.post < 0 && !(v.guard && !v.housed), scout = v.job === 'scout' && !awayScout(sim, v), supply = v.job === 'supply'; // the scouts wait in their tent too, except on a trip; the supply soldiers in their camp
   if (v.team !== 'player' || !(soldier || scout || supply)) return false;
-  if (sim.alarmUntil > sim.time || sim.warLock() || v.out) return false;
+  if (sim.alarmUntil > sim.time || sim.warLock() || v.out || (v.guard && sim.guardRallyOn())) return false; // (the rally of the guards: Báo động toàn tuyến)
   const camp = v.inside === null ? undefined : sim.getBuilding(v.inside);
   return (!!camp && camp.kind === homeKind(v)) || !!freeBed(sim, v); // only when there is a bed for him in his camp
 }

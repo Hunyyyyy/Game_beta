@@ -42,7 +42,7 @@ export function tickFoe(sim: Sim, f: Villager, dt: number): void {
     if (house) ai.siege = house.id;
   }
   if (ai?.life && ai.life.kind !== 'hunt' && (f.phase === 'flee' || f.fleeT > 0 || f.fight.target)) endLife(sim, f); // danger ends the work
-  if (t && ai) foeBrain(sim, f, t, ai, dt);
+  if (t && ai && ai.guest === undefined) foeBrain(sim, f, t, ai, dt); // a guest (encounters.ts) is walked and kept by the visit, not by the village's brain
   sim.moveUnit(f, dt);
   sim.animate(f, dt);
 }

@@ -1,5 +1,5 @@
 {
-  "_note": "Khởi đầu một ván. campfire: vị trí đống lửa so với điểm xuất phát. stock: tài nguyên có sẵn (khóa như trong kho). villagers: dân có mặt từ đầu (dx, dy so với điểm xuất phát; sex 'm'/'f'; job là nghề). buildings: công trình dựng sẵn quanh đống lửa, theo thứ tự. arrivals: mỗi ngày mới (từ ngày firstDay) có min..max người lạ tới xin ở, femaleChance = xác suất là nữ.",
+  "_note": "Khởi đầu một ván. campfire: vị trí đống lửa so với điểm xuất phát. stock: tài nguyên có sẵn (khóa như trong kho). villagers: dân có mặt từ đầu (dx, dy so với điểm xuất phát; sex 'm'/'f'; job là nghề). buildings: công trình dựng sẵn quanh đống lửa, theo thứ tự. arrivals: mỗi ngày mới (từ ngày firstDay) có một đoàn người lạ tới cổng xin ở (kịch bản newcomers trong data/encounters/stone.json, 2–4 người; bạn quyết bằng hội thoại), femaleChance = xác suất là nữ khi tạo dân bằng lệnh dev.",
   "campfire": { "dx": -1, "dy": -2 },
   "stock": { "food": 60,"wood": 100, "coin": 10 },
   "villagers": [
@@ -9,5 +9,5 @@
     { "dx": 0, "dy": 0, "sex": "m", "job": "idle" }
   ],
   "buildings": ["builder"],
-  "arrivals": { "firstDay": 2, "min": 2, "max": 4, "femaleChance": 0.25 }
+  "arrivals": { "firstDay": 2, "femaleChance": 0.25 }
 }

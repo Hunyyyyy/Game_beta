@@ -44,12 +44,10 @@ export function tickCalendar(sim: Sim): void {
 /** The player opens or shuts the village to strangers (the campfire's panel): while shut nobody comes. Returns whether it is open now. */
 export function toggleNewcomers(sim: Sim): boolean { sim.newcomersOpen = !sim.newcomersOpen; return sim.newcomersOpen; }
 
-/** Each new day a few strangers walk in and settle by the fire (how many: start.json "arrivals"), unless the village is shut to them. One notice for all of them. */
+/** Each new day a party of strangers comes to the gate to ask to stay (encounters.ts: the player decides there), unless the village is shut to them. The first day is start.json "arrivals" `firstDay`. */
 function newcomers(sim: Sim): void {
   if (!sim.newcomersOpen) return;
-  const { min, max } = startJson.arrivals;
-  const names = settle(sim, min + Math.floor(sim.frnd() * (max - min + 1)));
-  if (names.length) sim.say(`${names.length} người đến làng xin ở lại: ${names.join(', ')}.`);
+  sim.dailyArrival();
 }
 
 /** `n` people come to live by the fire (as many as the village has room for when `room` is asked); returns their names. */

@@ -714,6 +714,17 @@ export class Renderer {
         }
         if (v.health < v.maxHealth && (v.health > 0 || v.down > 0)) this.bar(fx, fy - lift - 46, v.health / v.maxHealth, v.team === 'player' ? '#6bbf59' : '#d9534f');
         if (v.down > 0) { ctx.fillStyle = '#ffd27a'; ctx.font = `700 ${Math.max(11, 6 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 30); ctx.fillText(gameDays(v.down, this.sim.dayLen), p.x, p.y); }
+        if (v.team === 'player' && this.sim.encounters.visitors.some((g) => g.escort.some((e) => e.id === v.id))) { // a guard sent to stop strangers (on his way, or holding them): a shield over his head
+          const p = this.worldToScreen(fx, fy - lift - 66), r = 8 * z;
+          ctx.fillStyle = 'rgba(20,14,8,.85)'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#e0b43c'; ctx.beginPath();
+          ctx.moveTo(p.x - r * 0.5, p.y - r * 0.5); ctx.lineTo(p.x + r * 0.5, p.y - r * 0.5); ctx.lineTo(p.x + r * 0.5, p.y + r * 0.05); ctx.lineTo(p.x, p.y + r * 0.6); ctx.lineTo(p.x - r * 0.5, p.y + r * 0.05); ctx.closePath(); ctx.fill();
+        }
+        if (v.ai?.guest !== undefined && this.sim.encounters.visitors.some((g) => g.unitId === v.id && g.state === 'waiting')) { // a guest waits to be received: a bobbing mark over the head
+          const p = this.worldToScreen(fx, fy - lift - 58 + Math.sin(time * 3) * 2), r = 8 * z;
+          ctx.fillStyle = 'rgba(20,14,8,.85)'; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#e0b43c'; ctx.font = `700 ${Math.max(11, 11 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', p.x, p.y + 1); ctx.textBaseline = 'alphabetic';
+        }
         if (v.phase === 'flee') { ctx.fillStyle = '#fff6e8'; ctx.font = `700 ${Math.max(12, 7 * z)}px system-ui, sans-serif`; ctx.textAlign = 'center'; const p = this.worldToScreen(fx, fy - 50); ctx.fillText('!', p.x, p.y); }
       }
     }

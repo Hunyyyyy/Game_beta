@@ -3,6 +3,8 @@
   "player": {
     "_defensive": "Lính trại không có báo động, hoặc đứng thế phòng thủ, chỉ đánh những gì vào trong ngần này ô.",
     "defensive": 4.5,
+    "_guardRally": "Nghiên cứu Báo động toàn tuyến (guard_ms3): khi làng bị đánh, mọi lính gác trong ngần này ô quanh địch tự xông ra tham chiến; xa hơn thì không.",
+    "guardRally": 45,
     "_fear": "Dân thường chạy khỏi nguy hiểm trong ngần này ô.",
     "fear": 10,
     "_sight": "Tầm nhìn dùng cho người ta khi không phải lính của ta (ít dùng).",

@@ -12,7 +12,7 @@ import { PlaceResult } from './model';
 
 // ---------------------------------------------------------------- công trình
 export function addBuilding(sim: Sim, kind: BuildingKind, x: number, y: number, done: boolean, level = 1, rot = 0): Building {
-  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: kind !== 'gate', staff: [], active: null, workers: 0 };
+  const b: Building = { id: sim.nextBid++, kind, era: sim.era, x, y, level, progress: done ? 1 : 0, done, upgrading: false, rebuild: false, hp: 0, open: true, staff: [], active: null, workers: 0 };
   if (rot === 1 && kind === 'gate') b.rot = 1;
   b.hp = maxHp(b);
   sim.buildings.push(b);

@@ -12,18 +12,19 @@ import { SIEGE, TRIBES } from './combat';
 import { BUILDINGS, footOf, maxHp } from './buildings';
 import { SCREEN_QUESTS } from './progression';
 import { decode, encode, packRuns, unpackRuns } from './codec';
+import { initialEncounters } from './encounterdata';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 39;
+export const SAVE_VERSION = 48;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'yieldBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier', 'encounters'],
   /** Lists of plain data. */
   lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests'],
   /** Handled by hand below. */
@@ -398,3 +399,60 @@ MIGRATIONS[38] = (d) => {
   }
   return { ...d, version: 39 };
 };
+MIGRATIONS[39] = (d) => {
+  // 39 -> 40: visitors at the gate and the dialogue with them (encounters): nothing yet, the first visitor comes on the day the data says
+  d.records.encounters ??= initialEncounters();
+  return { ...d, version: 40 };
+};
+MIGRATIONS[40] = (d) => {
+  // 40 -> 41: visitors grew a hidden truth's clues and used choices, the dialogue a queue of scripts to come, the refugees taken in and the relation gained; the deeds became one entry each (to count them in a window of days)
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  e.queue ??= []; e.last ??= ''; e.gains ??= []; e.refugees ??= [];
+  e.deeds = ((e.deeds ?? []) as Array<{ key: string; tribe?: string; day: number; count?: number }>).flatMap((x) => Array.from({ length: x.count ?? 1 }, () => ({ key: x.key, tribe: x.tribe, day: x.day })));
+  for (const v of (e.visitors ?? []) as Array<Record<string, unknown>>) { v.notes ??= []; v.used ??= []; }
+  return { ...d, version: 41 };
+};
+MIGRATIONS[41] = (d) => {
+  // 41 -> 42: a visitor comes with a party (the others' unit ids and where they stand), and the talk may have settled that they stay
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  for (const v of (e.visitors ?? []) as Array<Record<string, unknown>>) { v.members ??= []; v.spots ??= []; v.join ??= ''; }
+  return { ...d, version: 42 };
+};
+MIGRATIONS[42] = (d) => {
+  // 42 -> 43: the guards of the village go out to stop a visitor: who was sent, and whether guards were looked for
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  for (const v of (e.visitors ?? []) as Array<Record<string, unknown>>) { v.escort ??= []; v.guarded ??= false; }
+  return { ...d, version: 43 };
+};
+MIGRATIONS[43] = (d) => {
+  // 43 -> 44: the guards sent to a visitor are picked by the nearest to the gate (or the fire): the visitor remembers that place
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  for (const v of (e.visitors ?? []) as Array<Record<string, any>>) v.watch ??= [v.mx, v.my]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  return { ...d, version: 44 };
+};
+MIGRATIONS[44] = (d) => {
+  // 44 -> 45: a visitor remembers whether the guards stand in the way (it replaces whether guards were looked for)
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  for (const v of (e.visitors ?? []) as Array<Record<string, any>>) { v.placed ??= false; delete v.guarded; } // eslint-disable-line @typescript-eslint/no-explicit-any
+  return { ...d, version: 45 };
+};
+MIGRATIONS[45] = (d) => {
+  // 45 -> 46: a visitor remembers whether the party was struck (and so has answered with arms or by walking away)
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  for (const v of (e.visitors ?? []) as Array<Record<string, any>>) v.provoked ??= false; // eslint-disable-line @typescript-eslint/no-explicit-any
+  return { ...d, version: 46 };
+};
+MIGRATIONS[46] = (d) => {
+  // 46 -> 47: villagers carried off by strangers are kept (captives) to be ransomed or fetched
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  e.captives ??= [];
+  return { ...d, version: 47 };
+};
+MIGRATIONS[47] = (d) => {
+  // 47 -> 48: the ones of a party who slip away to do harm (each carries what he took), a party let into the village, and the clock they run by
+  const e = d.records.encounters as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  e.aclock ??= 0;
+  for (const v of (e.visitors ?? []) as Array<Record<string, any>>) { v.agents ??= []; delete v.loot; delete v.captive; delete v.kidnap; delete v.alarm; } // eslint-disable-line @typescript-eslint/no-explicit-any
+  return { ...d, version: 48 };
+};
+

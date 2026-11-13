@@ -2863,9 +2863,14 @@
                   }
                 ],
                 "leap": {
-                  "planned": "Giáp & khiên bậc 2",
-                  "about": "Giáp và khiên của lính gác tốt hơn.",
-                  "id": "guard_ms3"
+                  "id": "guard_ms3",
+                  "name": "Báo động toàn tuyến",
+                  "desc": "Khi làng bị tấn công, mọi lính gác (cả người đang trong trại) tự xông ra tham chiến, không chỉ những người tự nhìn thấy địch; chỉ người ở quá xa mới không kịp.",
+                  "effect": { "guard_rally": 1 },
+                  "cost": { "food": 700, "wood": 500, "stone": 300, "coin": 120 },
+                  "time": 2400,
+                  "share": 0.66,
+                  "lab": 3
                 },
                 "cross": [
                   "build_ms3"

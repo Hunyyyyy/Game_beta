@@ -289,6 +289,20 @@ export class Controller {
     return best;
   }
 
+  /** The visit of a guest waiting at the gate under the point (they are not villagers of ours, so `hit` skips them). */
+  private guestAt(p: { x: number; y: number }, touch: boolean): number | null {
+    const reach = ((touch ? 28 : 16) * Math.max(1, this.cam.zoom)) ** 2;
+    for (const g of this.sim.guestsWaiting()) {
+      for (const uid of g.unitIds) {
+        const f = this.sim.get(uid);
+        if (!f) continue;
+        const s = this.bodyScreen(f);
+        if ((s.x - p.x) ** 2 + (s.y - p.y) ** 2 < reach) return g.id;
+      }
+    }
+    return null;
+  }
+
   /** Building whose drawn shape (footprint plus what stands above it) is under the screen point. */
   private buildingUnder(p: { x: number; y: number }): number | null {
     const w = this.r.screenToWorld(p.x, p.y);
@@ -306,6 +320,8 @@ export class Controller {
     // choosing pieces of fence: a tap takes one in or puts it back
     if (this.groupMode && !this.placing) { const b = this.buildingUnder(p); if (b !== null && this.isWall(b)) this.toggleGroup(b); else { this.endGroup(); this.selectedBuilding = null; this.onChange(); } return; } // a tap away from the fence lets the group go
     if (this.placing) { if (touch) { this.placeAt = this.originAt(p); this.onChange(); } else this.confirmPlace(additive); return; }
+    const guest = this.guestAt(p, touch);
+    if (guest !== null) { const e = this.sim.encounterOpen(guest); if (e) this.onToast(e); return; } // a guest at the gate: click to receive
     const id = this.hit(p, touch);
     const b = this.buildingUnder(p), w = this.r.screenToWorld(p.x, p.y);
     const seen = this.sim.targetAt(w.x / TILE, w.y / TILE);
@@ -614,6 +630,22 @@ export class Controller {
   /** The tile the middle of the screen looks at. */
   viewTile(): { x: number; y: number } { const w = this.r.screenToWorld(this.r.w / 2, this.r.h / 2); return { x: w.x / TILE, y: w.y / TILE }; }
 
+  private fly: { x0: number; y0: number; z0: number; x1: number; y1: number; z1: number; t: number; dur: number } | null = null;
+  private savedView: { x: number; y: number; zoom: number } | null = null;
+
+  /** Ease the camera to a tile and zoom in on it (the middle of the upper part of the screen, clear of a panel along the bottom). The view it leaves is kept for `returnView`. */
+  flyToTile(tx: number, ty: number, ms = 800): void {
+    if (!this.savedView) this.savedView = { x: this.cam.x, y: this.cam.y, zoom: this.cam.zoom };
+    const z = Math.min(4, Math.max(3, Math.ceil(this.cam.zoom) + 1));
+    this.fly = { x0: this.cam.x, y0: this.cam.y, z0: this.cam.zoom, x1: tx * TILE - this.r.w / z / 2, y1: ty * TILE - (this.r.h * 0.34) / z, z1: z, t: 0, dur: ms / 1000 };
+  }
+
+  /** Ease back to the view before `flyToTile`. */
+  returnView(ms = 700): void {
+    const s = this.savedView; this.savedView = null;
+    if (s) this.fly = { x0: this.cam.x, y0: this.cam.y, z0: this.cam.zoom, x1: s.x, y1: s.y, z1: s.zoom, t: 0, dur: ms / 1000 };
+  }
+
   focusSelection(): void {
     const vs = this.sim.villagers.filter((v) => v.inside === null && (!this.selected.size || this.selected.has(v.id)));
     if (!vs.length) return;
@@ -659,6 +691,12 @@ export class Controller {
     if (k.has('a') || k.has('arrowleft')) this.cam.x -= sp;
     if (k.has('d') || k.has('arrowright')) this.cam.x += sp;
     if (k.size) this.clamp();
+    if (this.fly) { // the camera flies (a dialogue opens or closes): ease in and out
+      const f = this.fly; f.t += dt;
+      const u = Math.min(1, f.t / f.dur), e = u < 0.5 ? 2 * u * u : 1 - ((-2 * u + 2) ** 2) / 2;
+      this.cam.x = f.x0 + (f.x1 - f.x0) * e; this.cam.y = f.y0 + (f.y1 - f.y0) * e; this.cam.zoom = f.z0 + (f.z1 - f.z0) * e;
+      this.clamp(); if (u >= 1) this.fly = null;
+    }
     for (const id of [...this.selected]) if (!this.sim.get(id)) { this.selected.delete(id); this.onChange(); }
     for (const m of this.markers) m.age += dt;
     for (let i = this.markers.length - 1; i >= 0; i--) if (this.markers[i].age > 0.9) this.markers.splice(i, 1);
