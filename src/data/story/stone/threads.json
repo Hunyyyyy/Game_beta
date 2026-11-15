@@ -1,0 +1,191 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "threads": [
+  {
+   "id": "thread:I.A",
+   "name": "Bếp lửa mở",
+   "trunk": "I",
+   "tree": "stone",
+   "chapters": [
+    {
+     "id": "chapter:I.A-1",
+     "name": "Kẻ lang thang",
+     "script": "wanderer",
+     "options": [
+      {
+       "label": "Cho một bữa ăn",
+       "deeds": [
+        "helped_wanderer"
+       ]
+      },
+      {
+       "label": "Giữ lại làm việc",
+       "deeds": [
+        "took_in_wanderer"
+       ]
+      },
+      {
+       "label": "Đuổi đi",
+       "deeds": [
+        "refused_wanderer"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "chapter:I.A-2",
+     "name": "Đoàn người đi đường",
+     "script": "travelers",
+     "options": [
+      {
+       "label": "Cho nghỉ lại",
+       "deeds": [
+        "hosted_travelers"
+       ]
+      },
+      {
+       "label": "Không tiếp",
+       "deeds": []
+      }
+     ]
+    },
+    {
+     "id": "chapter:I.A-3",
+     "name": "Bữa tối chung",
+     "when": "refugees>=1",
+     "days": [
+      2,
+      4
+     ],
+     "scene": {
+      "say": [
+       "Tối nay có người đề nghị nấu chung một bữa ngoài bãi, cả người cũ lẫn người mới.",
+       "Làng mình tính sao?"
+      ],
+      "options": [
+       {
+        "text": "Vòng lửa chung, ai cũng ngồi chung",
+        "reply": "Lửa cháy to. Tiếng cười vang tới tận bìa rừng.",
+        "deed": "shared_fire"
+       },
+       {
+        "text": "Hai bếp: người cũ một bên, người mới một bên",
+        "reply": "Hai vòng lửa cách nhau một quãng tối. Không ai nói gì.",
+        "deed": "two_hearths"
+       },
+       {
+        "text": "Giao người mới gác đêm",
+        "reply": "Người mới nhận ngọn đuốc, gật đầu thật chậm.",
+        "deed": "newcomer_watch"
+       },
+       {
+        "text": "Mời người lạ kể chuyện quanh lửa",
+        "reply": "Họ kể về những con đường bên kia sương.",
+        "deed": "fire_tales"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "thread:III.B",
+   "name": "Lửa và mùa",
+   "trunk": "III",
+   "tree": "stone",
+   "chapters": [
+    {
+     "id": "chapter:III.B-1",
+     "name": "Kho lương vơi dần",
+     "when": "fireLevel>=2",
+     "days": [
+      1,
+      3
+     ],
+     "scene": {
+      "say": [
+       "Trời trở lạnh, kho lương vơi dần. Dân hỏi làng sẽ lo mùa đông ra sao."
+      ],
+      "options": [
+       {
+        "text": "Tích trữ cho mùa đông",
+        "reply": "Kho được chất đầy. Người qua đường nhìn mà trầm trồ.",
+        "deed": "stored_winter"
+       },
+       {
+        "text": "Chia đều bữa ăn chung",
+        "reply": "Mỗi tối cả làng ăn chung một nồi.",
+        "deed": "shared_meals"
+       },
+       {
+        "text": "Đổi bớt lương lấy vũ khí",
+        "reply": "Giáo mới dựng thành hàng trước Nhà chung.",
+        "deed": "food_for_arms"
+       }
+      ]
+     }
+    },
+    {
+     "id": "chapter:III.B-2",
+     "name": "Người giữ lửa",
+     "days": [
+      3,
+      6
+     ],
+     "scene": {
+      "say": [
+       "Đêm qua bão dập tắt lửa Nhà chung, cả làng lạnh một đêm.",
+       "Từ nay ai giữ lửa?"
+      ],
+      "options": [
+       {
+        "text": "Lập người giữ lửa, luân phiên mỗi đêm",
+        "reply": "Đêm nào cũng có một người thức bên lửa.",
+        "deed": "fire_keeper"
+       },
+       {
+        "text": "Mỗi nhà tự giữ lửa nhà mình",
+        "reply": "Mỗi mái nhà một đốm lửa nhỏ.",
+        "deed": "own_fires"
+       },
+       {
+        "text": "Giao cho người ngoài khéo giữ lửa",
+        "reply": "Người lạ ấy giữ lửa giỏi hơn ai hết.",
+        "deed": "outsider_keeper"
+       }
+      ]
+     }
+    },
+    {
+     "id": "chapter:III.B-3",
+     "name": "Vòng đá trên đồi",
+     "days": [
+      3,
+      6
+     ],
+     "scene": {
+      "say": [
+       "Dân đề nghị dựng một vòng đá lớn trên đồi để xin mùa."
+      ],
+      "options": [
+       {
+        "text": "Dựng vòng đá",
+        "reply": "Mười lăm ngày công, vòng đá đứng sừng sững.",
+        "deed": "stone_ring"
+       },
+       {
+        "text": "Dựng tường rào dày quanh làng",
+        "reply": "Làng khuất sau hàng cọc nhọn.",
+        "deed": "thick_wall"
+       },
+       {
+        "text": "Không dựng gì, giữ công cho việc khác",
+        "reply": "Mọi người quay lại việc thường ngày."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

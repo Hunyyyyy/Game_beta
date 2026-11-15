@@ -1,0 +1,83 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "tips": [
+  {
+   "id": "tip:N1",
+   "name": "Cố Đô Mở",
+   "tree": "stone",
+   "family": "mo",
+   "fruits": [
+    "fruit:T1"
+   ],
+   "leaves": [
+    "leaf:I1-a",
+    "leaf:I1-d",
+    "leaf:III2-a"
+   ],
+   "marks": [
+    "nhan",
+    "hop"
+   ],
+   "text": "Làng thành nơi người ta tìm tới: nhiều giọng nói, nhiều nghề."
+  },
+  {
+   "id": "tip:N2",
+   "name": "Pháo Đài Núi",
+   "tree": "stone",
+   "family": "kin",
+   "fruits": [
+    "fruit:T2"
+   ],
+   "leaves": [
+    "leaf:III2-d",
+    "leaf:I1-b"
+   ],
+   "marks": [
+    "uy"
+   ],
+   "text": "Làng khép kín sau tường dày: ít bạn, nhiều lính."
+  },
+  {
+   "id": "tip:N8",
+   "name": "Hai Làng Một Gốc",
+   "tree": "stone",
+   "family": "chia",
+   "fruits": [
+    "fruit:T10"
+   ],
+   "leaves": [
+    "leaf:III2-b",
+    "leaf:I1-c"
+   ],
+   "marks": [
+    "lo"
+   ],
+   "text": "Làng con bên kia suối nói cùng tiếng với làng mình."
+  },
+  {
+   "id": "tip:N5",
+   "name": "Đàn Lửa Thiêng",
+   "tree": "stone",
+   "family": "lua",
+   "fruits": [],
+   "leaves": [
+    "leaf:III2-c"
+   ],
+   "marks": [
+    "tin"
+   ],
+   "off": true,
+   "flowTo": "tip:N1",
+   "text": "Làng thành nơi hành hương."
+  },
+  {
+   "id": "tip:N0",
+   "name": "Làng Vô Danh",
+   "tree": "stone",
+   "family": "none",
+   "fruits": [],
+   "default": true,
+   "text": "Sương tan. Làng bước sang thời mới như bao làng khác."
+  }
+ ]
+}

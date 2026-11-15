@@ -90,6 +90,7 @@ export class Menu {
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
     page.append(h('div', { class: 'devrow' }, toggle('Thử nâng cấp sang nền rộng: Nhà dân cấp 2 thành 4×4', 'Cho Nhà dân cấp 2 chiếm nền 4×4 (hình vẫn nhỏ) để thử luồng nâng cấp: hình bóng nền mới, tô đỏ công trình vướng, dời đi rồi mới xác nhận; có thể hủy', () => dev.growTestOn(), (on) => dev.growTest(on))));
     page.append(h('div', { class: 'devrow' }, toggle('Xem cung điện (Nhà chính cấp 7)', 'Vẽ Nhà chính thành cung điện 6×6 để xem thử; cây, đá và các công trình quanh đó tạm ẩn (chỉ hình vẽ, không đổi gì trong game)', () => sim.dev.palace, (on) => { sim.dev.palace = on; })));
+    page.append(h('div', { class: 'devrow' }, toggle('Chạy cây cốt truyện (bản mẫu)', 'Bật máy cốt truyện dù dữ liệu còn tắt (data/story/index.json): nút thắt, lá, trái, ngọn ghi vào Nhật ký; cảnh của truyện tới cổng như khách', () => sim.dev.story, (on) => { sim.dev.story = on; })));
     page.append(h('div', { class: 'devrow' }, h('small', { text: 'Nghiên cứu xong:' }),
       ...dev.RESEARCH_GROUPS.map((g) => btn(g.label, () => toast(dev.researchGroup(sim, g.key)), `Nghiên cứu xong mọi mục của nhóm ${g.label}, không tốn gì`)),
       btn('Tất cả', () => toast(dev.researchGroup(sim, 'all')), 'Nghiên cứu xong cả cây')));

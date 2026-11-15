@@ -7332,8 +7332,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   };
   var FOOD = food_default;
   var rationAt = (fireLevel2, soldier) => {
-    const list = soldier ? FOOD.ration.soldier : FOOD.ration.villager;
-    return list[Math.max(0, Math.min(list.length, fireLevel2) - 1)];
+    const list2 = soldier ? FOOD.ration.soldier : FOOD.ration.villager;
+    return list2[Math.max(0, Math.min(list2.length, fireLevel2) - 1)];
   };
   var scaleBill = (cost) => {
     const m = pace_default.costMult, out = {};
@@ -10771,7 +10771,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   var rankDef = (role, rank) => BRANCHES[role].find((d) => d.rank === rank);
   var ARMOR_RANK = {};
-  for (const list of Object.values(BRANCHES)) for (const d of list) if (d.armor && (ARMOR_RANK[d.armor] === void 0 || d.rank < ARMOR_RANK[d.armor])) ARMOR_RANK[d.armor] = d.rank;
+  for (const list2 of Object.values(BRANCHES)) for (const d of list2) if (d.armor && (ARMOR_RANK[d.armor] === void 0 || d.rank < ARMOR_RANK[d.armor])) ARMOR_RANK[d.armor] = d.rank;
   var armorRank = (id) => id ? ARMOR_RANK[id] ?? 0 : 0;
   var rankName = (role, rank) => rankDef(role, rank)?.name ?? null;
   var rankPower = (rank) => ranks_default.power[Math.max(0, Math.min(ranks_default.power.length, rank) - 1)];
@@ -19396,10 +19396,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     /** A random dry spot (open ground for 20 tiles round it) at least START_MARGIN from every edge, so the tribes and the herds have room on all sides. */
     static pickStart(seed2) {
-      const N = MAP_SIZE, rnd = mulberry32(mix32(seed2 ^ 1374496523)), span = N - 2 * START_MARGIN;
+      const N = MAP_SIZE, rnd = mulberry32(mix32(seed2 ^ 1374496523)), span2 = N - 2 * START_MARGIN;
       let best = { x: N >> 1, y: N >> 1 }, bestScore = -1;
       for (let t = 0; t < 400; t++) {
-        const x = START_MARGIN + Math.floor(rnd() * span), y = START_MARGIN + Math.floor(rnd() * span);
+        const x = START_MARGIN + Math.floor(rnd() * span2), y = START_MARGIN + Math.floor(rnd() * span2);
         let score = 0;
         for (let k = 0; k < 8; k++) score += fbm((x + Math.cos(k * 0.785) * 20) / 26, (y + Math.sin(k * 0.785) * 20) / 26, seed2) > WATER_BELOW + 0.08 ? 1 : 0;
         if (score === 8 && fbm(x / 26, y / 26, seed2) > WATER_BELOW + 0.08) return { x, y };
@@ -19705,8 +19705,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sign() {
       return this.next() < 0.5 ? -1 : 1;
     }
-    pick(list) {
-      return list[Math.floor(this.next() * list.length)];
+    pick(list2) {
+      return list2[Math.floor(this.next() * list2.length)];
     }
     /** Roughly normal, mean 0, sd 1. */
     gauss() {
@@ -19737,7 +19737,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return rgb(red(a) + (red(b) - red(a)) * t, green(a) + (green(b) - green(a)) * t, blue(a) + (blue(b) - blue(a)) * t);
   }
   var scale = (c, k) => rgb(Math.min(255, red(c) * k), Math.min(255, green(c) * k), Math.min(255, blue(c) * k));
-  var ramp = (list) => list.map(hex);
+  var ramp = (list2) => list2.map(hex);
   function fit(r, n) {
     r = r.map(hex);
     if (r.length === n) return r;
@@ -20430,14 +20430,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
      * for a crescent that tapers at both ends.
      */
     arc(cx, cy, r, w, a0, a1, c, a = 1) {
-      const span = a1 - a0, wf = typeof w === "function";
+      const span2 = a1 - a0, wf = typeof w === "function";
       this.shade(cx - r, cy - r, cx + r, cy + r, (x, y, o) => {
         const dx = x - cx, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy);
         if (d > r) return;
         let ang = Math.atan2(dy, dx) - a0;
         ang -= Math.floor(ang / (Math.PI * 2)) * Math.PI * 2;
-        if (ang > span) return;
-        const u = ang / span, ww = wf ? w(u) : w;
+        if (ang > span2) return;
+        const u = ang / span2, ww = wf ? w(u) : w;
         if (ww <= 0 || d < r - ww) return;
         const v = (d - (r - ww)) / ww;
         o.c = call(c, u, v);
@@ -20725,10 +20725,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (meta3.actor && !opts.actor) opts.actor = stockActor(meta3.actor === 2 ? 2 : 1);
     return opts;
   }
-  function createFx(mod, o = {}) {
-    const meta3 = mod.meta ?? {};
+  function createFx(mod2, o = {}) {
+    const meta3 = mod2.meta ?? {};
     const opts = resolveOptions(meta3, o);
-    const impl = mod.create ? mod.create(opts) : mod;
+    const impl = mod2.create ? mod2.create(opts) : mod2;
     const D2 = meta3.duration ?? 1;
     let t = 0, stopAt = Infinity;
     return {
@@ -21159,10 +21159,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     return { frames, ax: ORIGIN_X, ay: ORIGIN_Y + HEARTH_UP, fps: FPS };
   }
-  function bakeFx(mod, opts = {}, fps2 = 30) {
-    const [w, h2] = mod.meta.size, [ox, oy] = mod.meta.origin;
-    const n = Math.max(1, Math.ceil(mod.meta.duration * fps2)), frame2 = createFrame(w, h2), img = new ImageData(w, h2), frames = [];
-    const fx = createFx(mod, { x: ox, y: oy, ...opts });
+  function bakeFx(mod2, opts = {}, fps2 = 30) {
+    const [w, h2] = mod2.meta.size, [ox, oy] = mod2.meta.origin;
+    const n = Math.max(1, Math.ceil(mod2.meta.duration * fps2)), frame2 = createFrame(w, h2), img = new ImageData(w, h2), frames = [];
+    const fx = createFx(mod2, { x: ox, y: oy, ...opts });
     for (let i = 0; i < n; i++) {
       clearFrame(frame2);
       fx.draw(frame2);
@@ -29149,8 +29149,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function rectOf(r) {
     return Array.isArray(r) ? r : [r.x, r.y, r.w, r.h, r.color];
   }
-  function rects(list) {
-    return list.map(rectOf);
+  function rects(list2) {
+    return list2.map(rectOf);
   }
   function gripShapes(def) {
     if (!Array.isArray(def.head)) return rects(def.side || []);
@@ -30694,7 +30694,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       return h2 >>> 0;
     }
-    var mod = function(a, n) {
+    var mod2 = function(a, n) {
       return (a % n + n) % n;
     };
     function parseColor(c, pal, depth) {
@@ -30787,8 +30787,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       var x = lx + ctx2.ox, y = ly + ctx2.oy, w = ctx2.w, h2 = ctx2.h;
       if (ctx2.flip) x = w - 1 - x;
       if (ctx2.wrap) {
-        x = mod(x, w);
-        y = mod(y, h2);
+        x = mod2(x, w);
+        y = mod2(y, h2);
       } else if (x < 0 || y < 0 || x >= w || y >= h2) return;
       var i = (y * w + x) * 4, buf2 = ctx2.buf, dA = buf2[i + 3];
       if (s.clip === "inside" && dA === 0) return;
@@ -30820,19 +30820,19 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         return c;
       };
       if (Array.isArray(s.colors) && s.colors.length) {
-        var list = s.colors.map(function(e) {
+        var list2 = s.colors.map(function(e) {
           return typeof e === "object" && e ? { c: e.color, w: e.weight === void 0 ? 1 : e.weight } : { c: e, w: 1 };
         });
-        var tot = list.reduce(function(a, b) {
+        var tot = list2.reduce(function(a, b) {
           return a + b.w;
         }, 0);
         return function(x, y) {
           var r = rng2() * tot, k = 0;
-          for (; k < list.length - 1; k++) {
-            r -= list[k].w;
+          for (; k < list2.length - 1; k++) {
+            r -= list2[k].w;
             if (r < 0) break;
           }
-          var c = get(list[k].c);
+          var c = get(list2[k].c);
           if (c) put3(ctx2, s, x, y, c);
         };
       }
@@ -30861,8 +30861,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       var ix = Math.floor(u), iy = Math.floor(v), fx = u - ix, fy = v - iy;
       fx = fx * fx * (3 - 2 * fx);
       fy = fy * fy * (3 - 2 * fy);
-      var a = hash22(mod(ix, Px), mod(iy, Py), salt), b = hash22(mod(ix + 1, Px), mod(iy, Py), salt);
-      var c = hash22(mod(ix, Px), mod(iy + 1, Py), salt), d = hash22(mod(ix + 1, Px), mod(iy + 1, Py), salt);
+      var a = hash22(mod2(ix, Px), mod2(iy, Py), salt), b = hash22(mod2(ix + 1, Px), mod2(iy, Py), salt);
+      var c = hash22(mod2(ix, Px), mod2(iy + 1, Py), salt), d = hash22(mod2(ix + 1, Px), mod2(iy + 1, Py), salt);
       return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
     }
     var SHAPES = {
@@ -30967,8 +30967,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         }
       },
       gradient: function(s, ctx2, rng2) {
-        var a = area(s, ctx2, rng2), list = Array.isArray(s.colors) ? s.colors : [s.from, s.to];
-        var cols = list.map(function(c) {
+        var a = area(s, ctx2, rng2), list2 = Array.isArray(s.colors) ? s.colors : [s.from, s.to];
+        var cols = list2.map(function(c) {
           return parseColor(c, ctx2.palette);
         });
         if (cols.length < 2 || cols.some(function(c) {
@@ -31000,8 +31000,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         }
         var empty = function(x2, y2) {
           if (ctx2.wrap) {
-            x2 = mod(x2, w);
-            y2 = mod(y2, h2);
+            x2 = mod2(x2, w);
+            y2 = mod2(y2, h2);
           } else if (x2 < 0 || y2 < 0 || x2 >= w || y2 >= h2) return true;
           return snap[(y2 * w + x2) * 4 + 3] === 0;
         };
@@ -31026,8 +31026,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
           var hit = N.some(function(d) {
             var xx = x + d[0], yy = y + d[1];
             if (ctx2.wrap) {
-              xx = mod(xx, w);
-              yy = mod(yy, h2);
+              xx = mod2(xx, w);
+              yy = mod2(yy, h2);
             } else if (xx < 0 || yy < 0 || xx >= w || yy >= h2) return false;
             return snap[(yy * w + xx) * 4 + 3] > 0;
           });
@@ -172285,19 +172285,19 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         }
       }
       const trees = nat.trees, strips = /* @__PURE__ */ new Set();
-      const list = [];
-      const fireB = sim2.dev.palace ? sim2.campfire() : void 0, bare = (x, y) => !!fireB && fireB.done && Math.hypot(x - (fireB.x + 1), y - (fireB.y + 1)) <= 15;
+      const list2 = [];
+      const fireB = sim2.dev.palace ? sim2.campfire() : void 0, bare2 = (x, y) => !!fireB && fireB.done && Math.hypot(x - (fireB.x + 1), y - (fireB.y + 1)) <= 15;
       for (let j = j0; j <= Math.min(N - 1, j1 + 2); j++) {
         for (let i = Math.max(0, i0 - 1); i <= Math.min(N - 1, i1 + 1); i++) {
-          if (fireB && bare(i + 0.5, j + 0.5)) continue;
+          if (fireB && bare2(i + 0.5, j + 0.5)) continue;
           const t = world.at(i, j);
-          if (t === Tile.Tree) list.push({ y: j * TILE + 28, kind: "tree", i, j });
-          else if (t === Tile.Rock) list.push({ y: j * TILE + 28, kind: "rock", i, j });
-          else if (t === Tile.Ore) list.push({ y: j * TILE + 28, kind: "ore", i, j });
+          if (t === Tile.Tree) list2.push({ y: j * TILE + 28, kind: "tree", i, j });
+          else if (t === Tile.Rock) list2.push({ y: j * TILE + 28, kind: "rock", i, j });
+          else if (t === Tile.Ore) list2.push({ y: j * TILE + 28, kind: "ore", i, j });
           else if (t === Tile.Mountain && !strips.has(j * 65536 + (i >> 3))) {
             strips.add(j * 65536 + (i >> 3));
-            list.push({ y: (j + 1) * TILE - 1, kind: "mountain", i: i >> 3, j });
-          } else if (t === Tile.Bush) list.push({ y: j * TILE + 28, kind: "bush", i, j });
+            list2.push({ y: (j + 1) * TILE - 1, kind: "mountain", i: i >> 3, j });
+          } else if (t === Tile.Bush) list2.push({ y: j * TILE + 28, kind: "bush", i, j });
         }
       }
       const vx0 = cx - 128, vx1 = cx + this.w / z + 128, vy0 = cy - 128, vy1 = cy + this.h / z + 128;
@@ -172305,31 +172305,31 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       for (const b of sim2.buildings) {
         const [ax, ay] = this.anchorOf(b);
         if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1) continue;
-        if (fireB && b.kind !== "campfire" && bare(b.x + footOf(b).w / 2, b.y + footOf(b).h / 2)) continue;
-        list.push({ y: ay, kind: "building", i: 0, j: 0, b });
+        if (fireB && b.kind !== "campfire" && bare2(b.x + footOf(b).w / 2, b.y + footOf(b).h / 2)) continue;
+        list2.push({ y: ay, kind: "building", i: 0, j: 0, b });
       }
-      for (const v of sim2.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
+      for (const v of sim2.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list2.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-      for (const f of sim2.foes) if (!f.inTent && onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
-      for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
+      for (const f of sim2.foes) if (!f.inTent && onScr(f.x, f.y) && seen(f.x, f.y)) list2.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
+      for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list2.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
       for (const t of sim2.tribes) {
         for (const p of t.props) {
           if (p.kind === "fire" && t.state === "destroyed") continue;
           const [ax, ay] = this.buildingAnchor(this.propKind(p), p.x, p.y);
           if (ax < vx0 || ax > vx1 || ay < vy0 || ay > vy1 || sim2.fog.state[Math.floor(p.y) * N + Math.floor(p.x)] === 0) continue;
-          list.push({ y: ay, kind: "camp", i: 0, j: 0, t, p });
+          list2.push({ y: ay, kind: "camp", i: 0, j: 0, t, p });
         }
       }
       for (const pl of sim2.plans) if (pl.status === "running") {
-        for (const t of pl.tents) if (onScr(t.x, t.y)) list.push({ y: (t.y + 1) * TILE, kind: "ftent", i: 0, j: 0, ft: t });
+        for (const t of pl.tents) if (onScr(t.x, t.y)) list2.push({ y: (t.y + 1) * TILE, kind: "ftent", i: 0, j: 0, ft: t });
       }
-      list.sort((a, b) => a.y - b.y);
+      list2.sort((a, b) => a.y - b.y);
       const wallAt = /* @__PURE__ */ new Map();
       for (const b of sim2.buildings) if (b.kind === "fence" || b.kind === "gate") {
         const f = footOf(b);
         for (let j = 0; j < f.h; j++) for (let i = 0; i < f.w; i++) wallAt.set((b.y + j) * N + b.x + i, b);
       }
-      for (const d of list) {
+      for (const d of list2) {
         if (d.kind === "tree") {
           const p = trees[Math.floor(hash2(d.i, d.j, 21) * trees.length)];
           this.prop(p, d.i * TILE + 16, d.y, time);
@@ -173184,22 +173184,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     a.dest = null;
   }
-  function provoke(sim2, a, byId) {
+  function provoke(sim2, a, byId2) {
     if (a.state === "dead") return;
     const def = animalDef(a);
     if (def.defends || def.aggro > 0 || def.cornered && a.tired > 0) {
       a.state = "attack";
-      a.target = { kind: "unit", id: byId };
+      a.target = { kind: "unit", id: byId2 };
       a.timer = 14;
     } else {
       a.state = "flee";
-      a.target = { kind: "unit", id: byId };
+      a.target = { kind: "unit", id: byId2 };
       a.timer = 8;
     }
     for (const o of sim2.animals) {
       if (o !== a && o.herd === a.herd && o.state !== "dead" && o.state !== "attack" && Math.hypot(o.x - a.x, o.y - a.y) < 9 && !animalDef(o).defends) {
         o.state = "flee";
-        o.target = { kind: "unit", id: byId };
+        o.target = { kind: "unit", id: byId2 };
         o.timer = 6;
       }
     }
@@ -180199,9 +180199,994 @@ ${risk.lines.join("\n")}`);
     ]
   };
 
+  // src/data/story/index.json
+  var story_default = {
+    _note: "Story tree (doc/story_tree.md, src/sim/storydata.ts). enabled: false keeps the tree asleep in the game (the dev menu can wake it); tools/simStory.mjs always runs it. config: wmin = floor of a leaf's weight; wildChance = chance of a wild leaf at a knot; knotDelay / fruitDelay = days [least, most] between 'ready' and the event; tip = points for a ripe fruit, a fallen leaf and a dominant mark (the `dominant` highest marks); hardMul = weight of `hard` leaves by play mode; carry = share of stone-age deeds kept in the medieval age; oldTaleShare = share of a stone knot's effects when it fires as an old tale in the medieval age; secondShare = share of the second tip's legacy; resendDays = a scene that never came is sent again after this. trees: one per era; onePerTrunk = only the first knot of a trunk fires; tips: when a tip is scored ('eraEnd' = the day the era ends, a number = Nh\xE0 chung level).",
+    version: 1,
+    enabled: false,
+    config: {
+      wmin: 0.25,
+      wildChance: 0.08,
+      knotDelay: [2, 6],
+      fruitDelay: [3, 8],
+      tip: { fruit: 3, leaf: 1, mark: 0.5, dominant: 2 },
+      hardMul: { easy: 0, normal: 1, harsh: 1.5 },
+      carry: 0.5,
+      oldTaleShare: 0.5,
+      secondShare: 0.5,
+      sceneMaxDelay: 10,
+      scenePriority: 7,
+      resendDays: 20
+    },
+    trees: [
+      { id: "stone", era: "stone", onePerTrunk: true, tips: [{ slot: "stone", at: "eraEnd" }] },
+      { id: "medieval", era: "ancient", tips: [{ slot: "mid", at: 7 }, { slot: "end", at: 10 }] }
+    ]
+  };
+
+  // src/data/story/marks.json
+  var marks_default = {
+    _note: "The hidden marks (D\u1EA5u). They are never saved: each is the sum of the deeds done (encounters.deeds) times the weights below. window = days a deed counts for (absent: for ever, as H\u1EE3p); carry = share of stone-age deeds kept once the medieval age began (absent: index.json config.carry); era: 'ancient' = a mark of the medieval age only. deeds: deed key -> mark -> points. rumors: a line for the Nh\u1EADt k\xFD when a mark first reaches `at` (below: true = falls to it).",
+    marks: [
+      { id: "nhan", name: "Nh\xE2n", window: 60 },
+      { id: "uy", name: "Uy", window: 60 },
+      { id: "tin", name: "T\xEDn", window: 60 },
+      { id: "lo", name: "L\u1ED9", window: 60 },
+      { id: "hop", name: "H\u1EE3p", carry: 1 },
+      { id: "luat", name: "Lu\u1EADt", window: 120, era: "ancient" },
+      { id: "cua", name: "C\u1EE7a", era: "ancient" }
+    ],
+    deeds: {
+      helped_wanderer: { nhan: 1 },
+      took_in_wanderer: { nhan: 2, hop: 1 },
+      refused_wanderer: { nhan: -1 },
+      took_in_thief: { hop: 1 },
+      thief_again: { lo: 2 },
+      pardoned_thief: { nhan: 1, lo: 1 },
+      punished_thief: { nhan: -1, uy: 1 },
+      hosted_travelers: { nhan: 1, tin: 1, lo: 1 },
+      took_refugees: { nhan: 2, lo: 1, hop: 2 },
+      fed_refugees: { nhan: 1 },
+      refused_refugees: { nhan: -2 },
+      handed_over: { nhan: -3, tin: 1 },
+      paid_pursuers: { uy: -1, lo: 1 },
+      defied_pursuers: { nhan: 1, uy: 2, tin: -1 },
+      hosted_scouts: { tin: 2, lo: 1 },
+      showed_force: { uy: 3 },
+      showed_weakness: { uy: -1, lo: 3 },
+      drove_off_scouts: { uy: 1, tin: -2 },
+      paid_tribute: { uy: -1, tin: 1, lo: 1 },
+      refused_tribute: { uy: 1, tin: -1 },
+      scared_off_tribute: { uy: 3 },
+      drove_off_tribute: { uy: 1, tin: -1 },
+      bluff_failed: { uy: -3, lo: 2 },
+      bought_peace: { tin: 1, lo: 1 },
+      bought_time: { lo: 1 },
+      defied_ultimatum: { uy: 2 },
+      paid_ransom: { nhan: 2, tin: 1 },
+      refused_ransom: { nhan: -2 },
+      shared_fire: { hop: 2, nhan: 1, lo: 1 },
+      two_hearths: { hop: -1, lo: -1 },
+      newcomer_watch: { tin: 2, hop: 1, lo: 2 },
+      fire_tales: { tin: 1, hop: 1 },
+      stored_winter: { lo: 1 },
+      shared_meals: { nhan: 1, hop: 1 },
+      food_for_arms: { uy: 1 },
+      fire_keeper: { tin: 1, hop: 1 },
+      own_fires: { hop: -1 },
+      outsider_keeper: { hop: 2, lo: 1 },
+      stone_ring: { tin: 2, hop: 1 },
+      thick_wall: { uy: 2, lo: -2, hop: -1 },
+      law_spoken: { luat: 2 },
+      law_by_one: { uy: 1, luat: -1 },
+      heir_named: { luat: 1, hop: 1 },
+      heir_by_strength: { uy: 2 }
+    },
+    rumors: [
+      { mark: "nhan", at: 4, text: "Ngo\xE0i \u0111\u01B0\u1EDDng ai c\u0169ng k\u1EC3 l\xE0ng n\xE0y c\xF3 b\u1EBFp l\u1EEDa l\xFAc n\xE0o c\u0169ng c\xF2n ph\u1EA7n cho ng\u01B0\u1EDDi l\u1EA1." },
+      { mark: "uy", at: 4, text: "M\u1EA5y ng\u01B0\u1EDDi R\xECu \u0110\xE1 b\u1EA3o \u0111\u1EEBng \u0111\u1EE5ng t\u1EDBi l\xE0ng n\xE0y." },
+      { mark: "lo", at: 4, text: "C\xF3 k\u1EBB \u0111\u1EBFm kho l\u01B0\u01A1ng c\u1EE7a m\xECnh t\u1EEB b\xEAn kia su\u1ED1i." },
+      { mark: "tin", at: -2, below: true, text: "Th\u01B0\u01A1ng l\xE1i \u0111\u1ED3n m\xECnh n\xF3i m\u1ED9t \u0111\u1EB1ng l\xE0m m\u1ED9t n\u1EBBo." },
+      { mark: "hop", at: 4, text: "B\u1EEFa t\u1ED1i gi\u1EDD kh\xF4ng ai ph\xE2n bi\u1EC7t \u0111\xE2u l\xE0 ng\u01B0\u1EDDi c\u0169, \u0111\xE2u l\xE0 ng\u01B0\u1EDDi m\u1EDBi." }
+    ]
+  };
+
+  // src/data/story/stone/threads.json
+  var threads_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    threads: [
+      {
+        id: "thread:I.A",
+        name: "B\u1EBFp l\u1EEDa m\u1EDF",
+        trunk: "I",
+        tree: "stone",
+        chapters: [
+          {
+            id: "chapter:I.A-1",
+            name: "K\u1EBB lang thang",
+            script: "wanderer",
+            options: [
+              {
+                label: "Cho m\u1ED9t b\u1EEFa \u0103n",
+                deeds: [
+                  "helped_wanderer"
+                ]
+              },
+              {
+                label: "Gi\u1EEF l\u1EA1i l\xE0m vi\u1EC7c",
+                deeds: [
+                  "took_in_wanderer"
+                ]
+              },
+              {
+                label: "\u0110u\u1ED5i \u0111i",
+                deeds: [
+                  "refused_wanderer"
+                ]
+              }
+            ]
+          },
+          {
+            id: "chapter:I.A-2",
+            name: "\u0110o\xE0n ng\u01B0\u1EDDi \u0111i \u0111\u01B0\u1EDDng",
+            script: "travelers",
+            options: [
+              {
+                label: "Cho ngh\u1EC9 l\u1EA1i",
+                deeds: [
+                  "hosted_travelers"
+                ]
+              },
+              {
+                label: "Kh\xF4ng ti\u1EBFp",
+                deeds: []
+              }
+            ]
+          },
+          {
+            id: "chapter:I.A-3",
+            name: "B\u1EEFa t\u1ED1i chung",
+            when: "refugees>=1",
+            days: [
+              2,
+              4
+            ],
+            scene: {
+              say: [
+                "T\u1ED1i nay c\xF3 ng\u01B0\u1EDDi \u0111\u1EC1 ngh\u1ECB n\u1EA5u chung m\u1ED9t b\u1EEFa ngo\xE0i b\xE3i, c\u1EA3 ng\u01B0\u1EDDi c\u0169 l\u1EABn ng\u01B0\u1EDDi m\u1EDBi.",
+                "L\xE0ng m\xECnh t\xEDnh sao?"
+              ],
+              options: [
+                {
+                  text: "V\xF2ng l\u1EEDa chung, ai c\u0169ng ng\u1ED3i chung",
+                  reply: "L\u1EEDa ch\xE1y to. Ti\u1EBFng c\u01B0\u1EDDi vang t\u1EDBi t\u1EADn b\xECa r\u1EEBng.",
+                  deed: "shared_fire"
+                },
+                {
+                  text: "Hai b\u1EBFp: ng\u01B0\u1EDDi c\u0169 m\u1ED9t b\xEAn, ng\u01B0\u1EDDi m\u1EDBi m\u1ED9t b\xEAn",
+                  reply: "Hai v\xF2ng l\u1EEDa c\xE1ch nhau m\u1ED9t qu\xE3ng t\u1ED1i. Kh\xF4ng ai n\xF3i g\xEC.",
+                  deed: "two_hearths"
+                },
+                {
+                  text: "Giao ng\u01B0\u1EDDi m\u1EDBi g\xE1c \u0111\xEAm",
+                  reply: "Ng\u01B0\u1EDDi m\u1EDBi nh\u1EADn ng\u1ECDn \u0111u\u1ED1c, g\u1EADt \u0111\u1EA7u th\u1EADt ch\u1EADm.",
+                  deed: "newcomer_watch"
+                },
+                {
+                  text: "M\u1EDDi ng\u01B0\u1EDDi l\u1EA1 k\u1EC3 chuy\u1EC7n quanh l\u1EEDa",
+                  reply: "H\u1ECD k\u1EC3 v\u1EC1 nh\u1EEFng con \u0111\u01B0\u1EDDng b\xEAn kia s\u01B0\u01A1ng.",
+                  deed: "fire_tales"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        id: "thread:III.B",
+        name: "L\u1EEDa v\xE0 m\xF9a",
+        trunk: "III",
+        tree: "stone",
+        chapters: [
+          {
+            id: "chapter:III.B-1",
+            name: "Kho l\u01B0\u01A1ng v\u01A1i d\u1EA7n",
+            when: "fireLevel>=2",
+            days: [
+              1,
+              3
+            ],
+            scene: {
+              say: [
+                "Tr\u1EDDi tr\u1EDF l\u1EA1nh, kho l\u01B0\u01A1ng v\u01A1i d\u1EA7n. D\xE2n h\u1ECFi l\xE0ng s\u1EBD lo m\xF9a \u0111\xF4ng ra sao."
+              ],
+              options: [
+                {
+                  text: "T\xEDch tr\u1EEF cho m\xF9a \u0111\xF4ng",
+                  reply: "Kho \u0111\u01B0\u1EE3c ch\u1EA5t \u0111\u1EA7y. Ng\u01B0\u1EDDi qua \u0111\u01B0\u1EDDng nh\xECn m\xE0 tr\u1EA7m tr\u1ED3.",
+                  deed: "stored_winter"
+                },
+                {
+                  text: "Chia \u0111\u1EC1u b\u1EEFa \u0103n chung",
+                  reply: "M\u1ED7i t\u1ED1i c\u1EA3 l\xE0ng \u0103n chung m\u1ED9t n\u1ED3i.",
+                  deed: "shared_meals"
+                },
+                {
+                  text: "\u0110\u1ED5i b\u1EDBt l\u01B0\u01A1ng l\u1EA5y v\u0169 kh\xED",
+                  reply: "Gi\xE1o m\u1EDBi d\u1EF1ng th\xE0nh h\xE0ng tr\u01B0\u1EDBc Nh\xE0 chung.",
+                  deed: "food_for_arms"
+                }
+              ]
+            }
+          },
+          {
+            id: "chapter:III.B-2",
+            name: "Ng\u01B0\u1EDDi gi\u1EEF l\u1EEDa",
+            days: [
+              3,
+              6
+            ],
+            scene: {
+              say: [
+                "\u0110\xEAm qua b\xE3o d\u1EADp t\u1EAFt l\u1EEDa Nh\xE0 chung, c\u1EA3 l\xE0ng l\u1EA1nh m\u1ED9t \u0111\xEAm.",
+                "T\u1EEB nay ai gi\u1EEF l\u1EEDa?"
+              ],
+              options: [
+                {
+                  text: "L\u1EADp ng\u01B0\u1EDDi gi\u1EEF l\u1EEDa, lu\xE2n phi\xEAn m\u1ED7i \u0111\xEAm",
+                  reply: "\u0110\xEAm n\xE0o c\u0169ng c\xF3 m\u1ED9t ng\u01B0\u1EDDi th\u1EE9c b\xEAn l\u1EEDa.",
+                  deed: "fire_keeper"
+                },
+                {
+                  text: "M\u1ED7i nh\xE0 t\u1EF1 gi\u1EEF l\u1EEDa nh\xE0 m\xECnh",
+                  reply: "M\u1ED7i m\xE1i nh\xE0 m\u1ED9t \u0111\u1ED1m l\u1EEDa nh\u1ECF.",
+                  deed: "own_fires"
+                },
+                {
+                  text: "Giao cho ng\u01B0\u1EDDi ngo\xE0i kh\xE9o gi\u1EEF l\u1EEDa",
+                  reply: "Ng\u01B0\u1EDDi l\u1EA1 \u1EA5y gi\u1EEF l\u1EEDa gi\u1ECFi h\u01A1n ai h\u1EBFt.",
+                  deed: "outsider_keeper"
+                }
+              ]
+            }
+          },
+          {
+            id: "chapter:III.B-3",
+            name: "V\xF2ng \u0111\xE1 tr\xEAn \u0111\u1ED3i",
+            days: [
+              3,
+              6
+            ],
+            scene: {
+              say: [
+                "D\xE2n \u0111\u1EC1 ngh\u1ECB d\u1EF1ng m\u1ED9t v\xF2ng \u0111\xE1 l\u1EDBn tr\xEAn \u0111\u1ED3i \u0111\u1EC3 xin m\xF9a."
+              ],
+              options: [
+                {
+                  text: "D\u1EF1ng v\xF2ng \u0111\xE1",
+                  reply: "M\u01B0\u1EDDi l\u0103m ng\xE0y c\xF4ng, v\xF2ng \u0111\xE1 \u0111\u1EE9ng s\u1EEBng s\u1EEFng.",
+                  deed: "stone_ring"
+                },
+                {
+                  text: "D\u1EF1ng t\u01B0\u1EDDng r\xE0o d\xE0y quanh l\xE0ng",
+                  reply: "L\xE0ng khu\u1EA5t sau h\xE0ng c\u1ECDc nh\u1ECDn.",
+                  deed: "thick_wall"
+                },
+                {
+                  text: "Kh\xF4ng d\u1EF1ng g\xEC, gi\u1EEF c\xF4ng cho vi\u1EC7c kh\xE1c",
+                  reply: "M\u1ECDi ng\u01B0\u1EDDi quay l\u1EA1i vi\u1EC7c th\u01B0\u1EDDng ng\xE0y."
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  // src/data/story/stone/knots.json
+  var knots_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    knots: [
+      {
+        id: "knot:I-1",
+        name: "\u0110\xEAm kh\xF4ng ai ng\u1EE7",
+        tree: "stone",
+        trunk: "I",
+        fedBy: [
+          "thread:I.A"
+        ],
+        when: {
+          chapters: 2,
+          progress: [
+            0.25,
+            0.45
+          ],
+          cond: "mark.hop+mark.lo>=5"
+        },
+        fallback: "leaf:I1-nhat",
+        leaves: [
+          {
+            leaf: "leaf:I1-a",
+            base: 3,
+            affinity: {
+              hop: 0.5,
+              nhan: 0.4
+            },
+            tilt: [
+              {
+                if: "deed.shared_fire>=1",
+                mul: 1.5
+              }
+            ]
+          },
+          {
+            leaf: "leaf:I1-b",
+            base: 2,
+            affinity: {
+              lo: 0.5
+            },
+            tilt: [
+              {
+                if: "deed.newcomer_watch>=1",
+                mul: 1.5
+              },
+              {
+                if: "deed.two_hearths>=1",
+                mul: 1.3
+              }
+            ]
+          },
+          {
+            leaf: "leaf:I1-c",
+            base: 2,
+            affinity: {
+              hop: 0.3,
+              nhan: -0.3
+            }
+          },
+          {
+            leaf: "leaf:I1-d",
+            base: 2,
+            affinity: {
+              nhan: 0.4,
+              tin: 0.4
+            },
+            tilt: [
+              {
+                if: "deed.fire_tales>=1",
+                mul: 1.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: "knot:III-2",
+        name: "M\xF9a \u0111\xF4ng d\xE0i",
+        tree: "stone",
+        trunk: "III",
+        fedBy: [
+          "thread:III.B"
+        ],
+        when: {
+          chapters: 2,
+          progress: [
+            0.55,
+            0.7
+          ]
+        },
+        fallback: "leaf:III2-nhat",
+        leaves: [
+          {
+            leaf: "leaf:III2-a",
+            base: 3,
+            affinity: {
+              nhan: 0.4,
+              hop: 0.4
+            },
+            tilt: [
+              {
+                if: "deed.shared_meals>=1",
+                mul: 1.5
+              }
+            ]
+          },
+          {
+            leaf: "leaf:III2-b",
+            base: 2,
+            affinity: {
+              lo: 0.5,
+              hop: -0.4
+            }
+          },
+          {
+            leaf: "leaf:III2-c",
+            base: 1,
+            tilt: [
+              {
+                if: "deed.fire_keeper>=1",
+                mul: 2
+              },
+              {
+                if: "deed.stone_ring>=1",
+                mul: 2
+              }
+            ]
+          },
+          {
+            leaf: "leaf:III2-d",
+            base: 1,
+            affinity: {
+              uy: 0.4
+            },
+            tilt: [
+              {
+                if: "deed.thick_wall>=1",
+                mul: 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  // src/data/story/stone/leaves.json
+  var leaves_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    leaves: [
+      {
+        id: "leaf:I1-a",
+        name: "X\xF3m m\u1EDBi",
+        text: '\u0110\xEAm \u0111\xF3 ng\u01B0\u1EDDi m\u1EDBi d\u1EF1ng m\xE1i nh\xE0 ri\xEAng b\xEAn r\xECa l\xE0ng, g\u1ECDi l\xE0 "b\u1EBFp th\u1EE9 hai".',
+        flags: [
+          "xom_moi"
+        ]
+      },
+      {
+        id: "leaf:I1-b",
+        name: "N\u1ED9i gi\xE1n m\u1EDF c\u1ED5ng",
+        hard: true,
+        text: "Ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c tin giao g\xE1c \u0111\xE3 m\u1EDF l\u1ED1i. S\xE1ng ra kho l\u01B0\u01A1ng v\u01A1i h\u1EB3n.",
+        flags: [
+          "noi_gian"
+        ],
+        effects: [
+          {
+            take: {
+              food: 40
+            }
+          }
+        ]
+      },
+      {
+        id: "leaf:I1-c",
+        name: "B\u1EC7nh s\u1ED1t t\u1EEB \u0111\u01B0\u1EDDng xa",
+        hard: true,
+        text: "M\u1ED9t ph\u1EA7n ba d\xE2n n\u1EB1m li\u1EC7t v\xEC c\u01A1n s\u1ED1t ng\u01B0\u1EDDi \u0111\u01B0\u1EDDng xa mang t\u1EDBi.",
+        flags: [
+          "benh_sot"
+        ]
+      },
+      {
+        id: "leaf:I1-d",
+        name: "Ng\u01B0\u1EDDi c\xF3 t\xE0i",
+        text: "M\u1ED9t ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c nh\u1EADn h\xF3a ra c\xF3 tay ngh\u1EC1 hi\u1EBFm.",
+        flags: [
+          "nhan_tai"
+        ]
+      },
+      {
+        id: "leaf:I1-nhat",
+        name: "M\u1ED9t \u0111\xEAm y\xEAn",
+        text: "\u0110\xEAm tr\xF4i qua y\xEAn \u1EA3. Ng\u01B0\u1EDDi m\u1EDBi v\xE0 ng\u01B0\u1EDDi c\u0169 v\u1EABn d\xE8 ch\u1EEBng nhau."
+      },
+      {
+        id: "leaf:III2-a",
+        name: "M\xF9a \u0111\xF4ng chia \u0111\u1EC1u",
+        text: "Tuy\u1EBFt ph\u1EE7 m\u01B0\u1EDDi hai ng\xE0y, ai c\u0169ng b\u1EDBt mi\u1EBFng \u0103n nh\u01B0ng kh\xF4ng ai b\u1ECB b\u1ECF l\u1EA1i.",
+        effects: [
+          {
+            deed: "shared_meals"
+          }
+        ]
+      },
+      {
+        id: "leaf:III2-b",
+        name: "M\xF9a \u0111\xF4ng gi\xE0nh gi\u1EADt",
+        hard: true,
+        text: "L\u01B0\u01A1ng v\u01A1i nhanh, b\xE8 ph\xE1i chia nhau kho. M\u1ED9t nh\xF3m \u0111\xF2i t\xE1ch \u0111i.",
+        flags: [
+          "phan_ly"
+        ]
+      },
+      {
+        id: "leaf:III2-c",
+        name: "L\u1EEDa thi\xEAng",
+        text: "Ng\u01B0\u1EDDi gi\u1EEF l\u1EEDa th\xE0nh ng\u01B0\u1EDDi ch\u1EC9 l\xFAc nh\xF3m l\u1EEDa, ng\xE0y d\u1ECDn kho.",
+        flags: [
+          "lua_thieng"
+        ],
+        effects: [
+          {
+            rel: {
+              tribe: "cave",
+              n: 10
+            }
+          }
+        ]
+      },
+      {
+        id: "leaf:III2-d",
+        name: "T\u01B0\u1EDDng c\u1EE9u m\u1EA1ng",
+        text: "\u0110\xEAm tuy\u1EBFt, b\u1EA7y s\xF3i tr\xE0n xu\u1ED1ng; t\u01B0\u1EDDng v\xE0 c\u1ED5ng ch\u1EB7n \u0111\u01B0\u1EE3c.",
+        flags: [
+          "cua_dong"
+        ],
+        scene: {
+          say: [
+            "S\xE1ng ra c\xF3 m\u1ED9t nh\xF3m ng\u01B0\u1EDDi l\u1EA1 xin v\xE0o tr\xFA tuy\u1EBFt.",
+            "C\u1ED5ng v\u1EABn \u0111ang \u0111\xF3ng."
+          ],
+          options: [
+            {
+              text: "M\u1EDF c\u1ED5ng cho h\u1ECD v\xE0o",
+              reply: "H\u1ECD run r\u1EA9y b\u01B0\u1EDBc v\xE0o b\xEAn l\u1EEDa.",
+              deed: "took_refugees"
+            },
+            {
+              text: "Gi\u1EEF c\u1ED5ng \u0111\xF3ng",
+              reply: "H\u1ECD l\u1EB7ng l\u1EBD quay \u0111i trong tuy\u1EBFt.",
+              deed: "refused_refugees"
+            }
+          ]
+        }
+      },
+      {
+        id: "leaf:III2-nhat",
+        name: "M\xF9a \u0111\xF4ng qua \u0111i",
+        text: "M\xF9a \u0111\xF4ng d\xE0i nh\u01B0ng r\u1ED3i c\u0169ng qua. Kh\xF4ng ai nh\u1EAFc l\u1EA1i n\xF3."
+      }
+    ]
+  };
+
+  // src/data/story/stone/wild.json
+  var wild_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    leaves: [
+      {
+        id: "leaf:B3",
+        name: "\u0110\u1EE9a b\xE9 b\u1ECB b\u1ECF l\u1EA1i",
+        text: "M\u1ED9t \u0111\u1EE9a b\xE9 n\u1EB1m tr\u01B0\u1EDBc c\u1ED5ng l\xE0ng, kh\xF4ng ai nh\u1EADn.",
+        scene: {
+          say: [
+            "\u0110\u1EE9a b\xE9 kh\xF3c tr\u01B0\u1EDBc c\u1ED5ng t\u1EEB l\xFAc tr\u1EDDi ch\u01B0a s\xE1ng."
+          ],
+          options: [
+            {
+              text: "Nh\u1EADn nu\xF4i",
+              reply: "M\u1ED9t nh\xE0 trong l\xE0ng b\u1EBF \u0111\u1EE9a b\xE9 v\xE0o.",
+              deed: "took_in_wanderer"
+            },
+            {
+              text: "T\u1EEB ch\u1ED1i",
+              reply: "Ti\u1EBFng kh\xF3c xa d\u1EA7n.",
+              deed: "refused_wanderer"
+            }
+          ]
+        }
+      },
+      {
+        id: "leaf:B4",
+        name: "M\u01B0a \u0111\xE1",
+        text: "M\u1ED9t tr\u1EADn m\u01B0a \u0111\xE1 \u0111\u1EADp n\xE1t ru\u1ED9ng v\xE0 gi\xE0n ph\u01A1i.",
+        effects: [
+          {
+            take: {
+              food: 30
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  // src/data/story/stone/fruits.json
+  var fruits_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    fruits: [
+      {
+        id: "fruit:T1",
+        name: "L\xE0ng M\u1EDF",
+        tree: "stone",
+        needs: [
+          "leaf:I1-a",
+          "leaf:III2-a"
+        ],
+        flag: "lang_mo",
+        text: "Ngo\xE0i v\xF9ng ai c\u0169ng bi\u1EBFt: \u0111\u1EBFn \u0111\xF3 l\xE0 c\xF3 ch\u1ED7 ng\u1ED3i b\xEAn l\u1EEDa."
+      },
+      {
+        id: "fruit:T2",
+        name: "L\xE0ng K\xEDn",
+        tree: "stone",
+        needs: [
+          "leaf:III2-d",
+          "leaf:I1-b"
+        ],
+        flag: "lang_kin",
+        text: "Sau khi b\u1ECB ph\u1EA3n v\xE0 sau \u0111\xEAm tuy\u1EBFt, l\xE0ng \u0111\u1EB7t lu\u1EADt: qua c\u1ED5ng ph\u1EA3i c\xF3 ng\u01B0\u1EDDi b\u1EA3o l\xE3nh."
+      },
+      {
+        id: "fruit:T10",
+        name: "L\xE0ng Chia \u0110\xF4i",
+        tree: "stone",
+        needs: [
+          "leaf:III2-b",
+          [
+            "leaf:I1-c",
+            "leaf:I1-b"
+          ]
+        ],
+        flag: "lang_con",
+        text: 'Nh\xF3m ng\u01B0\u1EDDi t\xE1ch \u0111i d\u1EF1ng m\u1ED9t "l\xE0ng con" b\xEAn kia su\u1ED1i.'
+      }
+    ]
+  };
+
+  // src/data/story/stone/tips.json
+  var tips_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    tips: [
+      {
+        id: "tip:N1",
+        name: "C\u1ED1 \u0110\xF4 M\u1EDF",
+        tree: "stone",
+        family: "mo",
+        fruits: [
+          "fruit:T1"
+        ],
+        leaves: [
+          "leaf:I1-a",
+          "leaf:I1-d",
+          "leaf:III2-a"
+        ],
+        marks: [
+          "nhan",
+          "hop"
+        ],
+        text: "L\xE0ng th\xE0nh n\u01A1i ng\u01B0\u1EDDi ta t\xECm t\u1EDBi: nhi\u1EC1u gi\u1ECDng n\xF3i, nhi\u1EC1u ngh\u1EC1."
+      },
+      {
+        id: "tip:N2",
+        name: "Ph\xE1o \u0110\xE0i N\xFAi",
+        tree: "stone",
+        family: "kin",
+        fruits: [
+          "fruit:T2"
+        ],
+        leaves: [
+          "leaf:III2-d",
+          "leaf:I1-b"
+        ],
+        marks: [
+          "uy"
+        ],
+        text: "L\xE0ng kh\xE9p k\xEDn sau t\u01B0\u1EDDng d\xE0y: \xEDt b\u1EA1n, nhi\u1EC1u l\xEDnh."
+      },
+      {
+        id: "tip:N8",
+        name: "Hai L\xE0ng M\u1ED9t G\u1ED1c",
+        tree: "stone",
+        family: "chia",
+        fruits: [
+          "fruit:T10"
+        ],
+        leaves: [
+          "leaf:III2-b",
+          "leaf:I1-c"
+        ],
+        marks: [
+          "lo"
+        ],
+        text: "L\xE0ng con b\xEAn kia su\u1ED1i n\xF3i c\xF9ng ti\u1EBFng v\u1EDBi l\xE0ng m\xECnh."
+      },
+      {
+        id: "tip:N5",
+        name: "\u0110\xE0n L\u1EEDa Thi\xEAng",
+        tree: "stone",
+        family: "lua",
+        fruits: [],
+        leaves: [
+          "leaf:III2-c"
+        ],
+        marks: [
+          "tin"
+        ],
+        off: true,
+        flowTo: "tip:N1",
+        text: "L\xE0ng th\xE0nh n\u01A1i h\xE0nh h\u01B0\u01A1ng."
+      },
+      {
+        id: "tip:N0",
+        name: "L\xE0ng V\xF4 Danh",
+        tree: "stone",
+        family: "none",
+        fruits: [],
+        default: true,
+        text: "S\u01B0\u01A1ng tan. L\xE0ng b\u01B0\u1EDBc sang th\u1EDDi m\u1EDBi nh\u01B0 bao l\xE0ng kh\xE1c."
+      }
+    ]
+  };
+
+  // src/data/story/stone/legacy.json
+  var legacy_default = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    legacy: {
+      "tip:N1": {
+        marks: {
+          luat: 1,
+          hop: 1
+        },
+        trunk: "IV",
+        tilt: {
+          "leaf:IV1-a": 1.4
+        },
+        mods: {
+          arrivals: 1.5
+        }
+      },
+      "tip:N2": {
+        marks: {
+          uy: 1,
+          luat: 1
+        },
+        trunk: "V",
+        tilt: {
+          "leaf:IV1-b": 1.2
+        },
+        mods: {
+          marketFee: 1.2
+        }
+      },
+      "tip:N8": {
+        marks: {
+          hop: 2
+        },
+        trunk: "IV",
+        tilt: {
+          "leaf:IV1-b": 0.7
+        }
+      }
+    }
+  };
+
+  // src/data/story/medieval/threads.json
+  var threads_default2 = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    threads: [
+      {
+        id: "thread:IV.A",
+        name: "Ng\u01B0\u1EDDi c\u1EA7m l\u1EEDa gi\xE0 \u0111i",
+        trunk: "IV",
+        tree: "medieval",
+        chapters: [
+          {
+            id: "chapter:IV.A-1",
+            name: "L\u1EC7 l\xE0ng th\xE0nh l\u1EDDi",
+            days: [
+              1,
+              3
+            ],
+            scene: {
+              say: [
+                "L\xE0ng \u0111\xE3 l\u1EDBn. M\u1ED7i v\u1EE5 tranh ch\u1EA5p gi\u1EDD c\xF3 ng\u01B0\u1EDDi h\u1ECFi: theo l\u1EC7 n\xE0o?"
+              ],
+              options: [
+                {
+                  text: "\u0110\u1ECDc l\u1EC7 l\xE0ng tr\u01B0\u1EDBc c\u1EA3 l\xE0ng",
+                  reply: "L\u1EC7 \u0111\u01B0\u1EE3c \u0111\u1ECDc to b\xEAn l\u1EEDa, ai c\u0169ng nghe.",
+                  deed: "law_spoken"
+                },
+                {
+                  text: "M\u1ED9t ng\u01B0\u1EDDi quy\u1EBFt l\xE0 \u0111\u1EE7",
+                  reply: "Kh\xF4ng ai c\xE3i, nh\u01B0ng c\u0169ng kh\xF4ng ai g\u1EADt.",
+                  deed: "law_by_one"
+                }
+              ]
+            }
+          },
+          {
+            id: "chapter:IV.A-2",
+            name: "Ng\u01B0\u1EDDi k\u1EBF t\u1EE5c",
+            days: [
+              3,
+              6
+            ],
+            scene: {
+              say: [
+                "Ng\u01B0\u1EDDi c\u1EA7m l\u1EEDa \u0111\xE3 gi\xE0. Ai s\u1EBD thay?"
+              ],
+              options: [
+                {
+                  text: "\u0110\u1EC3 h\u1ED9i \u0111\u1ED3ng ch\u1ECDn",
+                  reply: "C\xE1c tr\u01B0\u1EDFng l\xE3o ng\u1ED3i l\u1EA1i ba \u0111\xEAm li\u1EC1n.",
+                  deed: "heir_named"
+                },
+                {
+                  text: "Ai m\u1EA1nh nh\u1EA5t th\xEC c\u1EA7m",
+                  reply: "Thanh ni\xEAn trong l\xE0ng b\u1EAFt \u0111\u1EA7u nh\xECn nhau kh\xE1c \u0111i.",
+                  deed: "heir_by_strength"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  // src/data/story/medieval/knots.json
+  var knots_default2 = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    knots: [
+      {
+        id: "knot:IV-1",
+        name: "Ai ng\u1ED3i gh\u1EBF",
+        tree: "medieval",
+        trunk: "IV",
+        fedBy: [
+          "thread:IV.A"
+        ],
+        when: {
+          chapters: 2,
+          fire: [
+            4,
+            5
+          ]
+        },
+        fallback: "leaf:IV1-nhat",
+        leaves: [
+          {
+            leaf: "leaf:IV1-a",
+            base: 3,
+            affinity: {
+              luat: 0.5,
+              hop: 0.3
+            }
+          },
+          {
+            leaf: "leaf:IV1-b",
+            base: 2,
+            affinity: {
+              uy: 0.5
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  // src/data/story/medieval/leaves.json
+  var leaves_default2 = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    leaves: [
+      {
+        id: "leaf:IV1-a",
+        name: "H\u1ED9i \u0111\u1ED3ng tr\u01B0\u1EDFng l\xE3o",
+        text: "Chi\u1EBFc gh\u1EBF \u0111\u1EA7u ti\xEAn thu\u1ED9c v\u1EC1 m\u1ED9t h\u1ED9i \u0111\u1ED3ng, kh\xF4ng c\u1EE7a ri\xEAng ai.",
+        flags: [
+          "hoi_dong"
+        ]
+      },
+      {
+        id: "leaf:IV1-b",
+        name: "M\u1ED9t ng\u01B0\u1EDDi c\u1EA7m \u0111\u1EA7u",
+        hard: true,
+        text: "M\u1ED9t ng\u01B0\u1EDDi ng\u1ED3i l\xEAn gh\u1EBF, v\xE0 kh\xF4ng ai d\xE1m h\u1ECFi v\xEC sao.",
+        flags: [
+          "mot_nguoi"
+        ]
+      },
+      {
+        id: "leaf:IV1-nhat",
+        name: "Gh\u1EBF \u0111\u1EC3 tr\u1ED1ng",
+        text: "Chi\u1EBFc gh\u1EBF v\u1EABn \u0111\u1EC3 tr\u1ED1ng th\xEAm m\u1ED9t m\xF9a."
+      }
+    ]
+  };
+
+  // src/data/story/medieval/wild.json
+  var wild_default2 = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    leaves: []
+  };
+
+  // src/data/story/medieval/fruits.json
+  var fruits_default2 = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    fruits: []
+  };
+
+  // src/data/story/medieval/tips.json
+  var tips_default2 = {
+    _note: "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+    tips: [
+      {
+        id: "tip:M4",
+        name: "Th\xE0nh Bang",
+        tree: "medieval",
+        family: "hoi",
+        fruits: [],
+        leaves: [
+          "leaf:IV1-a"
+        ],
+        marks: [
+          "luat"
+        ],
+        text: "L\xE0ng \u0111\u01B0\u1EE3c tr\u1ECB b\u1EB1ng l\u1EC7 v\xE0 b\xE0n b\u1EA1c."
+      },
+      {
+        id: "tip:M3",
+        name: "\u0110\u1EBF Qu\u1ED1c S\u1EAFt",
+        tree: "medieval",
+        family: "sat",
+        fruits: [],
+        leaves: [
+          "leaf:IV1-b"
+        ],
+        marks: [
+          "uy"
+        ],
+        text: "M\u1ED9t b\xE0n tay s\u1EAFt gi\u1EEF c\u1EA3 v\xF9ng."
+      },
+      {
+        id: "tip:M7",
+        name: "T\xE0n Qu\u1ED1c",
+        tree: "medieval",
+        family: "none",
+        fruits: [],
+        default: true,
+        text: "Kh\xF4ng ai ghi t\xEAn b\u1EA1n, kh\xF4ng ai nh\u1EDB b\u1EA1n."
+      }
+    ]
+  };
+
+  // src/sim/storyscenes.ts
+  var list = (...files) => files.flatMap((f) => Object.values(f).filter(Array.isArray).flat());
+  var STORY = {
+    enabled: story_default.enabled,
+    config: story_default.config,
+    trees: story_default.trees,
+    marks: marks_default.marks,
+    deeds: marks_default.deeds,
+    rumors: marks_default.rumors,
+    threads: list(threads_default, threads_default2),
+    knots: list(knots_default, knots_default2),
+    leaves: list(leaves_default, leaves_default2),
+    wild: { stone: list(wild_default), medieval: list(wild_default2) },
+    fruits: list(fruits_default, fruits_default2),
+    tips: list(tips_default, tips_default2),
+    legacy: legacy_default.legacy
+  };
+  var STORY_SCENES = [
+    ...STORY.threads.flatMap((t) => t.chapters.filter((c) => c.scene).map((c) => ({ id: c.id, scene: c.scene }))),
+    ...[...STORY.leaves, ...Object.values(STORY.wild).flat()].filter((l) => l.scene).map((l) => ({ id: l.id, scene: l.scene })),
+    ...STORY.fruits.filter((f) => f.scene).map((f) => ({ id: f.id, scene: f.scene }))
+  ];
+  function sceneScript(id, sc) {
+    const nodes = { start: { say: sc.say, choices: sc.options.map((o, i) => ({ text: o.text, say: o.say, cond: o.cond, then: `o${i}` })) } };
+    sc.options.forEach((o, i) => {
+      nodes[`o${i}`] = { say: o.reply, effects: [...o.deed ? [{ deed: o.deed }] : [], ...o.effects ?? []] };
+    });
+    return { id, fireLevel: [1, 99], minDay: 0, weight: 0, anywhere: !sc.tribes, tribes: sc.tribes, start: "start", nodes };
+  }
+  var STORY_SCRIPTS = STORY_SCENES.map((s) => sceneScript(s.id, s.scene));
+
   // src/sim/encounterdata.ts
   var ENC = encounters_default;
-  var SCRIPTS = stone_default.scripts;
+  var SCRIPTS = [...stone_default.scripts, ...STORY_SCRIPTS];
   var scriptOf = (id) => SCRIPTS.find((s) => s.id === id);
   var initialEncounters = () => ({
     active: null,
@@ -180256,29 +181241,59 @@ ${risk.lines.join("\n")}`);
   function deedCount(deeds, key, tribe, within, day) {
     return deeds.filter((d) => d.key === key && (tribe === void 0 || d.tribe === tribe) && (within === void 0 || day - d.day <= within)).length;
   }
+  function condValue(key, c, win) {
+    if (key.startsWith("stock.")) return c.stock[key.slice(6)] ?? 0;
+    if (key.startsWith("deed.")) return deedCount(c.deeds, key.slice(5), c.tribe, win, c.day);
+    if (key.startsWith("flag.")) return c.flags.includes(key.slice(5)) ? 1 : 0;
+    if (key.startsWith("mark.")) return c.story?.marks[key.slice(5)] ?? 0;
+    if (key.startsWith("sflag.")) return c.story?.flags.includes(key.slice(6)) ? 1 : 0;
+    if (key.startsWith("leaf.")) return c.story?.leaves.includes(key.slice(5)) ? 1 : 0;
+    if (key.startsWith("fruit.")) return c.story?.fruits.includes(key.slice(6)) ? 1 : 0;
+    if (key.startsWith("chapters.")) return c.story?.chapters[key.slice(9)] ?? 0;
+    if (key.startsWith("tip.")) return c.story?.tips[key.slice(4)] ?? 0;
+    switch (key) {
+      case "rel":
+        return c.rel;
+      case "day":
+        return c.day;
+      case "fireLevel":
+        return c.fireLevel;
+      case "refugees":
+        return c.refugees;
+      case "soldiers":
+        return c.soldiers;
+      case "captives":
+        return c.captives;
+      case "room":
+        return c.room;
+      case "party":
+        return c.party;
+      case "mood":
+        return c.mood;
+      case "truth":
+        return c.truth;
+      case "progress":
+        return c.story?.progress ?? 0;
+      case "mode":
+        return c.story?.mode ?? "normal";
+      default:
+        return void 0;
+    }
+  }
+  var TERM = /^\s*([\w.:+\-\s]+?)\s*(>=|<=|==|!=|>|<)\s*(-?[\w.]+?)(?:@(\d+)d)?\s*$/;
+  var condTerms = (expr) => expr.split("&&").map((term) => {
+    const m = TERM.exec(term);
+    return m ? { keys: m[1].split("+").map((k) => k.trim()), op: m[2], rhs: m[3], win: m[4] ? Number(m[4]) : void 0 } : null;
+  });
   function evalCond(expr, c) {
     if (!expr) return true;
-    return expr.split("&&").every((term) => {
-      const m = /^\s*([\w.:]+?)\s*(>=|<=|==|!=|>|<)\s*(-?[\w.]+?)(?:@(\d+)d)?\s*$/.exec(term);
-      if (!m) return false;
-      const [, key, op, rhs, win] = m;
-      let left;
-      if (key.startsWith("stock.")) left = c.stock[key.slice(6)] ?? 0;
-      else if (key.startsWith("deed.")) left = deedCount(c.deeds, key.slice(5), c.tribe, win ? Number(win) : void 0, c.day);
-      else if (key === "rel") left = c.rel;
-      else if (key === "day") left = c.day;
-      else if (key === "fireLevel") left = c.fireLevel;
-      else if (key === "refugees") left = c.refugees;
-      else if (key === "soldiers") left = c.soldiers;
-      else if (key === "captives") left = c.captives;
-      else if (key === "room") left = c.room;
-      else if (key === "party") left = c.party;
-      else if (key === "mood") left = c.mood;
-      else if (key.startsWith("flag.")) left = c.flags.includes(key.slice(5)) ? 1 : 0;
-      else if (key === "truth") left = c.truth;
-      else return false;
-      const r = typeof left === "number" ? Number(rhs) : rhs;
-      return op === ">=" ? left >= r : op === "<=" ? left <= r : op === "==" ? left === r : op === "!=" ? left !== r : op === ">" ? left > r : left < r;
+    return condTerms(expr).every((t) => {
+      if (!t) return false;
+      const vals = t.keys.map((k) => condValue(k, c, t.win));
+      if (vals.some((v) => v === void 0)) return false;
+      const left = vals.length === 1 ? vals[0] : vals.reduce((a, v) => a + Number(v), 0);
+      const r = typeof left === "number" ? Number(t.rhs) : t.rhs;
+      return t.op === ">=" ? left >= r : t.op === "<=" ? left <= r : t.op === "==" ? left === r : t.op === "!=" ? left !== r : t.op === ">" ? left > r : left < r;
     });
   }
   function fillText(text, who) {
@@ -180320,7 +181335,11 @@ ${risk.lines.join("\n")}`);
     return st.refugees.length;
   }
   function ctxOf(sim2, v) {
-    return { stock: sim2.stock, day: sim2.day, fireLevel: sim2.fireLevel(), rel: v && tribeOf2(sim2, v.tribe)?.relation || 0, truth: v?.truth ?? "honest", refugees: refugeesAlive(sim2), soldiers: sim2.villagers.filter((s) => s.job === "fight" && s.health > 0).length, captives: sim2.encounters.captives.length, room: Math.max(0, sim2.popCap() - sim2.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim2.encounters.deeds, tribe: v?.tribe };
+    return { stock: sim2.stock, day: sim2.day, fireLevel: sim2.fireLevel(), rel: v && tribeOf2(sim2, v.tribe)?.relation || 0, truth: v?.truth ?? "honest", refugees: refugeesAlive(sim2), soldiers: sim2.villagers.filter((s) => s.job === "fight" && s.health > 0).length, captives: sim2.encounters.captives.length, room: Math.max(0, sim2.popCap() - sim2.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim2.encounters.deeds, tribe: v?.tribe, story: sim2.storyCond() };
+  }
+  var condNow = (sim2) => ctxOf(sim2);
+  function queueScript(sim2, script, days2, priority = 5, maxDelay = ENC.maxDelay) {
+    if (scriptOf(script)) sim2.encounters.queue.push({ script, day: sim2.day + Math.max(0, days2), priority, maxDelay });
   }
   function tickEncounters(sim2, dt) {
     const st = sim2.encounters;
@@ -180857,6 +181876,8 @@ ${risk.lines.join("\n")}`);
     }
     if (e.host) v.host = true;
     if (e.flag && !(v.flags ?? []).includes(e.flag)) v.flags = [...v.flags ?? [], e.flag];
+    if (e.sflag) sim2.setStoryFlag(e.sflag);
+    if (e.journal) sim2.say(e.journal);
     if (e.welcome !== void 0) v.welcome = e.welcome;
     if (e.buy) {
       const sc = scriptOf(v.scriptId), item = sc ? shopItems(sim2, v, sc).find((i) => i.id === e.buy) : void 0;
@@ -181157,6 +182178,248 @@ ${risk.lines.join("\n")}`);
     }
     sim2.say(v.join === "all" ? `${n} ng\u01B0\u1EDDi t\u1ECB n\u1EA1n \u1EDF l\u1EA1i l\xE0ng.` : `${sim2.get(v.unitId)?.name ?? "Ng\u01B0\u1EDDi l\u1EA1"} \u1EDF l\u1EA1i l\xE0m d\xE2n c\u1EE7a l\xE0ng.`);
     st.visitors = st.visitors.filter((x) => x.id !== v.id);
+  }
+
+  // src/sim/storydata.ts
+  var initialStory = () => ({ mode: "normal", flags: [], knots: {}, pending: {}, fruits: {}, tips: {}, sent: {}, told: [], bonus: {}, old: [], eraDay: 0, baseVillages: 0 });
+  var CFG = STORY.config;
+  var bare = (id) => id.slice(id.indexOf(":") + 1);
+  var byId = (l) => new Map(l.map((x) => [x.id, x]));
+  var LEAF = byId([...STORY.leaves, ...Object.values(STORY.wild).flat()]);
+  var KNOT = byId(STORY.knots);
+  var FRUIT = byId(STORY.fruits);
+  var TIP = byId(STORY.tips);
+  var THREAD = byId(STORY.threads);
+  var clamp01 = (x) => Math.max(0, Math.min(1, x));
+  var span = (seed2, tag, [lo, hi]) => lo + Math.floor(seedRoll(seed2, tag) * (hi - lo + 1));
+  function marksOf(deeds, day, eraDay, bonus = {}) {
+    const out = {};
+    for (const m of STORY.marks) {
+      let now = 0, old = 0;
+      for (const d of deeds) {
+        const w = STORY.deeds[d.key]?.[m.id];
+        if (!w || m.window !== void 0 && day - d.day > m.window) continue;
+        if (eraDay > 0 && d.day < eraDay) old += w;
+        else now += w;
+      }
+      out[m.id] = now + Math.trunc(old * (m.carry ?? CFG.carry)) + (bonus[m.id] ?? 0);
+    }
+    return out;
+  }
+  var progressOf = (w) => w.era === "stone" ? (clamp01((w.fireLevel - 1) / 3) + w.bossContact) / 2 : clamp01((w.fireLevel - 4) / 6);
+  var chaptersDone = (t, seen) => t.chapters.filter((c) => (seen[c.script ?? c.id]?.times ?? 0) > 0).length;
+  function condOf(st, w) {
+    var _a;
+    const tips = {};
+    for (const t of Object.values(st.tips)) {
+      tips[bare(t.main)] = 1;
+      if (t.second) tips[_a = bare(t.second)] ?? (tips[_a] = CFG.secondShare);
+    }
+    return {
+      marks: marksOf(w.deeds, w.day, st.eraDay, st.bonus),
+      flags: st.flags,
+      progress: progressOf(w),
+      leaves: Object.values(st.knots).map((k) => bare(k.leaf)),
+      fruits: Object.keys(st.fruits).map(bare),
+      chapters: Object.fromEntries(STORY.threads.map((t) => [bare(t.id), chaptersDone(t, w.seen)])),
+      tips,
+      mode: st.mode
+    };
+  }
+  var ctxOf2 = (st, w) => ({ ...w.base, day: w.day, fireLevel: w.fireLevel, deeds: w.deeds, story: condOf(st, w) });
+  var legacyOf = (st) => {
+    const t = st.tips.stone, out = [];
+    if (t && STORY.legacy[t.main]) out.push([STORY.legacy[t.main], 1]);
+    if (t?.second && STORY.legacy[t.second]) out.push([STORY.legacy[t.second], CFG.secondShare]);
+    return out;
+  };
+  var tiltOf = (st, leaf) => legacyOf(st).reduce((a, [l, s]) => a * (1 + ((l.tilt?.[leaf] ?? 1) - 1) * s), 1);
+  var storyMod = (st, key) => legacyOf(st).reduce((a, [l, s]) => a * (1 + ((l.mods?.[key] ?? 1) - 1) * s), 1);
+  function leafWeights(st, k, c) {
+    const marks = c.story?.marks ?? {};
+    return k.leaves.map((kl) => {
+      let leaf = LEAF.get(kl.leaf);
+      if (leaf?.needs && !evalCond(leaf.needs, c)) leaf = leaf.alt ? LEAF.get(leaf.alt) : void 0;
+      if (!leaf || leaf.needs && !evalCond(leaf.needs, c)) return { leaf: kl.leaf, w: 0 };
+      let w = Math.max(CFG.wmin, kl.base + Object.entries(kl.affinity ?? {}).reduce((a, [m, x]) => a + x * (marks[m] ?? 0), 0));
+      for (const t of kl.tilt ?? []) if (evalCond(t.if, c)) w *= t.mul;
+      w *= tiltOf(st, kl.leaf);
+      if (leaf.hard) w *= CFG.hardMul[st.mode];
+      return { leaf: leaf.id, w };
+    });
+  }
+  function drawLeaf(st, w, k, c) {
+    const wilds = (STORY.wild[k.tree] ?? []).filter((l) => !Object.values(st.knots).some((x) => x.leaf === l.id));
+    if (wilds.length && seedRoll(w.seed, `wild|${k.id}`) < CFG.wildChance) return { leaf: wilds[Math.floor(seedRoll(w.seed, `wildpick|${k.id}`) * wilds.length)].id, wild: true };
+    const ws = leafWeights(st, k, c), total = ws.reduce((a, x) => a + x.w, 0);
+    if (total <= 0) return { leaf: k.fallback, pale: true };
+    let r = seedRoll(w.seed, `leaf|${k.id}`) * total;
+    for (const x of ws) {
+      r -= x.w;
+      if (r < 0) return { leaf: x.leaf };
+    }
+    return { leaf: ws[ws.length - 1].leaf };
+  }
+  function fireKnot(st, w, k, p, out) {
+    const drawn2 = p.pale ? { leaf: k.fallback, pale: true, wild: false } : drawLeaf(st, w, k, ctxOf2(st, w)), leaf = LEAF.get(drawn2.leaf);
+    if (!leaf) return;
+    st.knots[k.id] = { day: w.day, leaf: leaf.id, ...drawn2.pale ? { pale: true } : {}, ...drawn2.wild ? { wild: true } : {}, ...p.old ? { old: true } : {} };
+    for (const f of leaf.flags ?? []) if (!st.flags.includes(f)) st.flags.push(f);
+    out.push({ kind: "tell", what: "knot", id: leaf.id, name: `${p.old ? "Chuy\u1EC7n c\u0169: " : ""}${k.name}: ${leaf.name}`, text: leaf.text });
+    for (const e of leaf.effects ?? []) out.push({ kind: "effect", effect: e, share: p.old ? CFG.oldTaleShare : 1 });
+    if (leaf.scene) out.push({ kind: "scene", script: leaf.id, days: 1 });
+  }
+  function ripen(st, w, f, from, out) {
+    const variant = f.variants?.length ? Math.floor(seedRoll(w.seed, `variant|${f.id}`) * f.variants.length) : 0, v = f.variants?.[variant];
+    st.fruits[f.id] = { day: w.day, from, variant };
+    if (!st.flags.includes(f.flag)) st.flags.push(f.flag);
+    out.push({ kind: "tell", what: "fruit", id: f.id, name: f.name, text: v ? `${f.text} ${v.text}` : f.text });
+    for (const e of v?.effects ?? []) out.push({ kind: "effect", effect: e, share: 1 });
+    if (f.scene) out.push({ kind: "scene", script: f.id, days: 1 });
+  }
+  function scoreTips(st, w, tree) {
+    const marks = marksOf(w.deeds, w.day, st.eraDay, st.bonus), dominant = Object.entries(marks).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, CFG.tip.dominant).map(([m]) => m);
+    const inFruit = new Set(Object.values(st.fruits).flatMap((f) => f.from)), leaves = new Set(Object.values(st.knots).map((k) => k.leaf));
+    const tips = STORY.tips.filter((t) => t.tree === tree.id), solid2 = {}, scores = {};
+    for (const t of tips) {
+      const to = t.off ? t.flowTo : t.id;
+      if (!to) continue;
+      const s = CFG.tip.fruit * t.fruits.filter((f) => st.fruits[f]).length + CFG.tip.leaf * (t.leaves ?? []).filter((l) => leaves.has(l) && !inFruit.has(l)).length;
+      solid2[to] = (solid2[to] ?? 0) + s;
+      scores[to] = (scores[to] ?? 0) + s + CFG.tip.mark * (t.marks ?? []).filter((m) => dominant.includes(m)).length;
+    }
+    const ranked = tips.filter((t) => !t.off && !t.default && (solid2[t.id] ?? 0) > 0).sort((a, b) => scores[b.id] - scores[a.id] || seedRoll(w.seed, `tip|${a.id}`) - seedRoll(w.seed, `tip|${b.id}`));
+    const main = ranked[0] ?? tips.find((t) => t.default);
+    if (!main) return null;
+    return { main: main.id, second: ranked.find((t) => t !== main && t.family !== main.family)?.id, scores };
+  }
+  function setTip(st, w, tree, slot, out) {
+    const r = scoreTips(st, w, tree);
+    if (!r) return;
+    st.tips[slot] = { main: r.main, day: w.day, ...r.second ? { second: r.second } : {} };
+    for (const id of [r.main, r.second]) {
+      const t = id ? TIP.get(id) : void 0;
+      if (t) out.push({ kind: "tell", what: "tip", id: t.id, name: `${id === r.main ? "Ng\u1ECDn" : "Ng\u1ECDn ph\u1EE5"}: ${t.name}`, text: t.text });
+    }
+  }
+  function closeStone(st, w, out) {
+    st.eraDay = w.day;
+    for (const tree of STORY.trees) {
+      if (tree.era === w.era) continue;
+      const mine2 = (id) => KNOT.get(id)?.tree === tree.id || FRUIT.get(id)?.tree === tree.id;
+      for (const id of Object.keys(st.pending)) if (mine2(id)) delete st.pending[id];
+      for (const t of tree.tips) if (t.at === "eraEnd" && !st.tips[t.slot]) setTip(st, w, tree, t.slot, out);
+      st.old = STORY.knots.filter((k) => k.tree === tree.id && !st.knots[k.id] && k.fedBy.some((id) => {
+        const th = THREAD.get(id);
+        return !!th && chaptersDone(th, w.seen) > 0;
+      })).map((k) => k.id);
+    }
+    for (const [l, share2] of legacyOf(st)) for (const [m, n] of Object.entries(l.marks ?? {})) st.bonus[m] = (st.bonus[m] ?? 0) + n * share2;
+  }
+  function stepStory(st, w) {
+    const out = [];
+    if (w.era !== "stone" && st.eraDay === 0) closeStone(st, w, out);
+    const tree = STORY.trees.find((t) => t.era === w.era);
+    if (!tree) return out;
+    for (const [id, p] of Object.entries(st.pending)) {
+      if (w.day < p.day) continue;
+      delete st.pending[id];
+      const k = KNOT.get(id), f = FRUIT.get(id);
+      if (k) fireKnot(st, w, k, p, out);
+      else if (f) ripen(st, w, f, p.from ?? [], out);
+    }
+    const c = ctxOf2(st, w), first = legacyOf(st)[0]?.[0].trunk;
+    for (const th of STORY.threads) {
+      if (th.tree !== tree.id) continue;
+      th.chapters.forEach((ch, i) => {
+        if (!ch.scene || (w.seen[ch.id]?.times ?? 0) > 0) return;
+        if (st.sent[ch.id] !== void 0 && w.day - st.sent[ch.id] < CFG.resendDays) return;
+        const prev = i > 0 ? th.chapters[i - 1] : void 0, prevSeen = prev ? w.seen[prev.script ?? prev.id] : void 0;
+        if (prev && !(prevSeen && prevSeen.times > 0) || !evalCond(ch.when, c)) return;
+        const gap = (ch.days ? span(w.seed, `chapter|${ch.id}`, ch.days) : 0) + (i === 0 && first && th.trunk !== first ? 4 : 0);
+        st.sent[ch.id] = w.day;
+        out.push({ kind: "scene", script: ch.id, days: Math.max(0, (prevSeen ? prevSeen.lastDay : w.day) + gap - w.day) });
+      });
+    }
+    for (const k of STORY.knots) {
+      if (k.tree !== tree.id || st.knots[k.id] || st.pending[k.id]) continue;
+      if (tree.onePerTrunk && STORY.knots.some((o) => o !== k && o.tree === k.tree && o.trunk === k.trunk && (st.knots[o.id] || st.pending[o.id]))) continue;
+      if (k.fedBy.reduce((a, id) => a + (THREAD.get(id) ? chaptersDone(THREAD.get(id), w.seen) : 0), 0) < k.when.chapters) continue;
+      const at = k.when.fire ? w.fireLevel : c.story.progress, [lo, hi] = k.when.fire ?? k.when.progress ?? [0, Infinity];
+      if (at < lo) continue;
+      const ok = evalCond(k.when.cond, c);
+      if (!ok && at <= hi) continue;
+      st.pending[k.id] = { day: w.day + span(w.seed, `knot|${k.id}`, CFG.knotDelay), ...ok ? {} : { pale: true } };
+    }
+    if (w.era !== "stone" && st.old.length && !st.old.some((id) => st.pending[id])) {
+      const next = st.old.find((id) => !st.knots[id]);
+      if (next && w.fireLevel >= 5 && st.old.filter((id) => st.knots[id]).length < w.fireLevel - 4) st.pending[next] = { day: w.day + span(w.seed, `knot|${next}`, CFG.knotDelay), old: true };
+    }
+    const trunkOf = new Map(Object.entries(st.knots).map(([kid, x]) => [x.leaf, KNOT.get(kid)?.trunk ?? ""]));
+    const fed = (leaf) => Object.values(st.fruits).filter((f) => f.from.includes(leaf)).length + Object.values(st.pending).filter((p) => p.from?.includes(leaf)).length;
+    for (const f of STORY.fruits) {
+      if (f.tree !== tree.id || st.fruits[f.id] || st.pending[f.id]) continue;
+      const from = [];
+      for (const need of f.needs) {
+        const hit = (Array.isArray(need) ? need : [need]).find((l) => trunkOf.has(l) && fed(l) < 2 && !from.includes(l));
+        if (hit) from.push(hit);
+      }
+      if (from.length < (f.min ?? 2) || new Set(from.map((l) => trunkOf.get(l))).size < 2) continue;
+      st.pending[f.id] = { day: w.day + span(w.seed, `fruit|${f.id}`, CFG.fruitDelay), from };
+    }
+    for (const t of tree.tips) if (typeof t.at === "number" && w.fireLevel >= t.at && !st.tips[t.slot]) setTip(st, w, tree, t.slot, out);
+    for (const r of STORY.rumors) {
+      const key = `${r.mark}:${r.at}`, v = c.story.marks[r.mark] ?? 0;
+      if (st.told.includes(key) || !(r.below ? v <= r.at : v >= r.at)) continue;
+      st.told.push(key);
+      out.push({ kind: "tell", what: "rumor", id: key, name: "L\u1EDDi \u0111\u1ED3n", text: r.text });
+    }
+    return out;
+  }
+
+  // src/sim/story.ts
+  var storyOn = (sim2) => STORY.enabled || sim2.dev.story;
+  function bossContact(sim2) {
+    const bosses = sim2.tribes.filter((t) => t.boss);
+    if (bosses.every((t) => t.bossDown)) return 1;
+    return bosses.some((t) => t.bossDown || sim2.maps.some((m) => m.tribe === t.id)) ? 0.5 : 0;
+  }
+  var worldOf = (sim2) => ({ day: sim2.day, seed: sim2.seed, era: sim2.era, fireLevel: sim2.fireLevel(), bossContact: bossContact(sim2), seen: sim2.encounters.seen, deeds: sim2.encounters.deeds });
+  var storyCond = (sim2) => condOf(sim2.story, worldOf(sim2));
+  var mod = (sim2, key) => storyOn(sim2) ? storyMod(sim2.story, key) : 1;
+  function setFlag(sim2, name) {
+    if (!sim2.story.flags.includes(name)) sim2.story.flags.push(name);
+  }
+  function setMode(sim2, mode) {
+    sim2.story.mode = mode;
+  }
+  function tribeOf3(sim2, name) {
+    if (name !== "@boss") return sim2.tribes.find((t) => t.id === name && t.state === "free")?.id;
+    return sim2.tribes.filter((t) => t.boss && !t.bossDown && t.state === "free").sort((a, b) => sim2.tribePower(b).military - sim2.tribePower(a).military)[0]?.id;
+  }
+  function applyWorld(sim2, e, share2) {
+    for (const [k, n] of Object.entries(e.give ?? {})) sim2.stock[k] += Math.round((n ?? 0) * share2);
+    for (const [k, n] of Object.entries(e.take ?? {})) sim2.stock[k] = Math.max(0, sim2.stock[k] - Math.round((n ?? 0) * share2));
+    if (e.deed) sim2.addDeed(e.deed);
+    if (e.rel) {
+      const id = tribeOf3(sim2, e.rel.tribe);
+      if (id) sim2.tribeRelationAdd(id, e.rel.n * share2);
+    }
+    if (e.raid) {
+      const id = tribeOf3(sim2, e.raid.tribe);
+      if (id) sim2.raidFrom(id, Math.max(1, Math.round(e.raid.size * share2)));
+    }
+  }
+  function apply(sim2, o) {
+    if (o.kind === "tell") sim2.say(o.what === "rumor" ? `L\u1EDDi \u0111\u1ED3n: ${o.text}` : `${o.name}. ${o.text}`);
+    else if (o.kind === "scene") sim2.queueEncounter(o.script, o.days, STORY.config.scenePriority, STORY.config.sceneMaxDelay);
+    else applyWorld(sim2, o.effect, o.share);
+  }
+  function tickStory(sim2, dt) {
+    if (!storyOn(sim2) || Math.floor(sim2.time) === Math.floor(sim2.time - dt)) return;
+    const st = sim2.story;
+    if (!st.baseVillages) st.baseVillages = sim2.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.tier !== "boss" && t.tier !== "rebel" && t.tier !== "raider").length + sim2.conquests.length;
+    for (const o of stepStory(st, { ...worldOf(sim2), base: sim2.encounterCond() })) apply(sim2, o);
   }
 
   // src/sim/processing.ts
@@ -183928,12 +185191,12 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/save.ts
-  var SAVE_VERSION = 48;
+  var SAVE_VERSION = 49;
   var SAVED = {
     /** Single values. */
     scalars: ["era", "time", "dayBase", "timeBase", "acc", "coinFrac", "sawCoin", "nextRaid", "nextAid", "nextVid", "nextBid", "nextSquad", "nextMission", "nextPlan", "alarmUntil", "tribeClock", "foodPot", "foodPenalty", "popBonus", "campBonus", "yieldBonus", "newcomersOpen", "nextEventDay", "conquered", "foodIncome", "foodSeen", "lastFullWarn", "lastMatWarn", "weather", "nextWeather", "dayWeather", "weatherAt", "weatherEnd", "lastDay", "signalled", "resting", "lastVision", "pendingTribe", "fogDirty"],
     /** Objects whose keys are filled in place. */
-    records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts", "market", "smoke", "gatherFocus", "legion", "frontier", "encounters"],
+    records: ["stock", "toolStock", "battle", "yieldNow", "yieldPrev", "ruins", "drafts", "market", "smoke", "gatherFocus", "legion", "frontier", "encounters", "story"],
     /** Lists of plain data. */
     lists: ["warLog", "battleLog", "scoutLosses", "wornTools", "craftQueue", "craftPaid", "tameQueue", "researchQueue", "log", "foodDays", "villagers", "buildings", "foes", "events", "animals", "projectiles", "squads", "maps", "scouts", "sightings", "plans", "battleReports", "zones", "cells", "conquests"],
     /** Handled by hand below. */
@@ -183975,8 +185238,8 @@ ${risk.lines.join("\n")}`);
     },
     // 1 -> 2: villagers gained energy, strain, a shift and a torch; the torch blueprint became a known technology
     1: (d) => {
-      for (const list of [d.lists.villagers, d.lists.foes]) {
-        for (const v of list) {
+      for (const list2 of [d.lists.villagers, d.lists.foes]) {
+        for (const v of list2) {
           v.energy ?? (v.energy = 100);
           v.strain ?? (v.strain = 0);
           v.shift ?? (v.shift = "day");
@@ -183990,7 +185253,7 @@ ${risk.lines.join("\n")}`);
     },
     // 2 -> 3: a gatherer can be posted to a Ruộng
     2: (d) => {
-      for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.post ?? (v.post = -1);
+      for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) v.post ?? (v.post = -1);
       return { ...d, version: 3 };
     },
     // 3 -> 4: buildings gained strength (defence works) and an open/shut state (gates)
@@ -184004,7 +185267,7 @@ ${risk.lines.join("\n")}`);
     // 4 -> 5: weapons and armour wear out
     4: (d) => {
       var _a, _b, _c, _d, _e, _f;
-      for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+      for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) {
         v.gear ?? (v.gear = { w: null, wd: 0, wb: false, a: null, ad: 0, ab: false });
         v.squad ?? (v.squad = -1);
       }
@@ -184053,7 +185316,7 @@ ${risk.lines.join("\n")}`);
     // 9 -> 10: roles belong to their houses. The Lều chiến binh becomes the Trại lính bộ; a soldier's arm is kept on him (a thrower if he carried a sling or a bow)
     9: (d) => {
       for (const b of d.lists.buildings) if (b.kind === "barracks") b.kind = "infantry";
-      for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.arm ?? (v.arm = v.job === "fight" && (v.weapon === "sling" || v.weapon === "bow") ? "archer" : "foot");
+      for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) v.arm ?? (v.arm = v.job === "fight" && (v.weapon === "sling" || v.weapon === "bow") ? "archer" : "foot");
       return { ...d, version: 10 };
     },
     // 10 -> 11: a running attack is in one stage of its deployment (one that was already running is simply fighting)
@@ -184079,13 +185342,13 @@ ${risk.lines.join("\n")}`);
           m.block ?? (m.block = null);
         }
       }
-      for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) v.breaks ?? (v.breaks = null);
+      for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) v.breaks ?? (v.breaks = null);
       for (const t of d.tribes) for (const p of t.props) p.hp ?? (p.hp = SIEGE.propHp[p.kind] ?? 60);
       return { ...d, version: 12 };
     }
   };
   MIGRATIONS[12] = (d) => {
-    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) {
       v.born ?? (v.born = { ...v.stats });
       v.train ?? (v.train = null);
     }
@@ -184094,7 +185357,7 @@ ${risk.lines.join("\n")}`);
   MIGRATIONS[13] = (d) => {
     var _a;
     (_a = d.lists).tameQueue ?? (_a.tameQueue = []);
-    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) {
       v.mount ?? (v.mount = null);
       const sk = v.skill, pot = v.potential, st = v.stats;
       sk.tame ?? (sk.tame = { xp: 0, level: 0 });
@@ -184125,7 +185388,7 @@ ${risk.lines.join("\n")}`);
     return { ...d, version: 23 };
   };
   MIGRATIONS[21] = (d) => {
-    for (const list of [d.lists.villagers, d.lists.foes]) for (const v of list) {
+    for (const list2 of [d.lists.villagers, d.lists.foes]) for (const v of list2) {
       v.guard ?? (v.guard = false);
       v.guardAt ?? (v.guardAt = null);
     }
@@ -184181,9 +185444,9 @@ ${risk.lines.join("\n")}`);
       Object.assign(rec, k === "stock" ? emptyStock() : {}, decode(data.records[k]));
     }
     for (const k of SAVED.lists) {
-      const list = target[k];
-      list.length = 0;
-      list.push(...decode(data.lists[k]));
+      const list2 = target[k];
+      list2.length = 0;
+      list2.push(...decode(data.lists[k]));
     }
     sim2.researched.clear();
     for (const id of data.researched) sim2.researched.add(id);
@@ -184427,6 +185690,11 @@ ${risk.lines.join("\n")}`);
       delete v.alarm;
     }
     return { ...d, version: 48 };
+  };
+  MIGRATIONS[48] = (d) => {
+    var _a;
+    (_a = d.records).story ?? (_a.story = initialStory());
+    return { ...d, version: 49 };
   };
 
   // src/sim/roles.ts
@@ -185729,15 +186997,15 @@ ${risk.lines.join("\n")}`);
   function setMissionPath(sim2, plan2, squadId, pts, retreat = false) {
     const m = drawable(sim2, plan2, squadId);
     if (typeof m === "string") return m;
-    let list = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
-    if (!retreat && list.length > 4) list = [...list.slice(0, 3), list[list.length - 1]];
+    let list2 = pts.slice(0, 40).map((p) => ({ x: p.x, y: p.y }));
+    if (!retreat && list2.length > 4) list2 = [...list2.slice(0, 3), list2[list2.length - 1]];
     if (retreat) {
-      m.retreat = list;
+      m.retreat = list2;
       return null;
     }
-    if (m.target && list.length) list[list.length - 1] = { ...m.target.at };
-    if (m.target && !list.length) m.target = null;
-    m.path = list;
+    if (m.target && list2.length) list2[list2.length - 1] = { ...m.target.at };
+    if (m.target && !list2.length) m.target = null;
+    m.path = list2;
     return null;
   }
   function setMissionTarget(sim2, plan2, squadId, target) {
@@ -186545,7 +187813,7 @@ ${risk.lines.join("\n")}`);
     }
     const enemyArmor = t.def.armor ? ARMORS.hide : null;
     const enemyWeapons = t.def.weapons, enemyRanged = !!(WEAPONS[enemyWeapons[0]] ?? WEAPONS.fist).ranged;
-    let strength = 0, count = 0, hurt2 = 0, bare = 0, unarmored = 0;
+    let strength = 0, count = 0, hurt2 = 0, bare2 = 0, unarmored = 0;
     const arms2 = { foot: 0, archer: 0, cavalry: 0 };
     const perSquad = [];
     for (const m of plan2.missions) {
@@ -186561,7 +187829,7 @@ ${risk.lines.join("\n")}`);
         sa[armOf2(sim2, v)]++;
         arms2[armOf2(sim2, v)]++;
         if (v.health < 0.6 * v.maxHealth) hurt2++;
-        if (!v.weapon) bare++;
+        if (!v.weapon) bare2++;
         if (!v.armor) unarmored++;
       }
       strength += worth;
@@ -186600,7 +187868,7 @@ ${risk.lines.join("\n")}`);
     const lossIfWin = R2 > 1 ? 1 - Math.sqrt(1 - 1 / (R2 * R2)) : 1;
     const w = out.warnings;
     if (!count) w.push("Kh\xF4ng c\xF3 l\xEDnh n\xE0o trong k\u1EBF ho\u1EA1ch");
-    if (bare) w.push(`${bare} l\xEDnh ch\u01B0a c\xF3 v\u0169 kh\xED`);
+    if (bare2) w.push(`${bare2} l\xEDnh ch\u01B0a c\xF3 v\u0169 kh\xED`);
     if (unarmored && count > 1) w.push(`${unarmored} l\xEDnh ch\u01B0a c\xF3 gi\xE1p`);
     if (hurt2) w.push(`${hurt2} l\xEDnh b\u1ECB th\u01B0\u01A1ng n\u1EB7ng`);
     const home = sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && !plan2.missions.some((m) => sim2.squadById(m.squad)?.ids.includes(v.id))).length;
@@ -186977,7 +188245,7 @@ ${risk.lines.join("\n")}`);
       if (!idle(v)) continue;
       const sight = sim2.sightOf(v), dist2 = (x, y) => Math.hypot(x - v.x, y - v.y);
       const seen = (p) => dist2(p.x + p.w / 2, p.y + p.h / 2) <= sight;
-      const nearest = (list, at) => list.slice().sort((a, b) => dist2(...at(a)) - dist2(...at(b)))[0];
+      const nearest = (list2, at) => list2.slice().sort((a, b) => dist2(...at(a)) - dist2(...at(b)))[0];
       const arm = armOf(v), towers = t.props.filter((q) => q.kind === "tower");
       const tower = nearest(arm === "foot" ? towers : towers.filter(seen), (q) => [q.x, q.y]);
       const foe = nearest(foes.filter((u) => dist2(u.x, u.y) <= sight), (u) => [u.x, u.y]);
@@ -187815,6 +189083,8 @@ ${risk.lines.join("\n")}`);
       this.frontier = { next: 0, late: 0, day: -1, bandit: {} };
       /** Visitors at the gate and the dialogue with them (encounters.ts); time stands still while `encounters.active` is set. */
       this.encounters = initialEncounters();
+      /** The story tree (story.ts): the lasting flags, the knots fired and their leaves, the fruits, the tips. The hidden marks are not kept: they come from `encounters.deeds`. */
+      this.story = initialStory();
       /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
       this.conquests = [];
       /** The percent every stroke of work gains from the villages taken, by their strength (difficulty.json capture.yieldPerVillage). */
@@ -187857,8 +189127,9 @@ ${risk.lines.join("\n")}`);
         freeWorks: false,
         noTire: false,
         noArrivals: false,
-        palace: false
-        /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */
+        palace: false,
+        story: false
+        /* the story tree runs though data/story/index.json has it off */
       };
       /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
       this.pendingTribe = null;
@@ -188301,6 +189572,34 @@ ${risk.lines.join("\n")}`);
     /** → tribes.guestsToRaid */
     guestsToRaid(id, unitIds) {
       return guestsToRaid(this, id, unitIds);
+    }
+    /** → encounters.condNow */
+    encounterCond() {
+      return condNow(this);
+    }
+    /** → encounters.queueScript */
+    queueEncounter(script, days2, priority, maxDelay) {
+      return queueScript(this, script, days2, priority, maxDelay);
+    }
+    /** → encounters.addDeed */
+    addDeed(key, tribe) {
+      return addDeed(this, key, tribe);
+    }
+    /** → story.storyCond */
+    storyCond() {
+      return storyCond(this);
+    }
+    /** → story.setFlag */
+    setStoryFlag(name) {
+      return setFlag(this, name);
+    }
+    /** → story.setMode */
+    setStoryMode(mode) {
+      return setMode(this, mode);
+    }
+    /** → story.mod */
+    storyMod(key) {
+      return mod(this, key);
     }
     /** → encounters.guestSlain */
     guestSlain(unitId) {
@@ -189092,6 +190391,7 @@ ${risk.lines.join("\n")}`);
       for (const f of [...this.foes]) tickFoe(this, f, dt);
       tickTribes(this, dt);
       tickEncounters(this, dt);
+      tickStory(this, dt);
       this.leaderClock += dt;
       if (this.leaderClock >= 1) {
         this.leaderClock = 0;
@@ -189700,8 +191000,8 @@ ${risk.lines.join("\n")}`);
       const now = performance.now();
       if (!force && now - this.asked < 2500) return;
       this.asked = now;
-      const list = await this.c.session.list(), key = `${this.c.session.slot}|${list.map((m) => `${m.id}.${m.savedAt}.${m.name ?? ""}`).join()}`;
-      this.saves = list;
+      const list2 = await this.c.session.list(), key = `${this.c.session.slot}|${list2.map((m) => `${m.id}.${m.savedAt}.${m.name ?? ""}`).join()}`;
+      this.saves = list2;
       if (key !== this.savesKey) {
         this.savesKey = key;
         this.renderList();
@@ -189715,12 +191015,12 @@ ${risk.lines.join("\n")}`);
         const on = h("input", { type: "checkbox", title: "B\u1EADt ho\u1EB7c t\u1EAFt" });
         const range = h("input", { type: "range", min: "0", max: "100", step: "5", title: tip });
         const num5 = h("small", { text: "" });
-        const apply = () => {
+        const apply2 = () => {
           sound2.set(kind, on.checked, +range.value / 100);
           num5.textContent = `${range.value}%`;
         };
-        on.addEventListener("change", apply);
-        range.addEventListener("input", apply);
+        on.addEventListener("change", apply2);
+        range.addEventListener("input", apply2);
         this.syncs.push(() => {
           const g = sound2.get(kind);
           if (document.activeElement !== range) range.value = String(Math.round(g.vol * 100));
@@ -191725,7 +193025,7 @@ ${risk.lines.join("\n")}`);
     return made ? `Th\xEAm ${made} l\xEDnh b\u1EADc ${rank} (${n} b\u1ED9 binh, ${n} cung, ${n} k\u1EF5 binh), \u0111\xE3 g\u1ECDi ra ngo\xE0i` : `Ch\u01B0a c\xF3 b\u1EADc ${rank}`;
   }
   function topGear(sim2, arm) {
-    const role = arm === "archer" ? "archer" : arm === "cavalry" ? "cavalry" : "foot", list = ranksOf(role, sim2.era), best = list[list.length - 1];
+    const role = arm === "archer" ? "archer" : arm === "cavalry" ? "cavalry" : "foot", list2 = ranksOf(role, sim2.era), best = list2[list2.length - 1];
     return { rank: best.rank, weapon: best.weapon, armor: best.armor ?? "bone", mount: best.mount };
   }
   function fullArmy(sim2) {
@@ -191809,12 +193109,12 @@ ${risk.lines.join("\n")}`);
     return err ?? `Th\xEAm ${made} l\xEDnh, c\u1EA3 qu\xE2n \u0111\xE3 t\u1EADp h\u1EE3p \u0111\u1EE7 c\xE1c \xF4`;
   }
   function conquerVillages(sim2, n = 3) {
-    const list = sim2.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.state !== "destroyed").slice(0, n);
-    for (const t of list) {
+    const list2 = sim2.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.state !== "destroyed").slice(0, n);
+    for (const t of list2) {
       t.state = "surrendered";
       adoptTribe(sim2, t.id);
     }
-    return list.length ? `\u0110\xE3 thu n\u1EA1p ${list.length} l\xE0ng (${sim2.conquests.length} l\xE0ng \u0111\xE3 chi\u1EBFm). L\xE0ng m\u1EDBi s\u1EBD t\u1EDBi sau ${3} \u0111\u1EBFn ${6} ng\xE0y.` : "Kh\xF4ng c\xF2n l\xE0ng th\u01B0\u1EDDng n\xE0o \u0111\u1EC3 thu n\u1EA1p";
+    return list2.length ? `\u0110\xE3 thu n\u1EA1p ${list2.length} l\xE0ng (${sim2.conquests.length} l\xE0ng \u0111\xE3 chi\u1EBFm). L\xE0ng m\u1EDBi s\u1EBD t\u1EDBi sau ${3} \u0111\u1EBFn ${6} ng\xE0y.` : "Kh\xF4ng c\xF2n l\xE0ng th\u01B0\u1EDDng n\xE0o \u0111\u1EC3 thu n\u1EA1p";
   }
   function newcomerNow(sim2) {
     const f = sim2.frontier;
@@ -192120,6 +193420,9 @@ ${risk.lines.join("\n")}`);
       page.append(h("div", { class: "devrow" }, toggle("Th\u1EED n\xE2ng c\u1EA5p sang n\u1EC1n r\u1ED9ng: Nh\xE0 d\xE2n c\u1EA5p 2 th\xE0nh 4\xD74", "Cho Nh\xE0 d\xE2n c\u1EA5p 2 chi\u1EBFm n\u1EC1n 4\xD74 (h\xECnh v\u1EABn nh\u1ECF) \u0111\u1EC3 th\u1EED lu\u1ED3ng n\xE2ng c\u1EA5p: h\xECnh b\xF3ng n\u1EC1n m\u1EDBi, t\xF4 \u0111\u1ECF c\xF4ng tr\xECnh v\u01B0\u1EDBng, d\u1EDDi \u0111i r\u1ED3i m\u1EDBi x\xE1c nh\u1EADn; c\xF3 th\u1EC3 h\u1EE7y", () => growTestOn(), (on) => growTest(on))));
       page.append(h("div", { class: "devrow" }, toggle("Xem cung \u0111i\u1EC7n (Nh\xE0 ch\xEDnh c\u1EA5p 7)", "V\u1EBD Nh\xE0 ch\xEDnh th\xE0nh cung \u0111i\u1EC7n 6\xD76 \u0111\u1EC3 xem th\u1EED; c\xE2y, \u0111\xE1 v\xE0 c\xE1c c\xF4ng tr\xECnh quanh \u0111\xF3 t\u1EA1m \u1EA9n (ch\u1EC9 h\xECnh v\u1EBD, kh\xF4ng \u0111\u1ED5i g\xEC trong game)", () => sim2.dev.palace, (on) => {
         sim2.dev.palace = on;
+      })));
+      page.append(h("div", { class: "devrow" }, toggle("Ch\u1EA1y c\xE2y c\u1ED1t truy\u1EC7n (b\u1EA3n m\u1EABu)", "B\u1EADt m\xE1y c\u1ED1t truy\u1EC7n d\xF9 d\u1EEF li\u1EC7u c\xF2n t\u1EAFt (data/story/index.json): n\xFAt th\u1EAFt, l\xE1, tr\xE1i, ng\u1ECDn ghi v\xE0o Nh\u1EADt k\xFD; c\u1EA3nh c\u1EE7a truy\u1EC7n t\u1EDBi c\u1ED5ng nh\u01B0 kh\xE1ch", () => sim2.dev.story, (on) => {
+        sim2.dev.story = on;
       })));
       page.append(h(
         "div",
@@ -192866,12 +194169,12 @@ ${risk.lines.join("\n")}`);
     }
     /** Upgrade the whole chosen group (a row of fence) at once: one question, one bill. */
     askUpgradeGroup() {
-      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, list = this.groupUpgradable();
-      if (!list.length) return;
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, list2 = this.groupUpgradable();
+      if (!list2.length) return;
       const total = {};
-      for (const b of list) for (const [r, n] of Object.entries(sim2.buildBill(levelDef(b, b.level + 1).cost))) total[r] = (total[r] ?? 0) + n;
+      for (const b of list2) for (const [r, n] of Object.entries(sim2.buildBill(levelDef(b, b.level + 1).cost))) total[r] = (total[r] ?? 0) + n;
       this.confirm.ask({
-        title: `N\xE2ng c\u1EA5p ${list.length} m\u1EA3nh?`,
+        title: `N\xE2ng c\u1EA5p ${list2.length} m\u1EA3nh?`,
         lines: [`M\u1ED7i m\u1EA3nh l\xEAn m\u1ED9t c\u1EA5p. V\u1EADt li\u1EC7u tr\u1EA3 ngay cho c\u1EA3 nh\xF3m, r\u1ED3i giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m.${sim2.freeCost() ? " \u0110ang b\u1EADt x\xE2y mi\u1EC5n ph\xED." : ""}`],
         cost: sim2.freeCost() ? {} : total,
         costTitle: "V\u1EADt li\u1EC7u c\u1EA7n",
@@ -192879,12 +194182,12 @@ ${risk.lines.join("\n")}`);
         ok: "N\xE2ng c\u1EA5p",
         onOk: () => {
           let done = 0, why = null;
-          for (const b of list) {
+          for (const b of list2) {
             why = sim2.upgradeBuilding(b.id);
             if (why) break;
             done++;
           }
-          toast2(why && !done ? why : `\u0110\xE3 n\xE2ng c\u1EA5p ${done} m\u1EA3nh. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m${why ? ` (c\xF2n ${list.length - done} m\u1EA3nh ch\u01B0a n\xE2ng \u0111\u01B0\u1EE3c: ${why})` : ""}`);
+          toast2(why && !done ? why : `\u0110\xE3 n\xE2ng c\u1EA5p ${done} m\u1EA3nh. Giao Th\u1EE3 x\xE2y \u0111\u1EC3 l\xE0m${why ? ` (c\xF2n ${list2.length - done} m\u1EA3nh ch\u01B0a n\xE2ng \u0111\u01B0\u1EE3c: ${why})` : ""}`);
           ctl2.onChange();
         }
       });
@@ -194321,7 +195624,7 @@ ${risk.lines.join("\n")}`);
       return `<button class="rs-ni${this.branch[p.id] === st.key ? " on" : ""}" data-br="${st.key}"><span class="rs-nr"><span class="rs-nn">${esc(st.name)}</span>${any ? '<span class="rs-rb" title="C\xF3 m\u1ED1c s\u1EB5n s\xE0ng \u0111\u1EC3 nghi\xEAn c\u1EE9u"></span>' : ""}</span><span class="rs-nr"><span class="rs-path">${path}</span><span class="rs-cnt">${cnt}/${total}</span></span></button>`;
     }
     bodyH(p) {
-      const list = this.branches(p), st = list.find((b) => b.key === this.branch[p.id]) ?? list[0], chains = this.chains(p, st);
+      const list2 = this.branches(p), st = list2.find((b) => b.key === this.branch[p.id]) ?? list2[0], chains = this.chains(p, st);
       const leaps = chains.flatMap((ch) => this.rows(ch).map((r) => this.leapOf(ch, r)).filter((l) => !!l)), doneN = leaps.filter((l) => this.done(l.id)).length;
       const hasMed = st.rows.some((x) => x.era === "ancient"), next = hasMed && this.c.sim.era !== "ancient" ? `<div class="rs-next" title="C\xE2y Trung c\u1ED5 n\u1ED1i ti\u1EBFp t\u1EEB \u0111\xE2y"><span class="rs-ic">${LOCK}</span><b>Trung c\u1ED5</b><small>kh\xF3a</small></div>` : "";
       const line3 = (ch) => `${this.rows(ch).map((r) => this.stageH(ch, r)).join("")}${ch === st ? next : ""}`;
@@ -194332,7 +195635,7 @@ ${risk.lines.join("\n")}`);
       }
       const hasSide = (ch) => this.rows(ch).some((r) => ch.rows[r].leap?.side);
       const stages = chains.length > 1 ? `<div class="rs-stages tree"><div class="rs-zoomer"><div class="rs-zoom" style="transform:scale(${this.zoom})"><div class="rs-tree">${chains.map((ch) => `<div class="rs-chain${hasSide(ch) ? " side" : ""}"${ch.from ? ` data-from="${esc(ch.from)}"` : ""} style="margin-left:${indent.get(ch.key) ?? 0}px"><div class="rs-tag">${esc(ch.tag ?? ch.name)}</div><div class="rs-line">${line3(ch)}</div></div>`).join("")}</div></div></div></div>` : `<div class="rs-stages"><div class="rs-zoomer"><div class="rs-zoom rs-solo" style="transform:scale(${this.zoom})">${line3(st)}</div></div></div>`;
-      return `<div class="rs-pv"><nav class="rs-nav" aria-label="Nh\xE1nh c\u1EE7a ${esc(p.name)}">${list.map((b) => this.navH(p, b)).join("")}</nav><div class="rs-lane"><div class="rs-lh"><h3>${esc(st.name)}</h3><span class="rs-w">${esc(st.who)}</span><span class="rs-lc">\u0110\xE3 m\u1EDF ${doneN}/${leaps.length}</span></div>${stages}</div></div>`;
+      return `<div class="rs-pv"><nav class="rs-nav" aria-label="Nh\xE1nh c\u1EE7a ${esc(p.name)}">${list2.map((b) => this.navH(p, b)).join("")}</nav><div class="rs-lane"><div class="rs-lh"><h3>${esc(st.name)}</h3><span class="rs-w">${esc(st.who)}</span><span class="rs-lc">\u0110\xE3 m\u1EDF ${doneN}/${leaps.length}</span></div>${stages}</div></div>`;
     }
     /** The node selected. */
     pick() {
@@ -195324,14 +196627,14 @@ ${risk.lines.join("\n")}`);
     renderVillages() {
       const { sim: sim2 } = this.c, found = sim2.tribes.filter((t) => t.state !== "destroyed" && sim2.isFound(t.id));
       if (this.sel && !found.some((t) => t.id === this.sel)) this.sel = "";
-      const list = h(
+      const list2 = h(
         "div",
         {},
         hint("L\xE0ng \u0111\xE3 ph\xE1t hi\u1EC7n", "D\xE2n, l\xEDnh hay trinh s\xE1t \u0111i quanh b\u1EA3n \u0111\u1ED3 m\xE0 g\u1EB7p m\u1ED9t ng\xF4i l\xE0ng, khi tr\u1EDF v\u1EC1 s\u1EBD b\xE1o l\u1EA1i: ch\u1EC9 ghi l\xE0ng \u0111\xF3 c\xE1ch bao xa. Mu\u1ED1n bi\u1EBFt th\xEAm ph\u1EA3i c\u1EED trinh s\xE1t. B\u1EA3n \u0111\u1ED3 v\u1EBD ra \u1EDF c\u1EA5p b\u1EB1ng c\u1EA5p Tr\u1EA1i trinh s\xE1t (l\u1EC1u c\u1EA5p 1 v\u1EBD b\u1EA3n \u0111\u1ED3 c\u1EA5p 1, v\xE0 c\u1EE9 th\u1EBF). B\u1EA3n \u0111\u1ED3 m\u1EA5t 10% \u0111\u1ED9 ch\xEDnh x\xE1c m\u1ED7i ng\xE0y."),
         found.length ? dlg.list(...found.map((t) => this.villageTile(t.id))) : dlg.empty("Ch\u01B0a ai ph\xE1t hi\u1EC7n ng\xF4i l\xE0ng n\xE0o. Cho d\xE2n ho\u1EB7c l\xEDnh \u0111i quanh b\u1EA3n \u0111\u1ED3: g\u1EB7p l\xE0ng n\xE0o r\u1ED3i tr\u1EDF v\u1EC1 th\xEC s\u1EBD b\xE1o \u1EDF \u0111\xE2y.")
       );
       const pane = h("div", { class: "ppane" }, this.sel ? this.detail(this.sel) : dlg.empty("Ch\u1ECDn m\u1ED9t ng\xF4i l\xE0ng \u1EDF b\xEAn tr\xE1i \u0111\u1EC3 xem b\u1EA3n \u0111\u1ED3 v\xE0 c\u1EED trinh s\xE1t."));
-      return [list, pane];
+      return [list2, pane];
     }
     /** One village in the list: its name, how far, what the map shows and whether scouts are out there. */
     villageTile(id) {
@@ -196219,8 +197522,8 @@ ${risk.lines.join("\n")}`);
   };
 
   // src/ui/soldierpane.ts
-  function sleeperRows(c, list) {
-    return list.map((v) => personTile(c, v));
+  function sleeperRows(c, list2) {
+    return list2.map((v) => personTile(c, v));
   }
 
   // src/ui/planmap.ts
@@ -196467,8 +197770,8 @@ ${risk.lines.join("\n")}`);
         if (!left) {
           const hit = arrows ? this.handleAt(p) : null;
           if (hit?.kind === "vertex") {
-            const list = this.listOf(ui.mode === "retreat");
-            this.ev.onPath(ui.modeSquad, list.filter((_, i) => i !== hit.idx), ui.mode === "retreat");
+            const list2 = this.listOf(ui.mode === "retreat");
+            this.ev.onPath(ui.modeSquad, list2.filter((_, i) => i !== hit.idx), ui.mode === "retreat");
             this.gesture = "none";
             return;
           }
@@ -196484,10 +197787,10 @@ ${risk.lines.join("\n")}`);
           this.sizeFrom = dep.o;
           if (dist(this.scr(dep.o), p) < 16) this.moving = { o0: dep.o, p0: dep.p, grab: w };
         } else if (arrows) {
-          const retreat = ui.mode === "retreat", list = this.listOf(retreat), hit = this.handleAt(p);
+          const retreat = ui.mode === "retreat", list2 = this.listOf(retreat), hit = this.handleAt(p);
           if (hit) {
-            const pts = list.map((q) => ({ ...q }));
-            if (hit.kind === "mid" && !retreat && list.length >= 4) {
+            const pts = list2.map((q) => ({ ...q }));
+            if (hit.kind === "mid" && !retreat && list2.length >= 4) {
               this.ev.onNotice("M\u0169i t\xEAn ch\u1EC9 g\u1EA5p kh\xFAc t\u1ED1i \u0111a 3 ch\u1ED7");
               this.gesture = "none";
               return;
@@ -196495,7 +197798,7 @@ ${risk.lines.join("\n")}`);
             if (hit.kind === "mid") pts.splice(hit.idx, 0, this.clampInBox(w));
             this.edit = { pts, retreat, idx: hit.idx };
             this.gesture = "node";
-          } else if (!list.length && retreat) {
+          } else if (!list2.length && retreat) {
             this.gesture = "arrow";
             this.arrowAim = this.clampInBox(w);
           } else this.gesture = "pan";
@@ -197177,8 +198480,8 @@ ${risk.lines.join("\n")}`);
       const pending2 = drawing && this.arrowAim && !this.listOf(back).length ? this.arrowAim : null;
       const start = this.startOf(m);
       if (start && (goPts.length || pending2 && !back)) {
-        const list = goPts.length ? goPts : [pending2], nodes = [start, ...list], pts = nodes.map((q) => this.scr(q));
-        const faint = !!dragged(false) || !goPts.length && !!pending2, t = faint ? sim2.routeTime(s, start, list, aim(m)) : r?.go;
+        const list2 = goPts.length ? goPts : [pending2], nodes = [start, ...list2], pts = nodes.map((q) => this.scr(q));
+        const faint = !!dragged(false) || !goPts.length && !!pending2, t = faint ? sim2.routeTime(s, start, list2, aim(m)) : r?.go;
         this.route(ctx2, pts, color, u, faint ? "faint" : "solid");
         t?.legs.forEach((tt, j) => {
           const p = pts[j], q = pts[j + 1], hit = t.hits[j] && t.hits[j].kind !== "enemy" ? t.hits[j] : null;
@@ -197216,8 +198519,8 @@ ${risk.lines.join("\n")}`);
       }
       const base = goPts.length ? goPts[goPts.length - 1] : start;
       if (base && (backPts.length || pending2 && back)) {
-        const list = backPts.length ? backPts : [pending2], nodes = [base, ...list], pts = nodes.map((q) => this.scr(q));
-        const faint = !!dragged(true) || !backPts.length && !!pending2, t = faint ? sim2.routeTime(s, base, list) : r?.back;
+        const list2 = backPts.length ? backPts : [pending2], nodes = [base, ...list2], pts = nodes.map((q) => this.scr(q));
+        const faint = !!dragged(true) || !backPts.length && !!pending2, t = faint ? sim2.routeTime(s, base, list2) : r?.back;
         this.route(ctx2, pts, color, u, faint ? "faint" : "back");
         const e = pts[pts.length - 1];
         label(ctx2, `r\xFAt${t ? ` ${fmtShort(t.total)}` : ""}`, e.x, e.y - 16 * u, 11 * u, "#bfe3ff");

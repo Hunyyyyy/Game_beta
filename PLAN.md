@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 0 done, decisions recorded below; Phase 1 starts on "tiếp"**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 1 done; Phase 2 starts on "tiếp"**.
 
 ## Survey facts (what the code has today)
 
@@ -126,4 +126,26 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | Phase | State | Notes |
 |---|---|---|
 | 0 | done | this file |
-| 1 | next | engine, no content |
+| 1 | done | engine + sample data; tree asleep in the game (`index.json` `enabled: false`, dev switch "Chạy cây cốt truyện"); save v49 |
+| 2 | next | soldiers rank 8-10, bodyguard, assassin |
+
+## Added by the user after Phase 0 (2026-11-15), for Phase 3
+
+| Requirement | Plan |
+|---|---|
+| Every building may grow its footprint by level, not only the Nhà chung (gates, fences, walls too) | `levels[i].size` already works for any kind (`construction.growCheck/startGrow`); `gen-levels.mjs` writes a size per level from a table in `artlevels.json` (per group, e.g. houses 2x2 -> 3x3 at A3, barracks 2x2 -> 4x4 at A4, gate 2x1 -> 3x1 -> 4x1) |
+| Soldiers stand and walk on walls, gates and fences | wall kinds get `walkTop` from a level on: a second path layer on top (stairs at gates and towers), archers on top get the tower bonus (`units.json archerOnTower`); touches `world` pathing, `battle.threatsOf`, render order. **Old logic: I state the exact conflicts and ask before coding this in Phase 3** |
+| Art must feel alive, not a pasted picture | every A-level art gets moving parts drawn by the renderer, not baked: banner sway, torch flicker, chimney smoke, lit windows at night, people at doors or on walls; depth by a ground shadow and a base that overlaps the tile behind; `art-derive.mjs` emits named anchor points (`banner`, `torch`, `smoke`, `post`) the renderer animates |
+
+## Phase 1 notes for later phases
+
+| Point | Note |
+|---|---|
+| Scene = visitor script | a scene of a chapter, leaf or fruit is a `Script` whose id is its owner's id; "chapter done" = `encounters.seen[id]`. No change to `stone.json` |
+| Conditions | `evalCond` now adds names joined by `+` and knows `mark.`, `sflag.`, `leaf.`, `fruit.`, `chapters.`, `tip.`, `progress`, `mode` |
+| Effects | visitor scripts: `sflag`, `journal`. Leaves and fruits (no visitor): `give`, `take`, `deed`, `rel {tribe, n}`, `raid {tribe, size}`, tribe `@boss` |
+| War mode | the tree ticks only in the peaceful loop; days still pass in war, so what was due fires on leaving war. Thân V chapters inside war need their own hook (Phase 5) |
+| Deeds cap | `encounters.deeds` keeps 300 entries; Hợp (no window) can lose very old deeds. Raise the cap in Phase 5 if a long game needs it |
+| `baseVillages` | counted at the first step (seed 4242 gave 4, the doc assumes 7): check in Phase 5 |
+| Play mode | `sim.story.mode` + `sim.setStoryMode` exist; the new-game choice (UI) comes with the hard leaves in Phase 5 |
+| Checker | `node tools/simStory.mjs --check` (no `tools/check-*` file) |

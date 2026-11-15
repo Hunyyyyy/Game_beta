@@ -1,0 +1,40 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "legacy": {
+  "tip:N1": {
+   "marks": {
+    "luat": 1,
+    "hop": 1
+   },
+   "trunk": "IV",
+   "tilt": {
+    "leaf:IV1-a": 1.4
+   },
+   "mods": {
+    "arrivals": 1.5
+   }
+  },
+  "tip:N2": {
+   "marks": {
+    "uy": 1,
+    "luat": 1
+   },
+   "trunk": "V",
+   "tilt": {
+    "leaf:IV1-b": 1.2
+   },
+   "mods": {
+    "marketFee": 1.2
+   }
+  },
+  "tip:N8": {
+   "marks": {
+    "hop": 2
+   },
+   "trunk": "IV",
+   "tilt": {
+    "leaf:IV1-b": 0.7
+   }
+  }
+ }
+}

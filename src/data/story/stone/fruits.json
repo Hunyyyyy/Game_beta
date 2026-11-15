@@ -1,0 +1,41 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "fruits": [
+  {
+   "id": "fruit:T1",
+   "name": "Làng Mở",
+   "tree": "stone",
+   "needs": [
+    "leaf:I1-a",
+    "leaf:III2-a"
+   ],
+   "flag": "lang_mo",
+   "text": "Ngoài vùng ai cũng biết: đến đó là có chỗ ngồi bên lửa."
+  },
+  {
+   "id": "fruit:T2",
+   "name": "Làng Kín",
+   "tree": "stone",
+   "needs": [
+    "leaf:III2-d",
+    "leaf:I1-b"
+   ],
+   "flag": "lang_kin",
+   "text": "Sau khi bị phản và sau đêm tuyết, làng đặt luật: qua cổng phải có người bảo lãnh."
+  },
+  {
+   "id": "fruit:T10",
+   "name": "Làng Chia Đôi",
+   "tree": "stone",
+   "needs": [
+    "leaf:III2-b",
+    [
+     "leaf:I1-c",
+     "leaf:I1-b"
+    ]
+   ],
+   "flag": "lang_con",
+   "text": "Nhóm người tách đi dựng một \"làng con\" bên kia suối."
+  }
+ ]
+}

@@ -1,0 +1,39 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "knots": [
+  {
+   "id": "knot:IV-1",
+   "name": "Ai ngồi ghế",
+   "tree": "medieval",
+   "trunk": "IV",
+   "fedBy": [
+    "thread:IV.A"
+   ],
+   "when": {
+    "chapters": 2,
+    "fire": [
+     4,
+     5
+    ]
+   },
+   "fallback": "leaf:IV1-nhat",
+   "leaves": [
+    {
+     "leaf": "leaf:IV1-a",
+     "base": 3,
+     "affinity": {
+      "luat": 0.5,
+      "hop": 0.3
+     }
+    },
+    {
+     "leaf": "leaf:IV1-b",
+     "base": 2,
+     "affinity": {
+      "uy": 0.5
+     }
+    }
+   ]
+  }
+ ]
+}

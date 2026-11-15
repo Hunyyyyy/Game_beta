@@ -21,6 +21,10 @@ import * as construction from './construction';
 import * as economy from './economy';
 import * as market from './market';
 import * as encounters from './encounters';
+import * as story from './story';
+import { initialStory, type StoryState } from './storydata';
+import type { StoryMode } from './storyscenes';
+import type { CondCtx, StoryCond } from './encounterdata';
 import { applyStats } from './statsys';
 import * as processing from './processing';
 import * as ranch from './ranch';
@@ -124,6 +128,8 @@ export class Sim {
   frontier: { next: number; late: number; day: number; bandit: Record<string, number> } = { next: 0, late: 0, day: -1, bandit: {} };
   /** Visitors at the gate and the dialogue with them (encounters.ts); time stands still while `encounters.active` is set. */
   encounters: encounters.EncounterState = encounters.initialEncounters();
+  /** The story tree (story.ts): the lasting flags, the knots fired and their leaves, the fruits, the tips. The hidden marks are not kept: they come from `encounters.deeds`. */
+  story: StoryState = initialStory();
   /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
   conquests: Conquest[] = [];
   /** The percent every stroke of work gains from the villages taken, by their strength (difficulty.json capture.yieldPerVillage). */
@@ -158,7 +164,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */ };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */, story: false /* the story tree runs though data/story/index.json has it off */ };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -448,6 +454,20 @@ export class Sim {
   guestAttacked(unitId: number): void { return encounters.guestAttacked(this, unitId); }
   /** → tribes.guestsToRaid */
   guestsToRaid(id: string, unitIds: number[]): void { return guestsToRaid(this, id as TribeId, unitIds); }
+  /** → encounters.condNow */
+  encounterCond(): CondCtx { return encounters.condNow(this); }
+  /** → encounters.queueScript */
+  queueEncounter(script: string, days: number, priority?: number, maxDelay?: number): void { return encounters.queueScript(this, script, days, priority, maxDelay); }
+  /** → encounters.addDeed */
+  addDeed(key: string, tribe?: string): void { return encounters.addDeed(this, key, tribe); }
+  /** → story.storyCond */
+  storyCond(): StoryCond { return story.storyCond(this); }
+  /** → story.setFlag */
+  setStoryFlag(name: string): void { return story.setFlag(this, name); }
+  /** → story.setMode */
+  setStoryMode(mode: StoryMode): void { return story.setMode(this, mode); }
+  /** → story.mod */
+  storyMod(key: string): number { return story.mod(this, key); }
   /** → encounters.guestSlain */
   guestSlain(unitId: number): void { return encounters.guestSlain(this, unitId); }
   /** → tribes.addRelation */
@@ -897,6 +917,7 @@ export class Sim {
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     encounters.tickEncounters(this, dt);
+    story.tickStory(this, dt);
     this.leaderClock += dt;
     if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
     this.tickFog();

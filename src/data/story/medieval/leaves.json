@@ -1,0 +1,27 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "leaves": [
+  {
+   "id": "leaf:IV1-a",
+   "name": "Hội đồng trưởng lão",
+   "text": "Chiếc ghế đầu tiên thuộc về một hội đồng, không của riêng ai.",
+   "flags": [
+    "hoi_dong"
+   ]
+  },
+  {
+   "id": "leaf:IV1-b",
+   "name": "Một người cầm đầu",
+   "hard": true,
+   "text": "Một người ngồi lên ghế, và không ai dám hỏi vì sao.",
+   "flags": [
+    "mot_nguoi"
+   ]
+  },
+  {
+   "id": "leaf:IV1-nhat",
+   "name": "Ghế để trống",
+   "text": "Chiếc ghế vẫn để trống thêm một mùa."
+  }
+ ]
+}

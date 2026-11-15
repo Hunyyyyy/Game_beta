@@ -39,7 +39,14 @@ function refugeesAlive(sim: Sim): number {
 
 /** What a condition of a script may ask about, for this visitor (or for no one yet). */
 function ctxOf(sim: Sim, v?: Visitor): CondCtx {
-  return { stock: sim.stock, day: sim.day, fireLevel: sim.fireLevel(), rel: (v && tribeOf(sim, v.tribe)?.relation) || 0, truth: v?.truth ?? 'honest', refugees: refugeesAlive(sim), soldiers: sim.villagers.filter((s) => s.job === 'fight' && s.health > 0).length, captives: sim.encounters.captives.length, room: Math.max(0, sim.popCap() - sim.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim.encounters.deeds, tribe: v?.tribe };
+  return { stock: sim.stock, day: sim.day, fireLevel: sim.fireLevel(), rel: (v && tribeOf(sim, v.tribe)?.relation) || 0, truth: v?.truth ?? 'honest', refugees: refugeesAlive(sim), soldiers: sim.villagers.filter((s) => s.job === 'fight' && s.health > 0).length, captives: sim.encounters.captives.length, room: Math.max(0, sim.popCap() - sim.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim.encounters.deeds, tribe: v?.tribe, story: sim.storyCond() };
+}
+
+/** What a condition may ask about now, with no visitor (for the story tree). */
+export const condNow = (sim: Sim): CondCtx => ctxOf(sim);
+/** A script is sent to the gate in `days` (the story tree sends its scenes so): it comes as a due script of the queue, from any village that may send it. */
+export function queueScript(sim: Sim, script: string, days: number, priority = 5, maxDelay = ENC.maxDelay): void {
+  if (scriptOf(script)) sim.encounters.queue.push({ script, day: sim.day + Math.max(0, days), priority, maxDelay });
 }
 
 // ---------------------------------------------------------------- the visits
@@ -515,6 +522,8 @@ function applyEffect(sim: Sim, v: Visitor, e: Effect): void {
   }
   if (e.host) v.host = true; // settled now, done when the talk ends
   if (e.flag && !(v.flags ?? []).includes(e.flag)) v.flags = [...(v.flags ?? []), e.flag];
+  if (e.sflag) sim.setStoryFlag(e.sflag); // a flag of the story tree: it stays for the whole game
+  if (e.journal) sim.say(e.journal);
   if (e.welcome !== undefined) v.welcome = e.welcome;
   if (e.buy) { // the price is paid; what arrives depends on the merchant: a cheat gives nothing, and even an honest one may sell a fake as a bargain
     const sc = scriptOf(v.scriptId), item = sc ? shopItems(sim, v, sc).find((i) => i.id === e.buy) : undefined;

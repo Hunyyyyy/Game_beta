@@ -1,0 +1,39 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "leaves": [
+  {
+   "id": "leaf:B3",
+   "name": "Đứa bé bị bỏ lại",
+   "text": "Một đứa bé nằm trước cổng làng, không ai nhận.",
+   "scene": {
+    "say": [
+     "Đứa bé khóc trước cổng từ lúc trời chưa sáng."
+    ],
+    "options": [
+     {
+      "text": "Nhận nuôi",
+      "reply": "Một nhà trong làng bế đứa bé vào.",
+      "deed": "took_in_wanderer"
+     },
+     {
+      "text": "Từ chối",
+      "reply": "Tiếng khóc xa dần.",
+      "deed": "refused_wanderer"
+     }
+    ]
+   }
+  },
+  {
+   "id": "leaf:B4",
+   "name": "Mưa đá",
+   "text": "Một trận mưa đá đập nát ruộng và giàn phơi.",
+   "effects": [
+    {
+     "take": {
+      "food": 30
+     }
+    }
+   ]
+  }
+ ]
+}

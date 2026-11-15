@@ -1,0 +1,42 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "tips": [
+  {
+   "id": "tip:M4",
+   "name": "Thành Bang",
+   "tree": "medieval",
+   "family": "hoi",
+   "fruits": [],
+   "leaves": [
+    "leaf:IV1-a"
+   ],
+   "marks": [
+    "luat"
+   ],
+   "text": "Làng được trị bằng lệ và bàn bạc."
+  },
+  {
+   "id": "tip:M3",
+   "name": "Đế Quốc Sắt",
+   "tree": "medieval",
+   "family": "sat",
+   "fruits": [],
+   "leaves": [
+    "leaf:IV1-b"
+   ],
+   "marks": [
+    "uy"
+   ],
+   "text": "Một bàn tay sắt giữ cả vùng."
+  },
+  {
+   "id": "tip:M7",
+   "name": "Tàn Quốc",
+   "tree": "medieval",
+   "family": "none",
+   "fruits": [],
+   "default": true,
+   "text": "Không ai ghi tên bạn, không ai nhớ bạn."
+  }
+ ]
+}

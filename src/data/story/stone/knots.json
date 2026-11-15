@@ -1,0 +1,146 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "knots": [
+  {
+   "id": "knot:I-1",
+   "name": "Đêm không ai ngủ",
+   "tree": "stone",
+   "trunk": "I",
+   "fedBy": [
+    "thread:I.A"
+   ],
+   "when": {
+    "chapters": 2,
+    "progress": [
+     0.25,
+     0.45
+    ],
+    "cond": "mark.hop+mark.lo>=5"
+   },
+   "fallback": "leaf:I1-nhat",
+   "leaves": [
+    {
+     "leaf": "leaf:I1-a",
+     "base": 3,
+     "affinity": {
+      "hop": 0.5,
+      "nhan": 0.4
+     },
+     "tilt": [
+      {
+       "if": "deed.shared_fire>=1",
+       "mul": 1.5
+      }
+     ]
+    },
+    {
+     "leaf": "leaf:I1-b",
+     "base": 2,
+     "affinity": {
+      "lo": 0.5
+     },
+     "tilt": [
+      {
+       "if": "deed.newcomer_watch>=1",
+       "mul": 1.5
+      },
+      {
+       "if": "deed.two_hearths>=1",
+       "mul": 1.3
+      }
+     ]
+    },
+    {
+     "leaf": "leaf:I1-c",
+     "base": 2,
+     "affinity": {
+      "hop": 0.3,
+      "nhan": -0.3
+     }
+    },
+    {
+     "leaf": "leaf:I1-d",
+     "base": 2,
+     "affinity": {
+      "nhan": 0.4,
+      "tin": 0.4
+     },
+     "tilt": [
+      {
+       "if": "deed.fire_tales>=1",
+       "mul": 1.5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "knot:III-2",
+   "name": "Mùa đông dài",
+   "tree": "stone",
+   "trunk": "III",
+   "fedBy": [
+    "thread:III.B"
+   ],
+   "when": {
+    "chapters": 2,
+    "progress": [
+     0.55,
+     0.7
+    ]
+   },
+   "fallback": "leaf:III2-nhat",
+   "leaves": [
+    {
+     "leaf": "leaf:III2-a",
+     "base": 3,
+     "affinity": {
+      "nhan": 0.4,
+      "hop": 0.4
+     },
+     "tilt": [
+      {
+       "if": "deed.shared_meals>=1",
+       "mul": 1.5
+      }
+     ]
+    },
+    {
+     "leaf": "leaf:III2-b",
+     "base": 2,
+     "affinity": {
+      "lo": 0.5,
+      "hop": -0.4
+     }
+    },
+    {
+     "leaf": "leaf:III2-c",
+     "base": 1,
+     "tilt": [
+      {
+       "if": "deed.fire_keeper>=1",
+       "mul": 2
+      },
+      {
+       "if": "deed.stone_ring>=1",
+       "mul": 2
+      }
+     ]
+    },
+    {
+     "leaf": "leaf:III2-d",
+     "base": 1,
+     "affinity": {
+      "uy": 0.4
+     },
+     "tilt": [
+      {
+       "if": "deed.thick_wall>=1",
+       "mul": 3
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

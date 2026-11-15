@@ -13,18 +13,19 @@ import { BUILDINGS, footOf, maxHp } from './buildings';
 import { SCREEN_QUESTS } from './progression';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import { initialEncounters } from './encounterdata';
+import { initialStory } from './storydata';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 48;
+export const SAVE_VERSION = 49;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'yieldBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier', 'encounters'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier', 'encounters', 'story'],
   /** Lists of plain data. */
   lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests'],
   /** Handled by hand below. */
@@ -454,5 +455,10 @@ MIGRATIONS[47] = (d) => {
   e.aclock ??= 0;
   for (const v of (e.visitors ?? []) as Array<Record<string, any>>) { v.agents ??= []; delete v.loot; delete v.captive; delete v.kidnap; delete v.alarm; } // eslint-disable-line @typescript-eslint/no-explicit-any
   return { ...d, version: 48 };
+};
+MIGRATIONS[48] = (d) => {
+  // 48 -> 49: the story tree (story.ts): nothing has happened in it yet; the count of common villages is taken at the first step. A game already in the medieval age gets the default tip of the stone age then
+  d.records.story ??= initialStory();
+  return { ...d, version: 49 };
 };
 

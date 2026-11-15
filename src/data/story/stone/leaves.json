@@ -1,0 +1,117 @@
+{
+ "_note": "SAMPLE data of Phase 1 (PLAN.md): a slice of doc/story_tree.md to prove the engine. Phase 5 writes the full tree here.",
+ "leaves": [
+  {
+   "id": "leaf:I1-a",
+   "name": "Xóm mới",
+   "text": "Đêm đó người mới dựng mái nhà riêng bên rìa làng, gọi là \"bếp thứ hai\".",
+   "flags": [
+    "xom_moi"
+   ]
+  },
+  {
+   "id": "leaf:I1-b",
+   "name": "Nội gián mở cổng",
+   "hard": true,
+   "text": "Người được tin giao gác đã mở lối. Sáng ra kho lương vơi hẳn.",
+   "flags": [
+    "noi_gian"
+   ],
+   "effects": [
+    {
+     "take": {
+      "food": 40
+     }
+    }
+   ]
+  },
+  {
+   "id": "leaf:I1-c",
+   "name": "Bệnh sốt từ đường xa",
+   "hard": true,
+   "text": "Một phần ba dân nằm liệt vì cơn sốt người đường xa mang tới.",
+   "flags": [
+    "benh_sot"
+   ]
+  },
+  {
+   "id": "leaf:I1-d",
+   "name": "Người có tài",
+   "text": "Một người được nhận hóa ra có tay nghề hiếm.",
+   "flags": [
+    "nhan_tai"
+   ]
+  },
+  {
+   "id": "leaf:I1-nhat",
+   "name": "Một đêm yên",
+   "text": "Đêm trôi qua yên ả. Người mới và người cũ vẫn dè chừng nhau."
+  },
+  {
+   "id": "leaf:III2-a",
+   "name": "Mùa đông chia đều",
+   "text": "Tuyết phủ mười hai ngày, ai cũng bớt miếng ăn nhưng không ai bị bỏ lại.",
+   "effects": [
+    {
+     "deed": "shared_meals"
+    }
+   ]
+  },
+  {
+   "id": "leaf:III2-b",
+   "name": "Mùa đông giành giật",
+   "hard": true,
+   "text": "Lương vơi nhanh, bè phái chia nhau kho. Một nhóm đòi tách đi.",
+   "flags": [
+    "phan_ly"
+   ]
+  },
+  {
+   "id": "leaf:III2-c",
+   "name": "Lửa thiêng",
+   "text": "Người giữ lửa thành người chỉ lúc nhóm lửa, ngày dọn kho.",
+   "flags": [
+    "lua_thieng"
+   ],
+   "effects": [
+    {
+     "rel": {
+      "tribe": "cave",
+      "n": 10
+     }
+    }
+   ]
+  },
+  {
+   "id": "leaf:III2-d",
+   "name": "Tường cứu mạng",
+   "text": "Đêm tuyết, bầy sói tràn xuống; tường và cổng chặn được.",
+   "flags": [
+    "cua_dong"
+   ],
+   "scene": {
+    "say": [
+     "Sáng ra có một nhóm người lạ xin vào trú tuyết.",
+     "Cổng vẫn đang đóng."
+    ],
+    "options": [
+     {
+      "text": "Mở cổng cho họ vào",
+      "reply": "Họ run rẩy bước vào bên lửa.",
+      "deed": "took_refugees"
+     },
+     {
+      "text": "Giữ cổng đóng",
+      "reply": "Họ lặng lẽ quay đi trong tuyết.",
+      "deed": "refused_refugees"
+     }
+    ]
+   }
+  },
+  {
+   "id": "leaf:III2-nhat",
+   "name": "Mùa đông qua đi",
+   "text": "Mùa đông dài nhưng rồi cũng qua. Không ai nhắc lại nó."
+  }
+ ]
+}
