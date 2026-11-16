@@ -52,10 +52,10 @@ const progress = new WeakMap<Villager, { x: number; y: number; t: number }>();
 function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (v.inside !== null) return;
   const w = sim.world, ours = passOf(v);
-  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours)) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
+  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim.onWall(v)) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
   if (!v.path.length) { progress.delete(v); return; }
   const goal = v.path[v.path.length - 1];
-  const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours); // the last step may be a work spot that overlaps what is worked on
+  const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours) && !sim.topAt(v.path[0][0], v.path[0][1]); // (a step on the top of a wall is a free one) the last step may be a work spot that overlaps what is worked on
   // a window of 2.5 seconds: a walker with a path who has got less than a tile and a quarter from where the window began is pacing, not walking
   const p = progress.get(v);
   if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
@@ -64,7 +64,7 @@ function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (!blocked && !stuck) return;
   progress.delete(v);
   // the way is shut or the walker is jammed: find the way again once, and if there is none stop and let the brain decide what next
-  const [gx, gy] = goal, standing = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) ? freeSpotNear(sim, v.x, v.y) : null;
+  const [gx, gy] = goal, standing = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim.onWall(v) ? freeSpotNear(sim, v.x, v.y) : null;
   if (standing) { v.x = standing[0]; v.y = standing[1]; }
   let again: Step[] = [];
   if (v.team !== 'player') again = sim.pathTo(v, gx, gy, 6000);
@@ -160,6 +160,8 @@ export function standTile(sim: Sim, v: Villager): [number, number] {
 
 /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
 export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes = 14000, fresh = false): Step[] {
+  const up = sim.wallPath(v, gx, gy, (a, b, c, d) => findPath(sim.world, a, b, c, d, maxNodes, passOf(v), fresh)); // from or to the top of a wall: up the stairs, along the top, down (walltop.ts)
+  if (up) return up;
   const [sx, sy] = standTile(sim, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
   const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh);
   return off ? [[sx, sy] as Step, ...p] : p;

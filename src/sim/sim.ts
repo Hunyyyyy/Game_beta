@@ -23,6 +23,7 @@ import * as market from './market';
 import * as encounters from './encounters';
 import * as story from './story';
 import * as specialists from './specialists';
+import * as walltop from './walltop';
 import type { SpecialistDef } from './specialdata';
 import { initialStory, isUnlocked, type StoryState } from './storydata';
 import type { StoryMode } from './storyscenes';
@@ -132,6 +133,8 @@ export class Sim {
   encounters: encounters.EncounterState = encounters.initialEncounters();
   /** The story tree (story.ts): the lasting flags, the knots fired and their leaves, the fruits, the tips. The hidden marks are not kept: they come from `encounters.deeds`. */
   story: StoryState = initialStory();
+  /** The tops of the walls worked out from the buildings (walltop.ts): derived, not saved. */
+  wallCache: walltop.Tops | null = null;
   /** The keys of unlocks.json bought (a blueprint at the Chợ, the Thư Viện Di Sản): they stay open for good. */
   unlocksBought: string[] = [];
   /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
@@ -480,6 +483,15 @@ export class Sim {
   tickAssassin(f: Villager, dt: number): void { return specialists.tickAssassin(this, f, dt); }
   /** Whether a specialist (a key of data/story/unlocks.json) may be used now; core things are always open. */
   isUnlocked(key: string): boolean { return this.dev.unlockAll || isUnlocked(this.story, this.unlocksBought, key, this.fireLevel()); }
+  /** → walltop.onWall: is he standing on the top of a wall (fence, gate or tower of level 6 and up)? */
+  onWall(v: Pick<Villager, 'x' | 'y'>): boolean { return walltop.onWall(this, v); }
+  /** → walltop.wallLift / wallArcher: how high a soldier on a wall is drawn, and the bonus of an archer there */
+  wallLift(): number { return walltop.wallLift(); }
+  wallArcher(): { damage: number; range: number } { return walltop.wallArcher(); }
+  /** → walltop.topAt */
+  topAt(x: number, y: number): boolean { return walltop.topAt(this, x, y); }
+  /** → walltop.wallPath: the way up, along and down the walls (null when neither end is on a top) */
+  wallPath(v: Pick<Villager, 'x' | 'y'>, gx: number, gy: number, ground: (sx: number, sy: number, tx: number, ty: number) => Step[]): Step[] | null { return walltop.wallPath(this, v, gx, gy, ground); }
   /** → story.storyCond */
   storyCond(): StoryCond { return story.storyCond(this); }
   /** → story.setFlag */

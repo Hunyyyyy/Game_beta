@@ -48,6 +48,7 @@ export const NOT_SAVED: readonly (keyof Sim)[] = [
   'noNodeWarn', // a timer for the "nothing left to gather" warning
   'nodeCheck', // a few seconds' memory of whether any source is left in the land seen
   'dangerAt', // a timer: after loading the villagers come out of hiding at once
+  'wallCache', // the tops of the walls: worked out again from the buildings within a second (walltop.ts)
 ];
 
 type Row = Array<number | string>;

@@ -128,7 +128,7 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | 0 | done | this file |
 | 1 | done | engine + sample data; tree asleep in the game (`index.json` `enabled: false`, dev switch "Chạy cây cốt truyện"); save v49 |
 | 2 | done | ranks 6-10 of 4 branches (`tools/gen-ranks.mjs`), `specialists.ts` (bodyguard, assassin) |
-| 3 | in progress | done: levels 4-10 for every kind (`tools/gen-levels.mjs`), per-level footprint, art for every level (`tools/gen-keep.mjs`, `tools/art-derive.mjs`, moving banners/torches/smoke), specialist buildings. Left: walkable walls, walls' sizes |
+| 3 | done | levels 4-10 for every kind, per-level footprint, art for every level with moving parts, specialist buildings, walkable walls (see Phase 3 notes for what is left) |
 
 ## Added by the user after Phase 0 (2026-11-15), for Phase 3
 
@@ -195,4 +195,13 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 | Numbers | costs x1.45 a level (Nhà chung x1.6) with steel from level 6, coin 7, fine steel 8: **not balanced**, run `npm run economy` when you ask |
 | Sizes | levels 8-9 base+1, 10 base+2 (2x2 -> 3x3 -> 4x4); Nhà chung 5: 2x2, 6: 4x4, 7: 6x6, 8-9: 8x8, 10: 10x10. Walls, field, drill, ranch keep their size for now |
 | Art | A1 hand-made, the rest derived; tents (infantry, scouttent, wartent) and flat kinds get posts, the others a stone turret. Everything alive is baked as 4 frames (banner, torch, smoke, fountain), glow and smoke drawn after the outline |
-| Walls | fence, gate, trap are drawn by the renderer (`drawFence`, `drawGate`): their levels 6-10 show the last art until the wall work |
+| Walls | fence, gate, trap are drawn by code (`drawFence`, `drawGate`); from level 6 fences and gates are stone with a walkway (`stoneSpan`), see below |
+
+## Walkable walls (done in Phase 3)
+
+| Point | Note |
+|---|---|
+| Rule | fence, gate, tower of level 6+ (`data/walls.json`): their tiles are a top; stairs = ground tiles beside a gate or tower, both sides; units of both teams climb; `battle.layerApart`: sword and spear blows only within one layer; archers on a wall: damage x1.25, range +2 |
+| Orders | `orderMove` to a top tile sends a soldier up (ground to stair, up, along); to the ground sends him down; guards and posts follow because `movement.pathTo` plans the climb |
+| Not done | picking a unit on a wall by clicking (the sprite is lifted 26 px, the hit area is not); gates and fences do not grow their footprint (a gate's growth along a rotated row needs `growRect` to turn); walls under fire do not drop the soldiers on them (they are put on the ground by the unstick rule within a second); stairs cannot be drawn or shut; towers keep their own "inside" archers |
+| Check | headless: climb, walk, descend, an assassin climbing after a unit on the wall, save/load |

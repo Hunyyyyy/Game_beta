@@ -214,8 +214,8 @@ function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   const e = resolve(sim, target);
   if (!e) return;
   const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(sim, v, e);
-  if (w.ranged) { fireProjectile(sim, v, e, { x: v.x, y: v.y }, 1, 0); return; }
-  if (d > w.range + 1.1) return; // the target stepped away: the blow misses
+  if (w.ranged) { const top = sim.onWall(v); fireProjectile(sim, v, e, { x: v.x, y: v.y }, top ? sim.wallArcher().damage : 1, top ? sim.wallArcher().range : 0); return; } // an archer on a wall shoots as one in a tower
+  if (d > w.range + 1.1 || layerApart(sim, v, e)) return; // the target stepped away, or is on the other side of a wall: the blow misses
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
@@ -288,13 +288,19 @@ function chaseGivenUp(sim: Sim, v: Villager, e: Ent, d: number, dt: number): boo
   return true;
 }
 
+/** A blow of the sword or the spear passes only between two on the same layer, both on the ground or both on the top of a wall (walltop.ts): the one below must climb, the one above must come down. A missile goes any way. */
+function layerApart(sim: Sim, v: Villager, e: Ent): boolean {
+  if (e.kind !== 'unit' || weaponOf(v).ranged) return false;
+  return sim.onWall(v) !== sim.onWall(e.v);
+}
+
 /** Walk toward a target, strike when in reach. */
 export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
   if (dt > 0 && chaseGivenUp(sim, v, e, d, dt)) return;
   const reach = w.ranged ? w.range : w.range + (e.kind === 'animal' ? 0.45 : 0.5);
   v.phase = 'fight';
-  if (d <= reach && (!w.ranged || canSee(sim, v, x, y))) {
+  if (d <= reach && (!w.ranged || canSee(sim, v, x, y)) && !layerApart(sim, v, e)) {
     v.path = []; v.slide = null;
     v.facing = x >= v.x ? 'right' : 'left';
     if (!v.swing && v.atkCd <= 0) { startSwing(sim, v, e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id }); v.fight.chaseT = 0; }

@@ -26382,7 +26382,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const fla = (tt) => 0.74 + 0.16 * NL(tt, 7.3, S2 + 1) + 0.1 * NL(tt, 19, S2 + 2), fl = fla(t);
     const GLOW = mix(mix(H2[3], H2[4], 0.5), WHITE, 0.25), SMOKE2 = mix(SMOKE12, H2[6], 0.25);
     const SPARKS = [H2[1], H2[2], H2[4], H2[5]], EMB = [H2[1], H2[2], H2[4], H2[6]];
-    const T2 = TONGUES.map(([dx, y, h2, w, back], i) => ({ dx: dx + R2.range(-0.4, 0.4), y, h: 3 + HC * h2 * R2.range(0.92, 1.08), w: w * R2.range(0.9, 1.1), back, env: h2, n: (S2 * 7 + i) * 13 }));
+    const T2 = TONGUES.map(([dx, y, h2, w, back2], i) => ({ dx: dx + R2.range(-0.4, 0.4), y, h: 3 + HC * h2 * R2.range(0.92, 1.08), w: w * R2.range(0.9, 1.1), back: back2, env: h2, n: (S2 * 7 + i) * 13 }));
     const lean = (tt) => NL(tt, 0.67, S2 + 90) * 0.12;
     const height = (i, tt) => {
       const { h: h2, n } = T2[i], leap = Math.max(0, NL(tt, 2.6, n + 70) - 0.55) * 1.4;
@@ -26394,8 +26394,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       return [T2[i].dx + sweep(i, tt, h2) * 0.85, T2[i].y - h2 * 0.88 + 3, h2];
     };
     const tongueAt = (i) => {
-      const { dx, y, w, n, back } = T2[i], h2 = height(i, t);
-      flameTongue(p, dx, y, h2, w, sweep(i, t, h2), N, n, H2, back ? BACK_LAYERS : w > 2.2 ? BIG_LAYERS : LAYERS, 0.5, 1.1 + h2 * 0.04);
+      const { dx, y, w, n, back: back2 } = T2[i], h2 = height(i, t);
+      flameTongue(p, dx, y, h2, w, sweep(i, t, h2), N, n, H2, back2 ? BACK_LAYERS : w > 2.2 ? BIG_LAYERS : LAYERS, 0.5, 1.1 + h2 * 0.04);
     };
     looped(t, D, 48, S2 + 300, (r) => ({ x: r.range(-5, 5), y: -HC * 0.8 - r.range(0, 8), vx: r.range(-2, 2), vy: -r.range(10, 17), life: r.range(2, 2.9), s: r.range(2.4, 3.8) }), (q, age) => {
       const [x, y] = drift(q.x, q.y, q.vx, q.vy, age, 4, -20, 1.6, 1);
@@ -38840,7 +38840,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (own) for (const [x, y, w, h2, c] of own) rect(b, gx + x, gy + y, w, h2, col[c] || hexRgb(c));
     else rotShapes(b, gripShapes(def), col, gx, gy, rad(180 - (tool.a || 0)));
   }
-  function drawToolFacing(b, back, hx, hy, tool, ov, P2) {
+  function drawToolFacing(b, back2, hx, hy, tool, ov, P2) {
     const tier2 = ov && ov.tier !== void 0 ? ov.tier : 2;
     if (tier2 <= 0) return;
     const kind = ov && ov.kind || tool.kind || "axe", def = handTools[kind] || handTools.axe;
@@ -38853,10 +38853,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       return;
     }
     if (Math.abs(cs) < 0.2) {
-      if (!back) rect(b, gx - 1, gy - 2, 3, 3, col.head);
+      if (!back2) rect(b, gx - 1, gy - 2, 3, 3, col.head);
       return;
     }
-    if (back && Math.abs(cs) < 0.5) return;
+    if (back2 && Math.abs(cs) < 0.5) return;
     for (const [x, y, w, h2, k] of gripShapes(def)) {
       const y0 = y * cs, y1 = (y + h2) * cs, top = Math.min(y0, y1), hh = Math.max(1, Math.round(Math.abs(y1 - y0)));
       rect(b, gx + x, gy + Math.round(top), w, hh, col[k] || hexRgb(k));
@@ -38916,7 +38916,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
   function drawCharacter(b, view2, f, P2, sex, ov, armorId, extra) {
     const AD = armorId && armors[armorId], AC = AD ? armorColors(AD, P2) : null;
-    const side = view2 === "side", back = view2 === "back", front = view2 === "front";
+    const side = view2 === "side", back2 = view2 === "back", front = view2 === "front";
     const bob = f.bob || 0, lean = f.lean || 0;
     const tool = f.tool && f.tool.on ? f.tool : null;
     const carry = f.carry && f.carry.on ? f.carry : null;
@@ -38940,7 +38940,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         const ex = sx + L2 * Math.sin(rad(a1)), ey2 = shY + L2 * Math.cos(rad(a1));
         return { sx, ex, ey: ey2, hx: ex + L2 * Math.sin(rad(a2)), hy: ey2 + L2 * Math.cos(rad(a2)) };
       }
-      const k = hold && !back ? 0.55 : 0;
+      const k = hold && !back2 ? 0.55 : 0;
       const ey = shY + L2 * Math.cos(rad(a1));
       return { sx, ex: sx + (CX - sx) * k * 0.4, ey, hx: sx + (CX - sx) * k, hy: ey + L2 * Math.cos(rad(a2)) };
     };
@@ -38961,7 +38961,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         rect(b, x, y, 7, 6, P2.cb);
         rect(b, x, y + 5, 7, 1, P2.cbD);
         [[1, 1], [3, 1], [5, 1], [2, 3], [4, 3]].forEach(([i, j]) => put(b, x + i, y + j, P2.cbL));
-      } else if (!back) {
+      } else if (!back2) {
         const x = CX - 7, y = 28 + dy;
         rect(b, x, y, 14, 2, P2.cb);
         rect(b, x, y + 2, 14, 2, P2.cbD);
@@ -38998,12 +38998,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const spread2 = gl(f, "spread", 0);
     leg(f.legR, front ? CX - 2.5 - spread2 : CX + 2.5 + spread2, P2.skin);
     leg(f.legL, front ? CX + 2.5 + spread2 : CX - 2.5 - spread2, P2.skin);
-    if (!hold || back) {
+    if (!hold || back2) {
       arm(pR, P2.skin);
       arm(pL, P2.skin);
     }
-    if (back && tool) drawToolFacing(b, true, pR.hx, pR.hy, tool, ov, P2);
-    if (back && shieldF) drawShield(b, SH, (shieldF.pose || "rest") + "Back", pL.hx + (shieldF.dx || 0), pL.hy + (shieldF.dy || 0));
+    if (back2 && tool) drawToolFacing(b, true, pR.hx, pR.hy, tool, ov, P2);
+    if (back2 && shieldF) drawShield(b, SH, (shieldF.pose || "rest") + "Back", pL.hx + (shieldF.dx || 0), pL.hy + (shieldF.dy || 0));
     if (AD) drawArmorLayer(b, AD, AC, view2, "back", CX - 5, TY);
     drawTorso(b, CX - 5, TY, view2, P2, sex);
     if (AD) drawArmorLayer(b, AD, AC, view2, "torso", CX - 5, TY);
@@ -39013,11 +39013,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (shieldF && front) drawShield(b, SH, (shieldF.pose || "rest") + "Front", pL.hx + (shieldF.dx || 0), pL.hy + (shieldF.dy || 0));
     if (hold) {
       if (carry) bundle();
-      if (!back) {
+      if (!back2) {
         arm(pR, P2.skin);
         arm(pL, P2.skin);
       }
-      if (!back && tool) drawToolFacing(b, false, pR.hx - 3, pR.hy, tool, ov, P2);
+      if (!back2 && tool) drawToolFacing(b, false, pR.hx - 3, pR.hy, tool, ov, P2);
     }
     if (extra && extra.torch !== void 0) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
   }
@@ -39207,7 +39207,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       line2(b, hx + S2.headR, hy, hx + S2.headR + S2.snout - 2, hy + 1, 1, brid);
     }
   }
-  function horseView(b, def, f, back, layer) {
+  function horseView(b, def, f, back2, layer) {
     const S2 = def.shape, C = colors(def), G = def.gear || {}, gc = (n) => G[n] ? hex2(G[n]) : null;
     const rear = layer === "rear", top = layer === "front";
     const cx = b.w / 2, gy = b.h - 2, bob = num2(f, "bob", 0), legL = S2.legL;
@@ -39221,23 +39221,23 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     };
     const bodyY = hipY - 4;
     const blanket = gc("blanket"), saddle = gc("saddle"), chest = gc("chest"), stud = gc("stud"), brid = gc("bridle");
-    const farL = back ? f.fl : f.bl, farR = back ? f.fr : f.br, nearL = back ? f.bl : f.fl, nearR = back ? f.br : f.fr;
+    const farL = back2 ? f.fl : f.bl, farR = back2 ? f.fr : f.br, nearL = back2 ? f.bl : f.fl, nearR = back2 ? f.br : f.fr;
     const plate = gc("plate"), plateH = gc("plateH"), plateD = gc("plateD");
     const barrel = () => {
-      ell(b, cx, bodyY, back ? 7.6 : 6.6, 7, C.base);
+      ell(b, cx, bodyY, back2 ? 7.6 : 6.6, 7, C.base);
       ell(b, cx - 2, bodyY - 2, 3.2, 4, C.light);
       ell(b, cx + 3, bodyY + 3, 3.4, 3, C.dark);
       if (plate) {
-        ell(b, cx, bodyY, back ? 7.8 : 6.8, 7.2, plate);
+        ell(b, cx, bodyY, back2 ? 7.8 : 6.8, 7.2, plate);
         ell(b, cx - 2.2, bodyY - 2.5, 3.2, 3.6, plateH);
         ell(b, cx + 3, bodyY + 3, 3.4, 3, plateD);
         line2(b, cx - 6, bodyY + 1, cx + 6, bodyY + 1, 1, plateD);
       }
-      if (back) line2(b, cx, bodyY - 6, cx, bodyY + 3, 1, C.dark);
+      if (back2) line2(b, cx, bodyY - 6, cx, bodyY + 3, 1, C.dark);
       if (blanket) ell(b, cx, bodyY - 5.5, 8.4, 2.6, blanket);
       if (saddle) ell(b, cx, bodyY - 6.5, 5, 1.8, saddle);
     };
-    if (!back) {
+    if (!back2) {
       if (rear) {
         leg(cx - 3.5, farL, C.far, 2);
         leg(cx + 3.5, farR, C.far, 2);
@@ -39403,9 +39403,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       line2(b, hx - 2, t - 5, hx - 5, t - 8, 1, C.acc);
     }
     if (has("horns")) {
-      const t = hy - S2.headR, h2 = S2.horn || 5, back = !!S2.hornBack;
+      const t = hy - S2.headR, h2 = S2.horn || 5, back2 = !!S2.hornBack;
       for (const dx of [-1, 1]) {
-        const bx = hx + dx, tipx = back ? bx - h2 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h2 * (back ? 0.9 : 0.8);
+        const bx = hx + dx, tipx = back2 ? bx - h2 * 0.8 : bx + (dx > 0 ? 3 : -1), tipy = t - h2 * (back2 ? 0.9 : 0.8);
         line2(b, bx, t, tipx, tipy, 1, C.acc);
         put2(b, tipx, tipy - 1, C.acc);
       }
@@ -188851,6 +188851,34 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       return [...out];
     }
+    /** A stretch of stone wall with a walkway on top (levels 6 and up, data/walls.json): a face in courses, a lit walkway edge, crenels on the outer side. `lp` below 1: still being built (it rises). */
+    stoneSpan(x0, y0, x1, y1, lp) {
+      const { ctx: ctx2 } = this, z = this.cam.zoom, H2 = 24 * z * Math.min(1, 0.25 + lp * 1.2), len = Math.hypot(x1 - x0, y1 - y0);
+      this.shape([[x0, y0], [x1, y1], [x1, y1 - H2], [x0, y0 - H2]], "#8e9498");
+      this.shape([[x0, y0 - H2], [x1, y1 - H2], [x1, y1 - H2 - 3.5 * z], [x0, y0 - H2 - 3.5 * z]], "#b9bfc2");
+      ctx2.strokeStyle = "#60676b";
+      ctx2.lineWidth = Math.max(1, z * 0.7);
+      for (const h2 of [8, 16]) {
+        if (h2 * z >= H2) break;
+        ctx2.beginPath();
+        ctx2.moveTo(x0, y0 - h2 * z);
+        ctx2.lineTo(x1, y1 - h2 * z);
+        ctx2.stroke();
+      }
+      ctx2.strokeStyle = "#2b1d10";
+      ctx2.lineWidth = Math.max(1, z);
+      ctx2.beginPath();
+      ctx2.moveTo(x0, y0);
+      ctx2.lineTo(x1, y1);
+      ctx2.lineTo(x1, y1 - H2 - 3.5 * z);
+      ctx2.lineTo(x0, y0 - H2 - 3.5 * z);
+      ctx2.closePath();
+      ctx2.stroke();
+      if (lp >= 0.9) for (let k = 3 * z; k < len - 3 * z; k += 7 * z) {
+        const f = k / len, cx = x0 + (x1 - x0) * f, cy = y0 + (y1 - y0) * f - H2 - 3.5 * z;
+        this.block(cx - 1.5 * z, cy - 3 * z, 3 * z, 3 * z, "#8e9498", "#b9bfc2", "#60676b");
+      }
+    }
     /** The rails (and a middle picket) from a wall piece to the pieces touching it: each link is drawn once, by the piece below or to the right of the other. A piece with no neighbour gets a short stub of rail either side. */
     drawWallLinks(b, wallAt, two, prog = 1) {
       const { ctx: ctx2 } = this, z = this.cam.zoom, [gx, gy] = this.groundOf(b), p = this.worldToScreen(gx, gy);
@@ -188886,6 +188914,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         if (len - r0 - r1 <= 1) continue;
         const x0 = p.x + ux * r0, y0 = p.y + uy * r0, x1 = q.x - ux * r1, y1 = q.y - uy * r1;
         const lp = Math.min(prog, o.done ? 1 : o.progress);
+        if (b.level >= 6 && o.level >= 6) {
+          this.stoneSpan(x0, y0, x1, y1, lp);
+          continue;
+        }
         for (const h2 of lp >= 0.75 ? rails : lp >= 0.5 ? [rails[1]] : []) rail(x0, y0, x1, y1, h2);
         const lowerTwo = o.level >= 2 && b.level >= 2;
         if (lp >= 0.75 && len - r0 - r1 > 14 * z) this.picket((x0 + x1) / 2, (y0 + y1) / 2, 5 * z, (lowerTwo ? 22 : 19) * z, lowerTwo);
@@ -188902,6 +188934,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       ctx2.ellipse(p.x, p.y, 8 * z, 3.5 * z, 0, 0, Math.PI * 2);
       ctx2.fill();
       this.drawWallLinks(b, wallAt, two, prog);
+      if (b.level >= 6) {
+        const sp = 26 * Math.min(1, 0.2 + prog * 1.6);
+        this.block(p.x - 6 * z, p.y - sp * z, 12 * z, sp * z, "#8e9498", "#b9bfc2", "#60676b");
+        this.block(p.x - 7.5 * z, p.y - (sp + 4) * z, 15 * z, 4 * z, "#b9bfc2", "#d3d8da", "#8e9498");
+        return;
+      }
       this.picket(p.x, p.y, (two ? 8 : 7) * z, hgt * z, two);
       ctx2.fillStyle = two ? "#9a6c3c" : "#c79a5e";
       ctx2.fillRect(Math.round(p.x - (two ? 4 : 3.5) * z), Math.round(p.y - hgt * z), Math.max(1, Math.round(z)), Math.round(hgt * z));
@@ -188920,7 +188958,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const f = footOf(b), L2 = Math.max(f.w, f.h), p = this.worldToScreen((b.x + f.w / 2) * TILE, (b.y + f.h / 2) * TILE + 4);
       const sign = open ? "#4fbf5a" : "#d9473f", signDark = open ? "#2a7a33" : "#8f2620";
       const X = (u, v = 0) => col ? p.x + v * z : p.x + u * z, Y = (u, h2, v = 0) => (col ? p.y + u * z : p.y + v * z) - h2 * z;
-      const U = L2 * 16 - 3, top = (two ? 46 : 40) * Math.min(1, 0.2 + prog * 1.6), pw = two ? 8 : 6;
+      const U = L2 * 16 - 3, top = (b.level >= 6 ? 30 : two ? 46 : 40) * Math.min(1, 0.2 + prog * 1.6), pw = two ? 8 : 6;
       const leaves = prog >= 0.6;
       const wood = "#8a6238", woodL = "#aa7c48", woodD = "#5e4026", stone = "#8e9498", stoneL = "#b9bfc2", stoneD = "#60676b", iron = "#454a52";
       ctx2.fillStyle = open ? "rgba(90,200,90,.30)" : "rgba(217,71,63,.26)";
@@ -189190,9 +189228,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         if (fireB && b.kind !== "campfire" && bare2(b.x + footOf(b).w / 2, b.y + footOf(b).h / 2)) continue;
         list2.push({ y: ay, kind: "building", i: 0, j: 0, b });
       }
-      for (const v of sim2.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list2.push({ y: v.y * TILE, kind: "villager", i: 0, j: 0, v });
+      for (const v of sim2.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list2.push({ y: v.y * TILE + (sim2.onWall(v) ? 20 : 0), kind: "villager", i: 0, j: 0, v });
       const seen = (x, y) => sim2.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-      for (const f of sim2.foes) if (!f.inTent && !f.ai?.assassin?.hidden && onScr(f.x, f.y) && seen(f.x, f.y)) list2.push({ y: f.y * TILE, kind: "villager", i: 0, j: 0, v: f });
+      for (const f of sim2.foes) if (!f.inTent && !f.ai?.assassin?.hidden && onScr(f.x, f.y) && seen(f.x, f.y)) list2.push({ y: f.y * TILE + (sim2.onWall(f) ? 20 : 0), kind: "villager", i: 0, j: 0, v: f });
       for (const a of sim2.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list2.push({ y: a.state === "dead" ? a.y * TILE - 1 : a.y * TILE, kind: "animal", i: 0, j: 0, a });
       for (const t of sim2.tribes) {
         for (const p of t.props) {
@@ -189348,6 +189386,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
             }
             lift = m.ride + 1;
           }
+          if (sim2.onWall(d.v)) lift += sim2.wallLift();
           if (d.v.phase === "sleep" || d.v.phase === "down") {
             ctx2.save();
             ctx2.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z));
@@ -190842,10 +190881,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!e) return;
     const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(sim2, v, e);
     if (w.ranged) {
-      fireProjectile(sim2, v, e, { x: v.x, y: v.y }, 1, 0);
+      const top = sim2.onWall(v);
+      fireProjectile(sim2, v, e, { x: v.x, y: v.y }, top ? sim2.wallArcher().damage : 1, top ? sim2.wallArcher().range : 0);
       return;
     }
-    if (d > w.range + 1.1) return;
+    if (d > w.range + 1.1 || layerApart(sim2, v, e)) return;
     let behind = false;
     if (e.kind === "unit") behind = e.v.facing === "right" && v.x < e.v.x || e.v.facing === "left" && v.x > e.v.x;
     else behind = e.a.dir === 1 && v.x < e.a.x || e.a.dir === -1 && v.x > e.a.x;
@@ -190924,12 +190964,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (f.mode === "attack") sim2.endOrder(v);
     return true;
   }
+  function layerApart(sim2, v, e) {
+    if (e.kind !== "unit" || weaponOf(v).ranged) return false;
+    return sim2.onWall(v) !== sim2.onWall(e.v);
+  }
   function engage(sim2, v, e, dt) {
     const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
     if (dt > 0 && chaseGivenUp(sim2, v, e, d, dt)) return;
     const reach = w.ranged ? w.range : w.range + (e.kind === "animal" ? 0.45 : 0.5);
     v.phase = "fight";
-    if (d <= reach && (!w.ranged || canSee(sim2, v, x, y))) {
+    if (d <= reach && (!w.ranged || canSee(sim2, v, x, y)) && !layerApart(sim2, v, e)) {
       v.path = [];
       v.slide = null;
       v.facing = x >= v.x ? "right" : "left";
@@ -191939,12 +191983,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const old = sim2.tribes.find((t) => t.id === id);
     if (old) deps.remove(sim2, old);
     deps.spawn(sim2, id, q.tier);
-    const back = sim2.tribes.find((t) => t.id === id);
-    if (back) {
-      back.state = "free";
-      back.relation = -100;
-      back.allyOf = by;
-      back.spoiledIn = sim2.era;
+    const back2 = sim2.tribes.find((t) => t.id === id);
+    if (back2) {
+      back2.state = "free";
+      back2.relation = -100;
+      back2.allyOf = by;
+      back2.spoiledIn = sim2.era;
     }
   }
 
@@ -193554,16 +193598,16 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const b = sim2.getBuilding(id);
     if (!b) return "Kh\xF4ng t\xECm th\u1EA5y c\xF4ng tr\xECnh";
     if (!b.upgrading && b.done) return "Kh\xF4ng c\xF3 vi\u1EC7c x\xE2y n\xE0o \u0111\u1EC3 h\u1EE7y";
-    const level = b.upgrading ? levelDef({ ...b, era: upgradeEra(b) }, b.level + 1) : levelDef(b), bill = buildBill(sim2, level.cost), back = {};
+    const level = b.upgrading ? levelDef({ ...b, era: upgradeEra(b) }, b.level + 1) : levelDef(b), bill = buildBill(sim2, level.cost), back2 = {};
     if (!sim2.freeCost()) for (const r of Object.keys(bill)) {
       const n = Math.floor((bill[r] ?? 0) * (1 - Math.max(0, Math.min(1, b.progress))));
       if (n > 0) {
-        back[r] = n;
+        back2[r] = n;
         sim2.stock[r] += n;
       }
     }
     for (const v of sim2.villagers) if (v.target === b.id && (v.phase === "goSite" || v.phase === "build")) sim2.resetTask(v);
-    const text = Object.keys(back).length ? `, thu l\u1EA1i ${Object.keys(back).map((r) => `${back[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : "";
+    const text = Object.keys(back2).length ? `, thu l\u1EA1i ${Object.keys(back2).map((r) => `${back2[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : "";
     if (b.upgrading) {
       b.upgrading = false;
       b.progress = 1;
@@ -193721,15 +193765,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (why) return why;
     if (Object.values(ROLES).some((r) => r.building === b.kind) && sim2.warLock()) return sim2.warLock();
     sim2.refundProcess(b);
-    const back = salvage(sim2, b);
+    const back2 = salvage(sim2, b);
     evict(sim2, b);
     releaseGrow(sim2, b);
     setOcc(sim2, b, 0);
     sim2.buildings.splice(sim2.buildings.indexOf(b), 1);
-    for (const r of Object.keys(back)) sim2.stock[r] += back[r] ?? 0;
+    for (const r of Object.keys(back2)) sim2.stock[r] += back2[r] ?? 0;
     sim2.fogDirty = true;
     sim2.trimRoles();
-    sim2.say(`\u0110\xE3 ph\xE1 ${BUILDINGS[b.kind].name.toLowerCase()}${Object.keys(back).length ? `, thu l\u1EA1i ${Object.keys(back).map((r) => `${back[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : ""}.`);
+    sim2.say(`\u0110\xE3 ph\xE1 ${BUILDINGS[b.kind].name.toLowerCase()}${Object.keys(back2).length ? `, thu l\u1EA1i ${Object.keys(back2).map((r) => `${back2[r]} ${RES_NAME[r].toLowerCase()}`).join(", ")}` : ""}.`);
     return null;
   }
   function movedDim(b, rot) {
@@ -193813,8 +193857,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       c.v.post = c.post;
     }
     if (b.upgrading) {
-      const back = buildBill(sim2, levelDef(b, b.level + 1).cost);
-      for (const r of Object.keys(back)) if (!sim2.freeCost()) sim2.stock[r] += back[r] ?? 0;
+      const back2 = buildBill(sim2, levelDef(b, b.level + 1).cost);
+      for (const r of Object.keys(back2)) if (!sim2.freeCost()) sim2.stock[r] += back2[r] ?? 0;
       b.upgrading = false;
     }
     setOcc(sim2, b, 0);
@@ -199704,6 +199748,114 @@ ${risk.lines.join("\n")}`);
     }
   }
 
+  // src/data/walls.json
+  var walls_default = {
+    _note: "Walkable walls (doc PLAN.md, Phase 3): from `minLevel` the fences, gates and towers have a top that soldiers (ours and the enemy's) stand and walk on, in a layer of their own over the ground. Stairs: the ground tiles next to a gate or a tower (stairKinds) lead up to it, from both sides. A soldier on a wall is drawn `lift` pixels higher; a blow of the sword or the spear passes only between two units of the same layer (the two on the same tile of the stairs excepted), a missile goes any way; an archer on a wall shoots as one in a tower (`archer`). The tops are looked at again every `refreshSeconds`.",
+    minLevel: { default: 6, tower: 6 },
+    kinds: ["fence", "gate", "tower"],
+    stairKinds: ["gate", "tower"],
+    lift: 26,
+    archer: { damage: 1.25, range: 2 },
+    refreshSeconds: 1
+  };
+
+  // src/sim/walltop.ts
+  var MIN = walls_default.minLevel;
+  var KINDS = new Set(walls_default.kinds);
+  var STAIR_KINDS = new Set(walls_default.stairKinds);
+  var wallLift = () => walls_default.lift;
+  var wallArcher = () => walls_default.archer;
+  function build2(sim2) {
+    const N = sim2.world.size, tiles = /* @__PURE__ */ new Set(), edge2 = [];
+    for (const b of sim2.buildings) {
+      if (!KINDS.has(b.kind) || !b.done || b.hp <= 0 || b.level < (MIN[b.kind] ?? MIN.default)) continue;
+      const f = footOf(b);
+      for (let y = b.y; y < b.y + f.h; y++) for (let x = b.x; x < b.x + f.w; x++) {
+        tiles.add(y * N + x);
+        if (STAIR_KINDS.has(b.kind)) edge2.push({ x, y });
+      }
+    }
+    const stairs = [];
+    for (const { x, y } of edge2) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const gx = x + dx, gy = y + dy;
+      if (!sim2.world.inBounds(gx, gy) || tiles.has(gy * N + gx) || sim2.world.isBlocked(gx, gy)) continue;
+      stairs.push({ top: y * N + x, ground: gy * N + gx });
+    }
+    return { at: sim2.time, tiles, stairs };
+  }
+  function tops(sim2) {
+    if (!sim2.wallCache || sim2.time - sim2.wallCache.at >= walls_default.refreshSeconds || sim2.time < sim2.wallCache.at) sim2.wallCache = build2(sim2);
+    return sim2.wallCache;
+  }
+  var topAt = (sim2, x, y) => tops(sim2).tiles.has(Math.floor(y) * sim2.world.size + Math.floor(x));
+  var onWall = (sim2, v) => {
+    const t = tops(sim2);
+    return t.tiles.size > 0 && t.tiles.has(Math.floor(v.y) * sim2.world.size + Math.floor(v.x));
+  };
+  function bfs(tiles, from, N) {
+    const dist3 = /* @__PURE__ */ new Map([[from, 0]]), prev = /* @__PURE__ */ new Map(), queue = [from];
+    for (let i = 0; i < queue.length; i++) {
+      const c = queue[i], cx = c % N, cy = c / N | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const n = (cy + dy) * N + cx + dx;
+        if (cx + dx < 0 || cx + dx >= N || !tiles.has(n) || dist3.has(n)) continue;
+        dist3.set(n, dist3.get(c) + 1);
+        prev.set(n, c);
+        queue.push(n);
+      }
+    }
+    return { dist: dist3, prev };
+  }
+  var stepsOf = (ids, N) => ids.map((i) => [i % N, i / N | 0]);
+  function back(prev, to) {
+    const out = [to];
+    for (let n = prev.get(to); n !== void 0; n = prev.get(n)) out.push(n);
+    return out;
+  }
+  function wallPath(sim2, v, gx, gy, ground) {
+    const t = tops(sim2), N = sim2.world.size;
+    if (!t.tiles.size) return null;
+    const sx = Math.floor(v.x), sy = Math.floor(v.y), s = sy * N + sx, g = gy * N + gx, startTop = t.tiles.has(s), goalTop = t.tiles.has(g);
+    if (!startTop && !goalTop) return null;
+    if (startTop && goalTop) {
+      const b2 = bfs(t.tiles, s, N);
+      if (b2.dist.has(g)) return stepsOf(back(b2.prev, g).reverse().slice(1), N);
+    }
+    if (goalTop) {
+      const b2 = bfs(t.tiles, g, N);
+      let best2 = null, bc2 = Infinity;
+      for (const st of t.stairs) {
+        const d = b2.dist.get(st.top);
+        if (d === void 0) continue;
+        const c = Math.hypot(sx - st.ground % N, sy - (st.ground / N | 0)) + d;
+        if (c < bc2) {
+          bc2 = c;
+          best2 = st;
+        }
+      }
+      if (!best2) return null;
+      const ex2 = best2.ground % N, ey2 = best2.ground / N | 0, low = ex2 === sx && ey2 === sy ? [] : ground(sx, sy, ex2, ey2), last2 = low[low.length - 1];
+      if (low.length && (!last2 || last2[0] !== ex2 || last2[1] !== ey2)) return null;
+      const up = [best2.top];
+      for (let n = b2.prev.get(best2.top); n !== void 0; n = b2.prev.get(n)) up.push(n);
+      return [...low, ...stepsOf(up, N)];
+    }
+    const b = bfs(t.tiles, s, N);
+    let best = null, bc = Infinity;
+    for (const st of t.stairs) {
+      const d = b.dist.get(st.top);
+      if (d === void 0) continue;
+      const c = d + Math.hypot(st.ground % N - gx, (st.ground / N | 0) - gy);
+      if (c < bc) {
+        bc = c;
+        best = st;
+      }
+    }
+    if (!best) return null;
+    const ex = best.ground % N, ey = best.ground / N | 0, along2 = stepsOf(back(b.prev, best.top).reverse().slice(1), N);
+    return [...along2, [ex, ey], ...ex === gx && ey === gy ? [] : ground(ex, ey, gx, gy)];
+  }
+
   // src/sim/processing.ts
   function processLock(sim2, b, id) {
     const r = processRecipe(b.kind, id);
@@ -200989,7 +201141,8 @@ ${risk.lines.join("\n")}`);
         v.queue.push({ k: "move", x: tx, y: ty });
         continue;
       }
-      const goal = sim2.nearestFree(tx, ty, taken);
+      const onTop = v.job === "fight" && sim2.topAt(tx, ty) && !taken.has(Math.floor(ty) * sim2.world.size + Math.floor(tx));
+      const goal = onTop ? [Math.floor(tx), Math.floor(ty)] : sim2.nearestFree(tx, ty, taken);
       resetTask(sim2, v);
       clearCombat(sim2, v);
       v.prefer = -1;
@@ -201343,7 +201496,7 @@ ${risk.lines.join("\n")}`);
   function unstickWalker(sim2, v, dt) {
     if (v.inside !== null) return;
     const w = sim2.world, ours = passOf(v);
-    if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours)) {
+    if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v)) {
       const spot = freeSpotNear(sim2, v.x, v.y);
       if (spot) {
         v.x = spot[0];
@@ -201356,7 +201509,7 @@ ${risk.lines.join("\n")}`);
       return;
     }
     const goal = v.path[v.path.length - 1];
-    const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours);
+    const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours) && !sim2.topAt(v.path[0][0], v.path[0][1]);
     const p = progress.get(v);
     if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
     else {
@@ -201372,7 +201525,7 @@ ${risk.lines.join("\n")}`);
     const stuck = !!p && p.t === 99;
     if (!blocked && !stuck) return;
     progress.delete(v);
-    const [gx, gy] = goal, standing2 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) ? freeSpotNear(sim2, v.x, v.y) : null;
+    const [gx, gy] = goal, standing2 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v) ? freeSpotNear(sim2, v.x, v.y) : null;
     if (standing2) {
       v.x = standing2[0];
       v.y = standing2[1];
@@ -201509,6 +201662,8 @@ ${risk.lines.join("\n")}`);
     return best;
   }
   function pathTo(sim2, v, gx, gy, maxNodes = 14e3, fresh = false) {
+    const up = sim2.wallPath(v, gx, gy, (a, b, c, d) => findPath(sim2.world, a, b, c, d, maxNodes, passOf(v), fresh));
+    if (up) return up;
     const [sx, sy] = standTile(sim2, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
     const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh);
     return off ? [[sx, sy], ...p] : p;
@@ -202075,7 +202230,7 @@ ${risk.lines.join("\n")}`);
   function makeName(sex, voice, rnd, taken) {
     const v = names_default.voices[voice % names_default.voices.length];
     const pick3 = (a) => a[Math.floor(rnd() * a.length)];
-    const build2 = (syllables) => {
+    const build3 = (syllables) => {
       let s = "";
       for (let i = 0; i < syllables; i++) {
         const last2 = i === syllables - 1;
@@ -202085,11 +202240,11 @@ ${risk.lines.join("\n")}`);
       return s.charAt(0).toUpperCase() + s.slice(1);
     };
     for (let tries = 0; tries < 12; tries++) {
-      const name = build2(rnd() < names_default.threeChance ? 3 : 2);
+      const name = build3(rnd() < names_default.threeChance ? 3 : 2);
       if (name.length <= names_default.maxLen && !taken.has(name)) return name;
     }
     for (let n = 2; ; n++) {
-      const name = build2(n);
+      const name = build3(n);
       if (!taken.has(name)) return name;
     }
   }
@@ -204268,12 +204423,12 @@ ${risk.lines.join("\n")}`);
         const put3 = sim2.deposit("food", Math.floor(left));
         sim2.say(`H\u1EADu c\u1EA7n mang v\u1EC1 ${put3} th\u1EE9c \u0103n c\xF2n l\u1EA1i.`);
       }
-      const back = { wood: 0, hide: 0 };
+      const back2 = { wood: 0, hide: 0 };
       for (const res of ["wood", "hide"]) {
         const n = Math.floor(crew2.reduce((a, v) => a + (v.pack?.[res] ?? 0), 0));
-        if (n > 0) back[res] = sim2.deposit(res, n);
+        if (n > 0) back2[res] = sim2.deposit(res, n);
       }
-      noteReturned(plan2, left >= 1 ? Math.floor(left) : 0, back.wood, back.hide);
+      noteReturned(plan2, left >= 1 ? Math.floor(left) : 0, back2.wood, back2.hide);
       plan2.tents = [];
       for (const id of plan2.supplyIds) {
         const v = sim2.get(id);
@@ -206428,6 +206583,8 @@ ${risk.lines.join("\n")}`);
       this.encounters = initialEncounters();
       /** The story tree (story.ts): the lasting flags, the knots fired and their leaves, the fruits, the tips. The hidden marks are not kept: they come from `encounters.deeds`. */
       this.story = initialStory();
+      /** The tops of the walls worked out from the buildings (walltop.ts): derived, not saved. */
+      this.wallCache = null;
       /** The keys of unlocks.json bought (a blueprint at the Chợ, the Thư Viện Di Sản): they stay open for good. */
       this.unlocksBought = [];
       /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
@@ -206964,6 +207121,25 @@ ${risk.lines.join("\n")}`);
     /** Whether a specialist (a key of data/story/unlocks.json) may be used now; core things are always open. */
     isUnlocked(key) {
       return this.dev.unlockAll || isUnlocked(this.story, this.unlocksBought, key, this.fireLevel());
+    }
+    /** → walltop.onWall: is he standing on the top of a wall (fence, gate or tower of level 6 and up)? */
+    onWall(v) {
+      return onWall(this, v);
+    }
+    /** → walltop.wallLift / wallArcher: how high a soldier on a wall is drawn, and the bonus of an archer there */
+    wallLift() {
+      return wallLift();
+    }
+    wallArcher() {
+      return wallArcher();
+    }
+    /** → walltop.topAt */
+    topAt(x, y) {
+      return topAt(this, x, y);
+    }
+    /** → walltop.wallPath: the way up, along and down the walls (null when neither end is on a top) */
+    wallPath(v, gx, gy, ground) {
+      return wallPath(this, v, gx, gy, ground);
     }
     /** → story.storyCond */
     storyCond() {
@@ -211599,16 +211775,16 @@ ${risk.lines.join("\n")}`);
       });
     }
     askCancel(b) {
-      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], up = b.upgrading, back = {};
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], up = b.upgrading, back2 = {};
       const bill = sim2.buildBill(levelDef({ ...b, era: b.kind === "campfire" ? "ancient" : b.era }, up ? b.level + 1 : b.level).cost);
       if (!sim2.freeCost()) for (const r of Object.keys(bill)) {
         const n = Math.floor((bill[r] ?? 0) * (1 - b.progress));
-        if (n > 0) back[r] = n;
+        if (n > 0) back2[r] = n;
       }
       this.confirm.ask({
         title: up ? `H\u1EE7y n\xE2ng c\u1EA5p ${def.name}?` : `H\u1EE7y x\xE2y ${def.name}?`,
         lines: [`\u0110\xE3 l\xE0m ${Math.round(b.progress * 100)}%. V\u1EADt li\u1EC7u ch\u01B0a d\xF9ng \u0111\u01B0\u1EE3c tr\u1EA3 l\u1EA1i${up ? "; c\xF4ng tr\xECnh gi\u1EEF c\u1EA5p hi\u1EC7n t\u1EA1i." : "; c\xF4ng tr\xECnh s\u1EBD bi\u1EBFn m\u1EA5t."}`],
-        cost: back,
+        cost: back2,
         costTitle: "Thu l\u1EA1i",
         why: null,
         ok: "H\u1EE7y vi\u1EC7c n\xE0y",
@@ -211636,10 +211812,10 @@ ${risk.lines.join("\n")}`);
       });
     }
     askDemolish(b) {
-      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], back = sim2.salvage(b), has = Object.keys(back).length > 0;
+      const { sim: sim2, ctl: ctl2, toast: toast2 } = this.c, def = BUILDINGS[b.kind], back2 = sim2.salvage(b), has = Object.keys(back2).length > 0;
       this.confirm.ask({
         title: `Ph\xE1 ${def.name}?`,
-        lines: [has ? `Thu l\u1EA1i: ${costText(back, RES_NAME)}.` : "Kh\xF4ng thu l\u1EA1i \u0111\u01B0\u1EE3c g\xEC.", ...b.staff.length || sim2.sleepers(b).length ? ["D\xE2n \u0111ang \u1EDF b\xEAn trong s\u1EBD ra ngo\xE0i."] : []],
+        lines: [has ? `Thu l\u1EA1i: ${costText(back2, RES_NAME)}.` : "Kh\xF4ng thu l\u1EA1i \u0111\u01B0\u1EE3c g\xEC.", ...b.staff.length || sim2.sleepers(b).length ? ["D\xE2n \u0111ang \u1EDF b\xEAn trong s\u1EBD ra ngo\xE0i."] : []],
         ok: "Ph\xE1 b\u1ECF",
         danger: true,
         onOk: () => {
@@ -215924,12 +216100,12 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
       const { sim: sim2 } = this, s = sim2.squadById(id), m = this.plan?.missions.find((x) => x.squad === id);
       if (!s || !m) return;
       const sel = this.ui.selected === id, color = s.color, r = this.routes.get(id);
-      const drawing = (this.ui.mode === "path" || this.ui.mode === "retreat") && this.ui.modeSquad === id, back = this.ui.mode === "retreat";
+      const drawing = (this.ui.mode === "path" || this.ui.mode === "retreat") && this.ui.modeSquad === id, back2 = this.ui.mode === "retreat";
       const dragged = (retreat) => drawing && this.edit && this.edit.retreat === retreat ? this.edit.pts : null;
       const goPts = dragged(false) ?? m.path, backPts = dragged(true) ?? m.retreat;
-      const pending2 = drawing && this.arrowAim && !this.listOf(back).length ? this.arrowAim : null;
+      const pending2 = drawing && this.arrowAim && !this.listOf(back2).length ? this.arrowAim : null;
       const start = this.startOf(m);
-      if (start && (goPts.length || pending2 && !back)) {
+      if (start && (goPts.length || pending2 && !back2)) {
         const list2 = goPts.length ? goPts : [pending2], nodes = [start, ...list2], pts = nodes.map((q) => this.scr(q));
         const faint = !!dragged(false) || !goPts.length && !!pending2, t = faint ? sim2.routeTime(s, start, list2, aim(m)) : r?.go;
         this.route(ctx2, pts, color, u, faint ? "faint" : "solid");
@@ -215953,7 +216129,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         });
         const end2 = pts[pts.length - 1];
         if (t) label(ctx2, `t\u1EDBi sau ${fmtShort(t.total)}`, end2.x, end2.y - 16 * u, 11 * u, "#ffe27a");
-        if (drawing && !back && goPts.length) this.handles(ctx2, nodes, color, u);
+        if (drawing && !back2 && goPts.length) this.handles(ctx2, nodes, color, u);
         this.converge(ctx2, m, goPts.length ? goPts[0] : pending2, color, u);
       }
       if (m.target && !this.edit) {
@@ -215968,13 +216144,13 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         label(ctx2, `\u{1F3AF} ${m.target.label}`, c.x, c.y + Math.max(20, this.k * 1.7), 11 * u, "#ffe27a");
       }
       const base = goPts.length ? goPts[goPts.length - 1] : start;
-      if (base && (backPts.length || pending2 && back)) {
+      if (base && (backPts.length || pending2 && back2)) {
         const list2 = backPts.length ? backPts : [pending2], nodes = [base, ...list2], pts = nodes.map((q) => this.scr(q));
         const faint = !!dragged(true) || !backPts.length && !!pending2, t = faint ? sim2.routeTime(s, base, list2) : r?.back;
         this.route(ctx2, pts, color, u, faint ? "faint" : "back");
         const e = pts[pts.length - 1];
         label(ctx2, `r\xFAt${t ? ` ${fmtShort(t.total)}` : ""}`, e.x, e.y - 16 * u, 11 * u, "#bfe3ff");
-        if (drawing && back && backPts.length) this.handles(ctx2, nodes, color, u);
+        if (drawing && back2 && backPts.length) this.handles(ctx2, nodes, color, u);
       }
       if (m.deploy) {
         const units = sim2.squadUnits(s).sort((a, b) => (sim2.armOf(a) === "archer" ? 1 : 0) - (sim2.armOf(b) === "archer" ? 1 : 0) || a.id - b.id);
@@ -216167,7 +216343,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
           this.modeSquad = -1;
         }
         this.refresh();
-      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back) => this.drewPath(id, pts, back), onTarget: (id, target) => this.aimed(id, target), onSquadAction: (id, a) => this.squadAction(id, a), onRing: () => {
+      }, onNotice: (t) => this.toast(t), onNew: (kind, o, p, cells, heading) => this.newSquad(kind, o, p, cells, heading), onReshape: (id, o, p, cells, heading) => this.reshaped(id, o, p, cells, heading), onTrim: (id, i) => this.trimmed(id, i), onPath: (id, pts, back2) => this.drewPath(id, pts, back2), onTarget: (id, target) => this.aimed(id, target), onSquadAction: (id, a) => this.squadAction(id, a), onRing: () => {
         this.panel = null;
         this.mode = "pan";
         this.modeSquad = -1;
@@ -216660,12 +216836,12 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         this.reportOpen = false;
         this.refresh();
       } }));
-      const back = this.chip("S\u1EEDa k\u1EBF ho\u1EA1ch", false, () => {
+      const back2 = this.chip("S\u1EEDa k\u1EBF ho\u1EA1ch", false, () => {
         this.reportOpen = false;
         this.refresh();
       });
       if (f.blocked) {
-        this.report.replaceChildren(head, h("div", { class: "psec rblock" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x }))), h("div", { class: "chips" }, back));
+        this.report.replaceChildren(head, h("div", { class: "psec rblock" }, h("b", { text: "\u2717 Ch\u01B0a th\u1EC3 tri\u1EC3n khai" }), ...f.blocked.split("\n").map((x) => h("p", { class: "why", text: x }))), h("div", { class: "chips" }, back2));
         return;
       }
       if (!f.level || sim2.era !== "ancient") this.reportPage = "sum";
@@ -216752,7 +216928,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
           this.closeMap();
           this.c.ctl.closeBuilding();
         }, { title: "Qu\xE2n \u0111i t\u1EDBi v\u1ECB tr\xED \u0111\xE3 b\u1ED1 tr\xED r\u1ED3i ch\u1EDD l\u1EC7nh \u0111\xE1nh hay r\xFAt" }),
-        back
+        back2
       ));
     }
     /** The soldiers of the chosen squad, kept short: name, role, weapon, who commands and a minus to take one out. Below it a drop-down of ticks to add soldiers who have no squad. */
@@ -216844,8 +217020,8 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         const names = plan2.cards.filter((cd) => cd.kind === "signal" || cd.squad === sq.id).map((cd) => CARD_NAME[cd.kind]);
         end2 = names.length ? `Th\u1EBB l\u1EC7nh: ${names.join(", ")}.` : "Ch\u01B0a c\xF3 th\u1EBB l\u1EC7nh n\xE0o n\xEAn \u0111\u1ED9i s\u1EBD \u0111\u1EE9ng \u0111\u1EE3i m\xE3i.";
       } else if (m.withdrawAt > 0) {
-        const back = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : start ?? m.retreat[0], m.retreat) : null;
-        end2 = `R\xFAt lui khi m\u1EA5t ${Math.round(m.withdrawAt * 100)}% qu\xE2n${back ? `, theo \u0111\u01B0\u1EDDng r\xFAt \u0111\xE3 v\u1EBD (m\u1EA5t kho\u1EA3ng ${fmtTime(back.total)})` : ", v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt"}.`;
+        const back2 = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : start ?? m.retreat[0], m.retreat) : null;
+        end2 = `R\xFAt lui khi m\u1EA5t ${Math.round(m.withdrawAt * 100)}% qu\xE2n${back2 ? `, theo \u0111\u01B0\u1EDDng r\xFAt \u0111\xE3 v\u1EBD (m\u1EA5t kho\u1EA3ng ${fmtTime(back2.total)})` : ", v\u1EC1 ch\u1ED7 h\u1EB9n v\xEC ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt"}.`;
       } else end2 = "Kh\xF4ng r\xFAt lui, \u0111\xE1nh t\u1EDBi c\xF9ng.";
       return `${first} ${way} ${end2}`;
     }
@@ -216933,13 +217109,13 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
             else this.refresh();
           }, { disabled: !draft }))));
           if (m.withdrawAt > 0) {
-            const back = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : sim2.missionStart(m) ?? m.retreat[0], m.retreat) : null;
+            const back2 = m.retreat.length ? sim2.routeTime(sq, m.path.length ? m.path[m.path.length - 1] : sim2.missionStart(m) ?? m.retreat[0], m.retreat) : null;
             body.push(
-              h("p", { class: "sub", text: back ? `\u0110\u01B0\u1EDDng r\xFAt ${m.retreat.length} \u0111i\u1EC3m, \u0111i m\u1EA5t ${fmtTime(back.total)}.` : "Ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt: \u0111\u1ED9i s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n." }),
+              h("p", { class: "sub", text: back2 ? `\u0110\u01B0\u1EDDng r\xFAt ${m.retreat.length} \u0111i\u1EC3m, \u0111i m\u1EA5t ${fmtTime(back2.total)}.` : "Ch\u01B0a v\u1EBD \u0111\u01B0\u1EDDng r\xFAt: \u0111\u1ED9i s\u1EBD r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n." }),
               opts(
                 "",
-                this.tile("\u27A4", back ? "N\u1ED1i th\xEAm" : "V\u1EBD \u0111\u01B0\u1EDDng r\xFAt", "tr\xEAn b\u1EA3n \u0111\u1ED3", false, () => this.startDraw("retreat", sq.id), { disabled: !draft }),
-                ...back ? [this.tile("\u{1F5D1}", "X\xF3a \u0111\u01B0\u1EDDng r\xFAt", "r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n", false, () => {
+                this.tile("\u27A4", back2 ? "N\u1ED1i th\xEAm" : "V\u1EBD \u0111\u01B0\u1EDDng r\xFAt", "tr\xEAn b\u1EA3n \u0111\u1ED3", false, () => this.startDraw("retreat", sq.id), { disabled: !draft }),
+                ...back2 ? [this.tile("\u{1F5D1}", "X\xF3a \u0111\u01B0\u1EDDng r\xFAt", "r\xFAt v\u1EC1 ch\u1ED7 h\u1EB9n", false, () => {
                   sim2.setMissionPath(plan2, sq.id, [], true);
                   this.refresh();
                 }, { disabled: !draft })] : []
