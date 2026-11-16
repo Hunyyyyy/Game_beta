@@ -10,10 +10,16 @@ import type { Sim, Villager } from './sim';
 const FX = SPEC.effects;
 export type FxKey = 'betrayMul' | 'tributeMul' | 'wardSlots' | 'squadsAdd' | 'marchMul' | 'researchSlots' | 'gearCostMul' | 'allyMul' | 'warnDays' | 'hireCostMul' | 'relationLossMul' | 'relationGainMul';
 /** What is saved: the season the allies were last called and the day they go home, the day until which no war may be begun (Ngai rỗng), the vote of the council on a war, the blueprints still to be had for nothing. */
-export interface LegacyState { aidStamp: number; aidUntil: number; warBanUntil: number; vote: { tribe: string; day: number } | null; planTokens: number; tokenGiven: boolean; /** The war now: the village, how many soldiers each side began with, the moments told, the one waiting to be told (story.ts). Null in peace and in every save. */ war: { tribe: string; foe0: number; our0: number; fired: string[]; pending: string | null; leaderDown?: boolean } | null }
+export interface LegacyState { aidStamp: number; aidUntil: number; warBanUntil: number; vote: { tribe: string; day: number } | null; planTokens: number; tokenGiven: boolean; /** The war now: the village, how many soldiers each side began with, the moments told, the one waiting to be told (story.ts). Null in peace and in every save. */ tributeDay?: number; killerSeason?: number; war: { tribe: string; foe0: number; our0: number; fired: string[]; pending: string | null; leaderDown?: boolean } | null }
 export const initialLegacy = (): LegacyState => ({ aidStamp: -1, aidUntil: 0, warBanUntil: 0, vote: null, planTokens: 0, tokenGiven: false, war: null });
 
-const stands = (sim: Sim, kind: string): boolean => sim.buildings.some((b) => (b.kind as string) === kind && b.done);
+/** The specialist buildings that stand, looked up once a second (the numbers are asked on every blow of a battle). */
+const standing = new WeakMap<Sim, { t: number; n: number; kinds: Set<string> }>();
+const stands = (sim: Sim, kind: string): boolean => {
+  let c = standing.get(sim);
+  if (!c || Math.floor(sim.time) !== c.t || sim.buildings.length !== c.n) { c = { t: Math.floor(sim.time), n: sim.buildings.length, kinds: new Set(sim.buildings.filter((b) => b.done).map((b) => b.kind as string)) }; standing.set(sim, c); }
+  return c.kinds.has(kind);
+};
 const power = (sim: Sim, id: string): boolean => sim.isUnlocked(`perk:${id}`) && !sim.dev.unlockAll; // the dev switch opens what can be built and trained, not the powers
 
 /** One number of the legacy now: a multiplier (1 when nothing changes it) or something added (0). */
@@ -36,8 +42,10 @@ export function fx(sim: Sim, key: FxKey): number {
 
 /** Đền Tưởng Niệm: our blows on the soldiers of a village that is hostile to us hit harder. 1 for every other blow. */
 export function grudgeEdge(sim: Sim, from: Villager | undefined, to: Villager): number {
-  if (!from || from.team !== 'player' || to.team === 'player' || !stands(sim, 'memorial_shrine')) return 1;
-  return sim.tribeHostile(to.team) ? FX.memorial_shrine.grudgeDamage : 1;
+  if (!from || from.team !== 'player' || to.team === 'player') return 1;
+  let m = stands(sim, 'memorial_shrine') && sim.tribeHostile(to.team) ? FX.memorial_shrine.grudgeDamage : 1;
+  if (sim.stoneTip('N6') && sim.tribes.some((t) => t.id === to.team && t.boss)) m *= 1.1; // (the Ngọn Dòng Máu Thù: soldiers fight the sworn enemy harder)
+  return m;
 }
 
 /** Why the allies cannot be called now to keep the village (Trạm Liên Lạc), or null. Once a season. */

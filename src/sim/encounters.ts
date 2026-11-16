@@ -166,7 +166,8 @@ function spawnVisitor(sim: Sim, due?: QueueItem): void {
   // the party: the visitor speaks for them; the others walk behind and stand about the meeting point
   const members: number[] = [], spots: Array<[number, number]> = [], P = script.party, N = sim.world.size;
   if (P) {
-    const n = P.size[0] + Math.floor(seedRoll(seed, 'party') * (P.size[1] - P.size[0] + 1)), takenS = new Set([sp[1] * N + sp[0]]), takenM = new Set([mp[1] * N + mp[0]]);
+    const n = Math.max(1, Math.round((P.size[0] + Math.floor(seedRoll(seed, 'party') * (P.size[1] - P.size[0] + 1))) * (script.id === 'newcomers' ? sim.storyMod('arrivals') : 1))), takenS // (the Ngọn Cố Đô Mở: more come to the gate)
+    = new Set([sp[1] * N + sp[0]]), takenM = new Set([mp[1] * N + mp[0]]);
     sim.armFoe(f, P.weapons?.[0] ?? null, !!P.armor, 1);
     for (let i = 1; i < n; i++) {
       const s = sim.nearestFree(sp[0], sp[1], takenS) ?? sp, m = sim.nearestFree(mp[0], mp[1], takenM) ?? mp;

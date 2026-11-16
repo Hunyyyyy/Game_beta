@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 5 done; leftovers batches A and B done; the rest listed in "Still open" before Phase 6**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 6 (acceptance) done; open items listed in "Phase 6 report"**.
 
 ## Survey facts (what the code has today)
 
@@ -294,11 +294,38 @@ Still open after batch A: the stone tips as mechanics (arrivals x1.5, paying tri
 | Tested | headless: every quest in both modes, ward walking, ambush, save mid-stage, A/B hash; the five war moments fed to a running war: all five scenes open, in order, clock still; simStory knows the war moments (200 seeds: no dead end, same Ngọn spread). NOT tested: a real battle against a village that holds soldiers (the villages are data until the army is near) |
 | Not done | no dev button for the war scenes (play a war); the stage is not drawn with a marker on the minimap |
 
-## Still open before Phase 6
+## Batch C (done): stone tips that go on in the medieval age
+
+| Ngọn | Rule | Hook |
+|---|---|---|
+| N1 Cố Đô Mở | the daily newcomers come in parties x1.5 | `encounters.spawnVisitor` (`storyMod('arrivals')`) |
+| N3 Triều Cống | every 10 days a tenth of the coin and food goes to the strongest leader village | `story.stoneTipRules`, `legacy.tributeDay` |
+| N6 Dòng Máu Thù | each season that village sends a killer (not in easy mode); our blows on leader villages x1.1 | `story.stoneTipRules`, `legacyfx.grudgeEdge`, `legacy.killerSeason` |
+| N2, N4, N7 | market fee / quota / craft speed (batch A) | `storyMod` |
+
+## Phase 6 report (acceptance, 2026-11-16)
+
+| Check | Result |
+|---|---|
+| `npm run typecheck`, `npm run build` | clean |
+| Old saves | v48, v49, v50 saves load into v51 and tick; a v99 save is refused with a clear message |
+| Data | `simStory --check`: 0 errors (8 warnings: leaves that feed no fruit, allowed by the doc); `validateSide`: clean, now also checks `field` (skipTo, count, tagWin, only step 0) |
+| Story simulation | 200 seeds mix: no dead end; every tip stands at least once; 8 of 25 legacy items outside 5-60% only for Trại Kép (TM6, about 4%) and the never-by-story ones in easy mode (blueprints are their way) |
+| Nhà chung 4..10 smoke | fire level 4..10 with every specialist open, 150 ticks each: no error, stocks and positions finite |
+| Play | 10 game days in a medieval camp with tree, side quests and blueprints on, 88 talks answered: no error, side quests offered (3 different), a stage played, save after play loads and ticks |
+| War | five war moments fed to a running attack plan: all five trunk V scenes open in order, the clock stands still while one is open |
+| Side quests on the map | all three fields played to the end, save mid-stage reloads, A/B against a control run |
+| Perf | `legacyfx` building lookup cached once a second (it is asked on every blow) |
+
+Bugs found by the review and fixed: stage unit never walked because the soldiers of the test were indoors (test fault, `lead` rule is right); stage distance clamped by the sight radius (camp sees 7 tiles) so no stage could be set; long escort path exceeded the pathfinding budget (now walked in legs of ten tiles); a war moment was used up before its chapter was due (now level-triggered, counts only when a scene opened).
+
+### Not done (needs a decision, art, or the balance run)
 
 | Item | Why |
 |---|---|
-| N8 daughter village, N9 marriage ally, "terror" tribute by fear | each is a new kind of village or diplomacy state: they touch `tribes.ts` spawning and the diplomacy rules |
-| Walls: click-picking a unit on a wall, gate and fence footprint growth, walls under fire dropping soldiers | touches the picking code and `growRect` |
-| Firearm bullet look and bang sound, viewer unit list | art and sound work |
-| Balance of costs, rewards, curve | needs `npm run economy` (CLAUDE.md: only when asked) |
+| N8 daughter village, N9 marriage ally, "terror" tribute by fear, "Triều Cống: the lord does not raid us" | new kinds of village or diplomacy state in `tribes.ts` |
+| A real battle against a village that holds soldiers was not run headless (the villages are data until the army is near); the war scenes were tested with the war moments fed in | no headless way to bring a village near |
+| Walls: click-picking a unit on a wall, gate and fence footprint growth, walls under fire dropping soldiers | picking code and `growRect` |
+| Firearm bullet look and bang sound, viewer unit list (`medieval_units.json`) | art and sound |
+| Balance of costs, rewards, curve | `npm run economy` only when asked (CLAUDE.md); rewards of quests and blueprint prices are untuned |
+| Nobody has clicked through the new screens (Bản vẽ tab, Việc nhận thêm with "Tới nơi", Di sản list, story mode buttons, Viện binh tab) | no screenshots by rule |

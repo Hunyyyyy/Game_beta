@@ -541,6 +541,8 @@ export class Sim {
   warLeaderDown(tribe: string): void { return story.warLeaderDown(this, tribe); }
   warOver(): void { return story.warOver(this); }
   tickWarStory(dt: number): void { return story.tickWarStory(this, dt); }
+  /** → story.stoneTip: a Ngọn of the stone age stands */
+  stoneTip(id: string): boolean { return story.stoneTip(this, id); }
   /** → story.legacyView */
   legacyView(): story.LegacyItem[] { return story.legacyView(this); }
   /** → story.mod */

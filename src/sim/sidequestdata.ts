@@ -70,6 +70,13 @@ export function validateSide(characters: readonly string[]): string[] {
     for (const who of [q.giver, ...q.steps.map((s) => s.cast)]) if (who && !characters.includes(who)) out.push(`quest ${q.id}: no character ${who}`);
     const tags = new Set<string>();
     q.steps.forEach((s, i) => {
+      const f = s.field;
+      if (f) { // a step played on the map
+        if (f.skipTo !== undefined && (f.skipTo <= i || f.skipTo >= q.steps.length)) out.push(`quest ${q.id} step ${i}: skipTo ${f.skipTo} is not a later step`);
+        if (f.count[0] < 1 || f.count[0] > f.count[1]) out.push(`quest ${q.id} step ${i}: bad foe count`);
+        if (f.tagWin && !(f.tagWin in q.reward.by) && !q.steps.some((x) => x.options.some((o) => o.tag === f.tagWin))) out.push(`quest ${q.id} step ${i}: tagWin ${f.tagWin} rewards nothing`);
+        if (i !== 0) out.push(`quest ${q.id} step ${i}: only the first step may be played on the map (the offer opens it)`);
+      }
       if (!s.options.length) out.push(`quest ${q.id} step ${i}: no option`);
       if (i === 0 && s.options.length < 2) out.push(`quest ${q.id}: the offer needs two ways`);
       if (i > 0 && s.options.every((o) => o.cond)) out.push(`quest ${q.id} step ${i}: every option has a condition (a player without soldiers is stuck)`);

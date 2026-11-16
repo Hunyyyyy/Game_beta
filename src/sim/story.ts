@@ -3,13 +3,14 @@
  * a line in the Nhật ký, a scene sent to the gate, goods, a deed, a relation or a raid. It ticks beside the visitors, so the war mode freezes it with them. The rules and the data are storydata.ts / storyscenes.ts.
  */
 import type { Sim } from './sim';
-import type { Res } from './resources';
+import { RES_NAME, type Res } from './resources';
 import type { StoryCond } from './encounterdata';
 import { STORY, type StoryMode, type WarEvent, type WorldEffect } from './storyscenes';
 import { unlockAbout, unlockName } from './specialdata';
 import { condOf, stepStory, storyMod, warChapter, type StoryOut, type StoryWorld } from './storydata';
 import { seedRoll } from './encounterdata';
 import { openAtOnce } from './encounters';
+import { SEASON_DAYS } from './calendar';
 
 /** The tree runs when index.json has it on, or the dev switch wakes it. */
 export const storyOn = (sim: Sim): boolean => STORY.enabled || sim.dev.story;
@@ -87,6 +88,7 @@ export function tickStory(sim: Sim, dt: number): void {
   const st = sim.story;
   if (!st.baseVillages) st.baseVillages = sim.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.tier !== 'boss' && t.tier !== 'rebel' && t.tier !== 'raider').length + sim.conquests.length;
   for (const o of stepStory(st, { ...worldOf(sim), base: sim.encounterCond() })) apply(sim, o);
+  stoneTipRules(sim);
   if (st.mode === 'easy' && st.tips.mid && !sim.legacy.tokenGiven) { sim.legacy.tokenGiven = true; sim.legacy.planTokens++; sim.say('Một người thợ già để lại cho làng một lời hứa: Chợ sẽ trao một bản vẽ tùy chọn, không lấy gì.'); }
 }
 
@@ -147,3 +149,23 @@ export function tickWarStory(sim: Sim, dt: number): void {
 export function warLeaderDown(sim: Sim, tribe: string): void { if (sim.legacy.war?.tribe === tribe) sim.legacy.war.leaderDown = true; }
 /** The war is over: the counts are dropped. */
 export function warOver(sim: Sim): void { sim.legacy.war = null; }
+
+// ---------------------------------------------------------------- what the Ngọn of the stone age go on doing in the medieval age
+/** Whether a stone-age tip stands (the main one, or the second). */
+export const stoneTip = (sim: Sim, id: string): boolean => sim.era === 'ancient' && (sim.story.tips.stone?.main === `tip:${id}` || sim.story.tips.stone?.second === `tip:${id}`);
+
+/** Triều Cống (N3): every ten days a tenth of the coin and food goes to the village that holds us (the strongest leader). Dòng Máu Thù (N6): each season that village sends a killer (not in the easy mode). Once a day, once a season. */
+function stoneTipRules(sim: Sim): void {
+  const st = sim.legacy, lord = tribeOf(sim, '@boss');
+  if (stoneTip(sim, 'N3') && sim.day % 10 === 0 && st.tributeDay !== sim.day) {
+    st.tributeDay = sim.day;
+    const pay: Record<string, number> = {};
+    for (const k of ['coin', 'food'] as const) { const n = Math.floor(sim.stock[k] * 0.1); if (n > 0) { sim.stock[k] -= n; pay[k] = n; } }
+    if (Object.keys(pay).length) sim.say(`Làng chủ nợ nhận cống nạp kỳ này: ${Object.entries(pay).map(([k, n]) => `${n} ${RES_NAME[k as Res].toLowerCase()}`).join(', ')}.`);
+  }
+  const season = Math.floor((sim.day - 1) / SEASON_DAYS);
+  if (stoneTip(sim, 'N6') && st.killerSeason !== season && sim.story.mode !== 'easy' && lord) {
+    st.killerSeason = season;
+    if (sim.sendAssassin(lord)) sim.say('Mối thù truyền kiếp không quên: có kẻ lạ lẻn vào làng trong đêm.');
+  }
+}

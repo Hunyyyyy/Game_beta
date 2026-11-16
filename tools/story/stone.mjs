@@ -173,7 +173,7 @@ export const tips = [
 
 // what each stone tip leaves to the medieval age (doc: "Ngọn Đồ đá làm nghiêng cây trung cổ" + "Ngọn đổi cách game vận hành"): first marks, the trunk that comes first, leaf weights, game multipliers
 export const legacy = {
-  N1: { marks: { luat: 1, hop: 1 }, trunk: 'IV', tilt: { 'IV1-a': 1.4 } },
+  N1: { marks: { luat: 1, hop: 1 }, trunk: 'IV', tilt: { 'IV1-a': 1.4 }, mods: { arrivals: 1.5 } },
   N2: { marks: { uy: 1, luat: 1 }, trunk: 'V', tilt: { 'V1-b': 1.4, 'V1-a': 0.7 }, mods: { marketFee: 1.2 } },
   N3: { marks: { cua: 1, uy: -1 }, trunk: 'IV', tilt: { 'IV1-b': 0.8 } },
   N4: { marks: { cua: 2 }, trunk: 'VI', tilt: { 'VI1-c': 1.5 }, mods: { marketFee: 0.8, marketQuota: 1.3 } },

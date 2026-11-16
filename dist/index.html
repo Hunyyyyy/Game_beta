@@ -200411,6 +200411,9 @@ ${risk.lines.join("\n")}`);
         trunk: "IV",
         tilt: {
           "leaf:IV1-a": 1.4
+        },
+        mods: {
+          arrivals: 1.5
         }
       },
       "tip:N2": {
@@ -204991,7 +204994,7 @@ ${risk.lines.join("\n")}`);
     st.last = script.id;
     const members2 = [], spots = [], P2 = script.party, N = sim2.world.size;
     if (P2) {
-      const n = P2.size[0] + Math.floor(seedRoll(seed2, "party") * (P2.size[1] - P2.size[0] + 1)), takenS = /* @__PURE__ */ new Set([sp[1] * N + sp[0]]), takenM = /* @__PURE__ */ new Set([mp[1] * N + mp[0]]);
+      const n = Math.max(1, Math.round((P2.size[0] + Math.floor(seedRoll(seed2, "party") * (P2.size[1] - P2.size[0] + 1))) * (script.id === "newcomers" ? sim2.storyMod("arrivals") : 1))), takenS = /* @__PURE__ */ new Set([sp[1] * N + sp[0]]), takenM = /* @__PURE__ */ new Set([mp[1] * N + mp[0]]);
       sim2.armFoe(f, P2.weapons?.[0] ?? null, !!P2.armor, 1);
       for (let i = 1; i < n; i++) {
         const s = sim2.nearestFree(sp[0], sp[1], takenS) ?? sp, m = sim2.nearestFree(mp[0], mp[1], takenM) ?? mp;
@@ -206047,6 +206050,7 @@ ${risk.lines.join("\n")}`);
     const st = sim2.story;
     if (!st.baseVillages) st.baseVillages = sim2.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.tier !== "boss" && t.tier !== "rebel" && t.tier !== "raider").length + sim2.conquests.length;
     for (const o of stepStory(st, { ...worldOf(sim2), base: sim2.encounterCond() })) apply(sim2, o);
+    stoneTipRules(sim2);
     if (st.mode === "easy" && st.tips.mid && !sim2.legacy.tokenGiven) {
       sim2.legacy.tokenGiven = true;
       sim2.legacy.planTokens++;
@@ -206108,6 +206112,27 @@ ${risk.lines.join("\n")}`);
   }
   function warOver(sim2) {
     sim2.legacy.war = null;
+  }
+  var stoneTip = (sim2, id) => sim2.era === "ancient" && (sim2.story.tips.stone?.main === `tip:${id}` || sim2.story.tips.stone?.second === `tip:${id}`);
+  function stoneTipRules(sim2) {
+    const st = sim2.legacy, lord = tribeOf3(sim2, "@boss");
+    if (stoneTip(sim2, "N3") && sim2.day % 10 === 0 && st.tributeDay !== sim2.day) {
+      st.tributeDay = sim2.day;
+      const pay3 = {};
+      for (const k of ["coin", "food"]) {
+        const n = Math.floor(sim2.stock[k] * 0.1);
+        if (n > 0) {
+          sim2.stock[k] -= n;
+          pay3[k] = n;
+        }
+      }
+      if (Object.keys(pay3).length) sim2.say(`L\xE0ng ch\u1EE7 n\u1EE3 nh\u1EADn c\u1ED1ng n\u1EA1p k\u1EF3 n\xE0y: ${Object.entries(pay3).map(([k, n]) => `${n} ${RES_NAME[k].toLowerCase()}`).join(", ")}.`);
+    }
+    const season = Math.floor((sim2.day - 1) / SEASON_DAYS);
+    if (stoneTip(sim2, "N6") && st.killerSeason !== season && sim2.story.mode !== "easy" && lord) {
+      st.killerSeason = season;
+      if (sim2.sendAssassin(lord)) sim2.say("M\u1ED1i th\xF9 truy\u1EC1n ki\u1EBFp kh\xF4ng qu\xEAn: c\xF3 k\u1EBB l\u1EA1 l\u1EBBn v\xE0o l\xE0ng trong \u0111\xEAm.");
+    }
   }
 
   // src/sim/sidequests.ts
@@ -206297,7 +206322,15 @@ ${risk.lines.join("\n")}`);
   // src/sim/legacyfx.ts
   var FX = specialists_default.effects;
   var initialLegacy = () => ({ aidStamp: -1, aidUntil: 0, warBanUntil: 0, vote: null, planTokens: 0, tokenGiven: false, war: null });
-  var stands = (sim2, kind) => sim2.buildings.some((b) => b.kind === kind && b.done);
+  var standing2 = /* @__PURE__ */ new WeakMap();
+  var stands = (sim2, kind) => {
+    let c = standing2.get(sim2);
+    if (!c || Math.floor(sim2.time) !== c.t || sim2.buildings.length !== c.n) {
+      c = { t: Math.floor(sim2.time), n: sim2.buildings.length, kinds: new Set(sim2.buildings.filter((b) => b.done).map((b) => b.kind)) };
+      standing2.set(sim2, c);
+    }
+    return c.kinds.has(kind);
+  };
   var power2 = (sim2, id) => sim2.isUnlocked(`perk:${id}`) && !sim2.dev.unlockAll;
   function fx(sim2, key) {
     switch (key) {
@@ -206328,8 +206361,10 @@ ${risk.lines.join("\n")}`);
     }
   }
   function grudgeEdge(sim2, from, to) {
-    if (!from || from.team !== "player" || to.team === "player" || !stands(sim2, "memorial_shrine")) return 1;
-    return sim2.tribeHostile(to.team) ? FX.memorial_shrine.grudgeDamage : 1;
+    if (!from || from.team !== "player" || to.team === "player") return 1;
+    let m = stands(sim2, "memorial_shrine") && sim2.tribeHostile(to.team) ? FX.memorial_shrine.grudgeDamage : 1;
+    if (sim2.stoneTip("N6") && sim2.tribes.some((t) => t.id === to.team && t.boss)) m *= 1.1;
+    return m;
   }
   function aidBlock(sim2) {
     if (!stands(sim2, "liaison_post")) return "C\u1EA7n d\u1EF1ng Tr\u1EA1m Li\xEAn L\u1EA1c";
@@ -208364,10 +208399,10 @@ ${risk.lines.join("\n")}`);
     const stuck = !!p && p.t === 99;
     if (!blocked && !stuck) return;
     progress.delete(v);
-    const [gx, gy] = goal, standing2 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v) ? freeSpotNear(sim2, v.x, v.y) : null;
-    if (standing2) {
-      v.x = standing2[0];
-      v.y = standing2[1];
+    const [gx, gy] = goal, standing3 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v) ? freeSpotNear(sim2, v.x, v.y) : null;
+    if (standing3) {
+      v.x = standing3[0];
+      v.y = standing3[1];
     }
     let again = [];
     if (v.team !== "player") again = sim2.pathTo(v, gx, gy, 6e3);
@@ -211765,9 +211800,9 @@ ${risk.lines.join("\n")}`);
     if (plan2.missions.filter((m) => !isHolding(plan2, m)).every((m) => m.state === "done" || m.state === "idle")) {
       plan2.result = "lost";
       plan2.endedAt = sim2.time;
-      const standing2 = plan2.missions.some((m) => isHolding(plan2, m) && m.state === "hold");
+      const standing3 = plan2.missions.some((m) => isHolding(plan2, m) && m.state === "hold");
       const left = plan2.missions.some((m) => m.initial > 0 && (sim2.squadById(m.squad) ? sim2.squadUnits(sim2.squadById(m.squad)).length : 0) > 0);
-      if (standing2) plan2.stage = "over";
+      if (standing3) plan2.stage = "over";
       else plan2.status = "done";
       sim2.say(left ? "Thua tr\u1EADn: c\xE1c \u0111\u1ED9i ti\u1EBFn \u0111\xE1nh \u0111\xE3 r\xFAt ho\u1EB7c g\u1EE5c." : "Thua tr\u1EADn: qu\xE2n ta kh\xF4ng c\xF2n ai.");
     }
@@ -214085,6 +214120,10 @@ ${risk.lines.join("\n")}`);
     }
     tickWarStory(dt) {
       return tickWarStory(this, dt);
+    }
+    /** → story.stoneTip: a Ngọn of the stone age stands */
+    stoneTip(id) {
+      return stoneTip(this, id);
     }
     /** → story.legacyView */
     legacyView() {
