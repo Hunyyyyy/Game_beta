@@ -12,7 +12,8 @@ Village-building / tribal-warfare game. TypeScript + esbuild, runs in the browse
 ## Environment
 
 - Windows. Python is installed: call `python` or `py`, **never `python3`** (it is the Microsoft Store stub and fails with "Python was not found").
-
+- do not define shell functions or aliases in your bash commands. Run each `grep` or `sed` command individually; if you need to truncate long lines, simply append `| cut -c1-200` directly to the command.
+- Do not use `cat`/`heredoc`/$TEMP. Create a script file using the `Write` tool at an absolute path (e.g., `E:/Game_beta/tools/fx8.py`), then execute `python E:/Game_beta/tools/fx8.py`.
 ## Token rules (important)
 
 - **Never read, edit, add or run tests**: `test/`, `*.test.*`, `tools/check-*`, and the `test:*` / `check:ui` scripts. They are abandoned. Skip any "update the tests" step, including those in the docs.
