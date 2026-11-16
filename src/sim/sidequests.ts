@@ -8,7 +8,7 @@ import { evalCond, seedRoll, type Cost } from './encounterdata';
 import { STORY } from './storyscenes';
 import { characterOf } from './characters';
 import { unlockName } from './specialdata';
-import { SIDE, sideQuest, sideScriptId, type SideQuest, type SideRun } from './sidequestdata';
+import { SIDE, sideQuest, sideScriptId, sideWeight, type SideQuest, type SideRun } from './sidequestdata';
 
 const CFG = SIDE.config;
 /** Offers come by themselves when the data has them on, or the dev switch does. */
@@ -49,7 +49,11 @@ export function tickSideQuests(sim: Sim, dt: number): void {
   if (sim.day < st.nextAt || st.runs.length >= CFG.max || st.runs.some((r) => !r.taken)) return;
   st.nextAt = sim.day + gap(sim);
   const pool = SIDE.quests.filter((q) => eligible(sim, q));
-  if (pool.length) offer(sim, pool[Math.floor(seedRoll(sim.seed, 'sq:pick', sim.day) * pool.length)], false);
+  if (!pool.length) return;
+  const ws = pool.map((q) => sideWeight(q.id, sim.story.flags)); // a flag of the story tree makes its quest likelier
+  let r = seedRoll(sim.seed, 'sq:pick', sim.day) * ws.reduce((a, b) => a + b, 0), pick = pool[0];
+  for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r < 0) { pick = pool[i]; break; } }
+  offer(sim, pick, false);
 }
 
 function offer(sim: Sim, q: SideQuest, fast: boolean): void {

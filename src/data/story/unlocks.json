@@ -1,266 +1,370 @@
 {
-  "_note": "Unlocks by legacy (doc/UPDATE_di_san_mo_khoa.md): the CORE (the four arms, ranks 4-10, every building of the plan, basic goods) is never listed here and is never locked by the story. Each entry is a SPECIALIST: key ('unit:<id>', 'building:<kind>', 'perk:<id>', 'research:<id>'), kind (unit | building | perk | research), from (fruits 'fruit:TMx' or tips 'tip:Mx' whose firing opens it; a middle tip counts from Nhà chung level 8, the last one at 10), sources (story | blueprint), blueprintCost (price of the blueprint at the Chợ: blueprintFactor times the cost of one unit or building, filled by tools/gen-specialists.mjs), core: false. isUnlocked(key) = a `from` has fired in the saved story, or the key is in sim.unlocksBought. strict: true makes validateStory demand the full table of the doc (each fruit one unlock, each tip one unit and one power).",
-  "strict": false,
-  "blueprintFactor": 3,
-  "unlocks": [
-    {
-      "key": "unit:guard_patrol",
-      "kind": "unit",
-      "from": [
-        "tip:M1"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 585
-      }
-    },
-    {
-      "key": "unit:horse_archer",
-      "kind": "unit",
-      "from": [
-        "tip:M2"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 2535,
-        "food": 3120,
-        "hide": 936
-      }
-    },
-    {
-      "key": "unit:assassin",
-      "kind": "unit",
-      "from": [
-        "tip:M3"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 585
-      }
-    },
-    {
-      "key": "unit:hired_guard",
-      "kind": "unit",
-      "from": [
-        "tip:M4"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 1170
-      }
-    },
-    {
-      "key": "unit:turncoat_knight",
-      "kind": "unit",
-      "from": [
-        "tip:M5"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 2535,
-        "food": 3120,
-        "hide": 936
-      }
-    },
-    {
-      "key": "unit:guerrilla",
-      "kind": "unit",
-      "from": [
-        "tip:M6"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 225
-      }
-    },
-    {
-      "key": "unit:siege_engineer",
-      "kind": "unit",
-      "from": [
-        "tip:M8"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "core": false,
-      "blueprintCost": {
-        "coin": 585
-      }
-    },
-    {
-      "key": "building:elder_hall",
-      "kind": "building",
-      "from": [
-        "fruit:TM1"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 684
-      },
-      "core": false
-    },
-    {
-      "key": "building:tribute_post",
-      "kind": "building",
-      "from": [
-        "fruit:TM2"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 489
-      },
-      "core": false
-    },
-    {
-      "key": "building:guild_exchange",
-      "kind": "building",
-      "from": [
-        "fruit:TM3"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 525
-      },
-      "core": false
-    },
-    {
-      "key": "building:bodyguard_lodge",
-      "kind": "building",
-      "from": [
-        "fruit:TM4"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 747
-      },
-      "core": false
-    },
-    {
-      "key": "building:liaison_post",
-      "kind": "building",
-      "from": [
-        "fruit:TM5"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 735
-      },
-      "core": false
-    },
-    {
-      "key": "building:twin_camp",
-      "kind": "building",
-      "from": [
-        "fruit:TM6"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 1002
-      },
-      "core": false
-    },
-    {
-      "key": "building:conquest_beacon",
-      "kind": "building",
-      "from": [
-        "fruit:TM7"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 642
-      },
-      "core": false
-    },
-    {
-      "key": "building:memorial_shrine",
-      "kind": "building",
-      "from": [
-        "fruit:TM8"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 684
-      },
-      "core": false
-    },
-    {
-      "key": "building:academy",
-      "kind": "building",
-      "from": [
-        "fruit:TM9"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 600
-      },
-      "core": false
-    },
-    {
-      "key": "building:hidden_forge",
-      "kind": "building",
-      "from": [
-        "fruit:TM10"
-      ],
-      "sources": [
-        "story",
-        "blueprint"
-      ],
-      "blueprintCost": {
-        "coin": 879
-      },
-      "core": false
-    }
-  ]
+ "_note": "Unlocks by legacy (doc/UPDATE_di_san_mo_khoa.md): the CORE (the four arms, ranks 4-10, every building of the plan, basic goods) is never listed here and is never locked by the story. Each entry is a SPECIALIST: key ('unit:<id>', 'building:<kind>', 'perk:<id>', 'research:<id>'), kind (unit | building | perk | research), from (fruits 'fruit:TMx' or tips 'tip:Mx' whose firing opens it; a middle tip counts from Nhà chung level 8, the last one at 10), sources (story | blueprint), blueprintCost (price of the blueprint at the Chợ: blueprintFactor times the cost of one unit or building, filled by tools/gen-specialists.mjs), core: false. isUnlocked(key) = a `from` has fired in the saved story, or the key is in sim.unlocksBought. strict: true makes validateStory demand the full table of the doc (each fruit one unlock, each tip one unit and one power).",
+ "strict": true,
+ "blueprintFactor": 3,
+ "unlocks": [
+  {
+   "key": "unit:guard_patrol",
+   "kind": "unit",
+   "from": [
+    "tip:M1"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 585
+   }
+  },
+  {
+   "key": "unit:horse_archer",
+   "kind": "unit",
+   "from": [
+    "tip:M2"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 2535,
+    "food": 3120,
+    "hide": 936
+   }
+  },
+  {
+   "key": "unit:assassin",
+   "kind": "unit",
+   "from": [
+    "tip:M3"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 585
+   }
+  },
+  {
+   "key": "unit:hired_guard",
+   "kind": "unit",
+   "from": [
+    "tip:M4"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 1170
+   }
+  },
+  {
+   "key": "unit:turncoat_knight",
+   "kind": "unit",
+   "from": [
+    "tip:M5"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 2535,
+    "food": 3120,
+    "hide": 936
+   }
+  },
+  {
+   "key": "unit:guerrilla",
+   "kind": "unit",
+   "from": [
+    "tip:M6"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 225
+   }
+  },
+  {
+   "key": "unit:siege_engineer",
+   "kind": "unit",
+   "from": [
+    "tip:M8"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "core": false,
+   "blueprintCost": {
+    "coin": 585
+   }
+  },
+  {
+   "key": "building:elder_hall",
+   "kind": "building",
+   "from": [
+    "fruit:TM1"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 684
+   },
+   "core": false
+  },
+  {
+   "key": "building:tribute_post",
+   "kind": "building",
+   "from": [
+    "fruit:TM2"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 489
+   },
+   "core": false
+  },
+  {
+   "key": "building:guild_exchange",
+   "kind": "building",
+   "from": [
+    "fruit:TM3"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 525
+   },
+   "core": false
+  },
+  {
+   "key": "building:bodyguard_lodge",
+   "kind": "building",
+   "from": [
+    "fruit:TM4"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 747
+   },
+   "core": false
+  },
+  {
+   "key": "building:liaison_post",
+   "kind": "building",
+   "from": [
+    "fruit:TM5"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 735
+   },
+   "core": false
+  },
+  {
+   "key": "building:twin_camp",
+   "kind": "building",
+   "from": [
+    "fruit:TM6"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 1002
+   },
+   "core": false
+  },
+  {
+   "key": "building:conquest_beacon",
+   "kind": "building",
+   "from": [
+    "fruit:TM7"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 642
+   },
+   "core": false
+  },
+  {
+   "key": "building:memorial_shrine",
+   "kind": "building",
+   "from": [
+    "fruit:TM8"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 684
+   },
+   "core": false
+  },
+  {
+   "key": "building:academy",
+   "kind": "building",
+   "from": [
+    "fruit:TM9"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 600
+   },
+   "core": false
+  },
+  {
+   "key": "building:hidden_forge",
+   "kind": "building",
+   "from": [
+    "fruit:TM10"
+   ],
+   "sources": [
+    "story",
+    "blueprint"
+   ],
+   "blueprintCost": {
+    "coin": 879
+   },
+   "core": false
+  },
+  {
+   "key": "perk:library",
+   "kind": "perk",
+   "from": [
+    "tip:M1"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Thư Viện Di Sản",
+   "about": "Chợ bán bản vẽ của mọi thứ chuyên còn thiếu, giá cao gấp đôi."
+  },
+  {
+   "key": "perk:coalition",
+   "kind": "perk",
+   "from": [
+    "tip:M2"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Liên quân",
+   "about": "Đồng minh gửi quân trợ chiến khi làng ra trận."
+  },
+  {
+   "key": "perk:eyes",
+   "kind": "perk",
+   "from": [
+    "tip:M3"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Tai mắt",
+   "about": "Làng biết trước hướng hành quân của làng địch."
+  },
+  {
+   "key": "perk:mercenary",
+   "kind": "perk",
+   "from": [
+    "tip:M4"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Hợp đồng lính thuê",
+   "about": "Phí chợ thấp hơn; thuê được lính chuyên nghiệp tức thời."
+  },
+  {
+   "key": "perk:reconcile",
+   "kind": "perk",
+   "from": [
+    "tip:M5"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Hòa giải",
+   "about": "Dập một cuộc nổi dậy rẻ hơn."
+  },
+  {
+   "key": "perk:refuge",
+   "kind": "perk",
+   "from": [
+    "tip:M6"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Nơi ẩn náu",
+   "about": "Có nơi để lui về; danh tiếng hồi lại nhanh hơn."
+  },
+  {
+   "key": "perk:survivor",
+   "kind": "perk",
+   "from": [
+    "tip:M7"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Kinh nghiệm sống sót",
+   "about": "Bản vẽ ở Chợ rẻ hơn 20%."
+  },
+  {
+   "key": "perk:learning",
+   "kind": "perk",
+   "from": [
+    "tip:M8"
+   ],
+   "sources": [
+    "story"
+   ],
+   "core": false,
+   "name": "Đô thành tri thức",
+   "about": "Nghiên cứu nhanh hơn 20%."
+  }
+ ]
 }

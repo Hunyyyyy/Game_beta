@@ -28,7 +28,7 @@ export interface Rumor { mark: string; at: number; below?: boolean; text: string
 /** One answer of a scene: what the button says, what the visitor answers, the deed it leaves and what else it does. */
 export interface SceneOption { text: string; say?: string; reply: string; deed?: string; effects?: Effect[]; cond?: string }
 /** A small talk of the tree: a visitor says `say`, the player picks one option. `tribes`: the villages that may send him (absent: any free one). */
-export interface Scene { say: string[]; options: SceneOption[]; tribes?: string[] }
+export interface Scene { say: string[]; options: SceneOption[]; tribes?: string[]; /** The named character (data/characters) who comes with it. */ cast?: string }
 /** A stage of a branch: an old visitor script (`script`, it comes by itself) or a scene the tree sends when `when` holds, `days` after the stage before. `options` is a summary of the choices of an old script for the simulator. */
 export interface Chapter { id: string; name: string; script?: string; scene?: Scene; when?: string; days?: [number, number]; options?: Array<{ label: string; deeds: string[] }> }
 export interface Thread { id: string; name: string; trunk: string; tree: string; chapters: Chapter[] }
@@ -39,16 +39,16 @@ export interface Knot { id: string; name: string; tree: string; trunk: string; f
 /** What a leaf or a fruit does to the world with no visitor about: goods, a deed, the relation with a village (`@boss`: the strongest leader left), a raid. */
 export interface WorldEffect { give?: Cost; take?: Cost; deed?: string; rel?: { tribe: string; n: number }; raid?: { tribe: string; size: number } }
 /** A leaf: `text` goes to the Nhật ký, `flags` stay for good, `hard` is a painful one (play mode), `needs` a condition (soldiers...) without which `alt` is drawn in its place. */
-export interface Leaf { id: string; name: string; text: string; hard?: boolean; flags?: string[]; effects?: WorldEffect[]; scene?: Scene; needs?: string; alt?: string }
+export interface Leaf { id: string; name: string; text: string; hard?: boolean; flags?: string[]; effects?: WorldEffect[]; scene?: Scene; needs?: string; alt?: string; /** Game multipliers while the leaf stands (storyMod keys: marketFee, marketQuota, researchSpeed, craftSpeed, blueprintPrice), for `modDays` days (absent: for good). */ mods?: Record<string, number>; modDays?: number }
 /** A fruit ripens when `min` (2) of its `needs` (a leaf, or one of a list) from different trunks were drawn; it leaves `flag`. */
-export interface Fruit { id: string; name: string; tree: string; needs: Array<string | string[]>; min?: number; flag: string; text: string; scene?: Scene; variants?: Array<{ text: string; effects?: WorldEffect[] }> }
+export interface Fruit { id: string; name: string; tree: string; needs: Array<string | string[]>; min?: number; flag: string; text: string; scene?: Scene; variants?: Array<{ text: string; effects?: WorldEffect[] }>; mods?: Record<string, number> }
 /** An ending of a tree: scored from its fruits, its fallen leaves and the dominant marks. `off`: asleep, its points go to `flowTo`. */
-export interface Tip { id: string; name: string; tree: string; family: string; fruits: string[]; leaves?: string[]; marks?: string[]; off?: boolean; flowTo?: string; default?: boolean; text: string }
+export interface Tip { id: string; name: string; tree: string; family: string; fruits: string[]; leaves?: string[]; marks?: string[]; off?: boolean; flowTo?: string; default?: boolean; text: string; /** Game multipliers of a medieval tip while it is the standing one (the second for a share). */ mods?: Record<string, number> }
 /** What a stone-age tip leaves to the medieval age: marks to begin with, the trunk that comes first, leaf weights, and game multipliers (`mods`). */
 export interface Legacy { marks?: Record<string, number>; trunk?: string; tilt?: Record<string, number>; mods?: Record<string, number> }
 /** A specialist the legacy may open (data/story/unlocks.json). `from`: the fruits and tips that open it, `sources`: how it can be had (story, blueprint), `blueprintCost`: the price of its blueprint. Never a core thing. */
-export interface Unlock { key: string; kind: 'unit' | 'building' | 'perk' | 'research'; from: string[]; sources: Array<'story' | 'blueprint'>; blueprintCost?: Cost; core: boolean }
-export interface TreeDef { id: string; era: string; onePerTrunk?: boolean; tips: Array<{ slot: string; at: 'eraEnd' | number }> }
+export interface Unlock { key: string; kind: 'unit' | 'building' | 'perk' | 'research'; from: string[]; sources: Array<'story' | 'blueprint'>; blueprintCost?: Cost; core: boolean; /** A power (kind perk): its name and what it does, for the Di sản list. */ name?: string; about?: string }
+export interface TreeDef { id: string; era: string; onePerTrunk?: boolean; /** The points of fruits and fallen leaves a tip needs to stand (1 when absent); below it the default tip stands. */ tipMin?: number; tips: Array<{ slot: string; at: 'eraEnd' | number }> }
 export interface StoryConfig {
   wmin: number; wildChance: number; knotDelay: [number, number]; fruitDelay: [number, number]; tip: { fruit: number; leaf: number; mark: number; dominant: number };
   hardMul: Record<StoryMode, number>; carry: number; oldTaleShare: number; secondShare: number; sceneMaxDelay: number; scenePriority: number; resendDays: number;
@@ -87,6 +87,6 @@ export const STORY_SCENES: Array<{ id: string; scene: Scene }> = [
 function sceneScript(id: string, sc: Scene): Script {
   const nodes: Record<string, Node> = { start: { say: sc.say, choices: sc.options.map((o, i) => ({ text: o.text, say: o.say, cond: o.cond, then: `o${i}` })) } };
   sc.options.forEach((o, i) => { nodes[`o${i}`] = { say: o.reply, effects: [...(o.deed ? [{ deed: o.deed }] : []), ...(o.effects ?? [])] }; });
-  return { id, fireLevel: [1, 99], minDay: 0, weight: 0, anywhere: !sc.tribes, tribes: sc.tribes, start: 'start', nodes };
+  return { id, fireLevel: [1, 99], minDay: 0, weight: 0, anywhere: !sc.tribes, tribes: sc.tribes, start: 'start', nodes, cast: sc.cast };
 }
 export const STORY_SCRIPTS: Script[] = STORY_SCENES.map((s) => sceneScript(s.id, s.scene));

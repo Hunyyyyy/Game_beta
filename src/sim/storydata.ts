@@ -33,7 +33,7 @@ export interface StoryState {
 export const initialStory = (): StoryState => ({ mode: 'normal', flags: [], knots: {}, pending: {}, fruits: {}, tips: {}, sent: {}, told: [], bonus: {}, old: [], eraDay: 0, baseVillages: 0 });
 
 /** What the tree sees of the game. `bossContact`: 0 no leader village met, 0.5 one mapped, 1 all fallen. `base`: the rest of what a condition may ask (goods, soldiers...). */
-export interface StoryWorld { day: number; seed: number; era: string; fireLevel: number; bossContact: number; seen: Record<string, { times: number; lastDay: number }>; deeds: readonly Deed[]; base: CondCtx }
+export interface StoryWorld { day: number; seed: number; era: string; fireLevel: number; bossContact: number; /** Share of the common villages that are ours, pay us or fell (0..1). */ power: number; seen: Record<string, { times: number; lastDay: number }>; deeds: readonly Deed[]; base: CondCtx }
 /** What a step did: a line to tell, a scene to send to the gate in `days`, something done to the world (`share`: how much of it). */
 export type StoryOut =
   | { kind: 'tell'; what: 'knot' | 'fruit' | 'tip' | 'rumor'; id: string; name: string; text: string }
@@ -81,12 +81,12 @@ export const progressOf = (w: Pick<StoryWorld, 'era' | 'fireLevel' | 'bossContac
 export const chaptersDone = (t: Thread, seen: StoryWorld['seen']): number => t.chapters.filter((c) => (seen[c.script ?? c.id]?.times ?? 0) > 0).length;
 
 /** What a condition may ask of the tree. */
-export function condOf(st: StoryState, w: Pick<StoryWorld, 'day' | 'era' | 'fireLevel' | 'bossContact' | 'seen' | 'deeds'>): StoryCond {
+export function condOf(st: StoryState, w: Pick<StoryWorld, 'day' | 'era' | 'fireLevel' | 'bossContact' | 'seen' | 'deeds' | 'power'>): StoryCond {
   const tips: Record<string, number> = {};
   for (const t of Object.values(st.tips)) { tips[bare(t.main)] = 1; if (t.second) tips[bare(t.second)] ??= CFG.secondShare; }
   return {
     marks: marksOf(w.deeds, w.day, st.eraDay, st.bonus), flags: st.flags, progress: progressOf(w), leaves: Object.values(st.knots).map((k) => bare(k.leaf)), fruits: Object.keys(st.fruits).map(bare),
-    chapters: Object.fromEntries(STORY.threads.map((t) => [bare(t.id), chaptersDone(t, w.seen)])), tips, mode: st.mode,
+    chapters: Object.fromEntries(STORY.threads.map((t) => [bare(t.id), chaptersDone(t, w.seen)])), tips, mode: st.mode, power: w.power,
   };
 }
 const ctxOf = (st: StoryState, w: StoryWorld): CondCtx => ({ ...w.base, day: w.day, fireLevel: w.fireLevel, deeds: w.deeds, story: condOf(st, w) });
@@ -100,7 +100,18 @@ const legacyOf = (st: StoryState): Array<[Legacy, number]> => {
 };
 const tiltOf = (st: StoryState, leaf: string): number => legacyOf(st).reduce((a, [l, s]) => a * (1 + ((l.tilt?.[leaf] ?? 1) - 1) * s), 1);
 /** A multiplier the tips put on the game (`mods` of legacy.json: `marketFee`, `arrivals`...): 1 when no tip speaks of it. */
-export const storyMod = (st: StoryState, key: string): number => legacyOf(st).reduce((a, [l, s]) => a * (1 + ((l.mods?.[key] ?? 1) - 1) * s), 1);
+export function storyMod(st: StoryState, key: string, day = 0): number {
+  let a = legacyOf(st).reduce((x, [l, s]) => x * (1 + ((l.mods?.[key] ?? 1) - 1) * s), 1);
+  for (const k of Object.values(st.knots)) { // the leaves that stand (an old tale for a share; a passing one for its days)
+    const leaf = LEAF.get(k.leaf), m = leaf?.mods?.[key];
+    if (m === undefined || (leaf!.modDays !== undefined && day - k.day > leaf!.modDays)) continue;
+    a *= 1 + (m - 1) * (k.old ? CFG.oldTaleShare : 1);
+  }
+  for (const id of Object.keys(st.fruits)) a *= FRUIT.get(id)?.mods?.[key] ?? 1;
+  const tip = st.tips.end ?? st.tips.mid; // the medieval tip that stands: the last one, else the middle one
+  if (tip) { a *= TIP.get(tip.main)?.mods?.[key] ?? 1; if (tip.second) a *= 1 + ((TIP.get(tip.second)?.mods?.[key] ?? 1) - 1) * CFG.secondShare; }
+  return a;
+}
 
 /** The weight of each leaf of a knot now: w = max(wmin, base + sum(affinity x mark)), times the tilts that hold, the legacy of the tips and the play mode for a hard leaf. A leaf whose `needs` fails gives way to its `alt` (or weighs nothing). */
 export function leafWeights(st: StoryState, k: Knot, c: CondCtx): Array<{ leaf: string; w: number }> {
@@ -159,7 +170,7 @@ export function scoreTips(st: StoryState, w: Pick<StoryWorld, 'day' | 'seed' | '
     solid[to] = (solid[to] ?? 0) + s;
     scores[to] = (scores[to] ?? 0) + s + CFG.tip.mark * (t.marks ?? []).filter((m) => dominant.includes(m)).length;
   }
-  const ranked = tips.filter((t) => !t.off && !t.default && (solid[t.id] ?? 0) > 0).sort((a, b) => scores[b.id] - scores[a.id] || seedRoll(w.seed, `tip|${a.id}`) - seedRoll(w.seed, `tip|${b.id}`));
+  const ranked = tips.filter((t) => !t.off && !t.default && (solid[t.id] ?? 0) >= (tree.tipMin ?? 1)).sort((a, b) => scores[b.id] - scores[a.id] || seedRoll(w.seed, `tip|${a.id}`) - seedRoll(w.seed, `tip|${b.id}`));
   const main = ranked[0] ?? tips.find((t) => t.default);
   if (!main) return null;
   return { main: main.id, second: ranked.find((t) => t !== main && t.family !== main.family)?.id, scores };
@@ -220,7 +231,13 @@ export function stepStory(st: StoryState, w: StoryWorld): StoryOut[] {
   // the knots that have become ready
   for (const k of STORY.knots) {
     if (k.tree !== tree.id || st.knots[k.id] || st.pending[k.id]) continue;
-    if (tree.onePerTrunk && STORY.knots.some((o) => o !== k && o.tree === k.tree && o.trunk === k.trunk && (st.knots[o.id] || st.pending[o.id]))) continue;
+    if (tree.onePerTrunk) {
+      const sib = STORY.knots.filter((o) => o !== k && o.tree === k.tree && o.trunk === k.trunk);
+      if (sib.some((o) => st.knots[o.id] || st.pending[o.id])) continue;
+      // which knot of a trunk comes first is the seed's: the other one waits while the favoured one may still fire (its branch was begun and its window is not over)
+      const all = [k, ...sib].sort((a, b) => (a.id < b.id ? -1 : 1)), fav = all[Math.floor(seedRoll(w.seed, `trunk|${k.trunk}`) * all.length)];
+      if (fav !== k && fav.fedBy.some((id) => { const th = THREAD.get(id); return !!th && chaptersDone(th, w.seen) > 0; }) && c.story!.progress <= (fav.when.progress ?? [0, Infinity])[1]) continue;
+    }
     if (k.fedBy.reduce((a, id) => a + (THREAD.get(id) ? chaptersDone(THREAD.get(id)!, w.seen) : 0), 0) < k.when.chapters) continue;
     const at = k.when.fire ? w.fireLevel : c.story!.progress, [lo, hi] = k.when.fire ?? k.when.progress ?? [0, Infinity];
     if (at < lo) continue;

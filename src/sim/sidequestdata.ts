@@ -3,6 +3,7 @@
  * The system that runs them is sidequests.ts. Only types come from encounterdata, so encounterdata may list these scripts among its own.
  */
 import DATA from '../data/story/quests/side_quests.json';
+import FLAGS from '../data/story/quests/from_flags.json';
 import type { Cost, Node, Script } from './encounterdata';
 
 /** One answer of a step. `roll`: it may go wrong (`fail` is then said): the quest is lost (`ends`) or another tag is kept. */
@@ -23,6 +24,8 @@ export interface SideState { runs: SideRun[]; nextAt: number; last: Record<strin
 export const initialSide = (): SideState => ({ runs: [], nextAt: 0, last: {} });
 
 export const SIDE = { config: DATA.config as unknown as SideConfig, quests: DATA.quests as unknown as SideQuest[] };
+/** How much likelier a quest is offered while a flag of the story tree that points to it stands (quests/from_flags.json). */
+export const sideWeight = (id: string, flags: readonly string[]): number => (FLAGS.flags.some((f) => f.quest === id && flags.includes(f.flag)) ? FLAGS.weight : 1);
 export const sideQuest = (id: string): SideQuest | undefined => SIDE.quests.find((q) => q.id === id);
 /** The visitor script of a step: its medieval twin (`:m`) asks dearer prices. */
 export const sideScriptId = (id: string, step: number, era: string): string => `sq:${id}:${step}${era === 'ancient' ? ':m' : ''}`;

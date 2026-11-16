@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 4 done; Phase 5 starts on "tiếp"**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 5 done; Phase 6 (acceptance) starts on "tiếp"**.
 
 ## Survey facts (what the code has today)
 
@@ -130,6 +130,7 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | 2 | done | ranks 6-10 of 4 branches (`tools/gen-ranks.mjs`), `specialists.ts` (bodyguard, assassin) |
 | 3 | done | levels 4-10 for every kind, per-level footprint, art for every level with moving parts, specialist buildings, walkable walls (see Phase 3 notes for what is left) |
 | 4 | done | 14 characters (`tools/gen-characters.mjs`), 12 side quests on the talk engine (`sidequests.ts`), blueprint shelf at the Chợ, save v50; quests and shelf asleep in the game (`enabled: false`, dev switch) until Phase 5 |
+| 5 | done | full tree from `tools/gen-story.mjs` (stone 6 branches / 6 knots / 24 leaves + 7 pale + 6 wild / 10 fruits / 10 tips; medieval 10 / 8 / 32 + 1 pale + 4 wild / 10 / 8), tree, side quests and blueprint shelf ON in the game, Di sản list, story mode in Cài đặt |
 
 ## Added by the user after Phase 0 (2026-11-15), for Phase 3
 
@@ -222,3 +223,19 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 | UI | Nhiệm vụ window lists side quests under the tutorial plan (step, days left, "Bỏ việc"). Nhật ký > Di sản screen is Phase 5 |
 | Old logic touched | `encounterdata.ts`: `Effect.quest`, `Script.cast`, `SCRIPTS` + side scripts; `encounters.ts`: `queueScript(..., tribe)`, cast in `spawnVisitor`, `quest` in `applyEffect`; `market.ts`: `MarketState.plans`, `plansRoll` called in `marketRoll` (uses `seedRoll`, the market RNG stream is unchanged); `sprites.ts`: `outfitOf` + cache key; `save.ts`: v50, record `side`, `MIGRATIONS[49]`; `sim.ts`: field `side`, `dev.side`, tick hook after `tickStory`; `tools/art-preview.mjs`: `cells` rows. `quests.ts` untouched |
 | Check | headless (scratchpad): every quest played to its end by two ways of answering in both ages (42 paid, 2 lost to a roll, 2 refused for lack of soldiers), shelf buy, save round trip, v49 -> v50, offers coming by themselves with the switch on |
+
+## Phase 5 notes
+
+| Point | Note |
+|---|---|
+| Source | `tools/story/stone.mjs`, `tools/story/medieval.mjs` (tables: branches, knots, leaves, wild, fruits, tips, legacy, powers, quest flags) -> `node tools/gen-story.mjs` -> `src/data/story/**`. Never edit the JSON. Then `node tools/simStory.mjs --check` and `--runs 200 --policy mix` |
+| Deeds | each answer of a scene gets its own deed (`c_IVA1_2`, `l_IV1a_1`, `f_TM1_1`) with its marks in `marks.json`; a named deed in the table (`shared_fire`, `took_captives`) is a tag left beside it, for tilts |
+| Engine added | `Scene.cast`; `mods` + `modDays` on leaves, `mods` on fruits and medieval tips (`storyMod(key, day)`); condition `power`; `TreeDef.tipMin` (medieval 3: less than one fruit or three fallen leaves = default tip M7); stone age: which knot of a trunk fires first is drawn by the seed (the other waits while the favoured one can still fire); deeds ledger 300 -> 600 |
+| Game hooks (old logic touched) | `market.tier` (fee, quota times `storyMod`), `market.blueprintShelf` (price mod, Thư Viện Di Sản, Sàn Thương Hội +1), `houses.houseRate` (research / craft speed), `sim.ts` war end adds deed `war_fought`, `sidequests` pick weight by `quests/from_flags.json`, Cài đặt > "Độ gắt của cốt truyện" (no new-game screen exists: the mode may be changed at any time) |
+| Trunk V | its stages do not appear inside the war mode: they come at the gate after a war was fought (`deed.war_fought>=1`, `>=2`); its knots fire in peace as the doc asks |
+| Simulation (200 seeds, mix) | no dead end; every tip stands at least once (M1 and M6 only at the last scoring); normal mode: all specialists between 5% and 60% except Trại Kép (TM6) about 4%; easy mode: M6 / TM6 never by story (hard leaves off) -> blueprints are the way |
+| Leaf effects | told in the Nhật ký + goods, relation, raid, deed, flag, timed multipliers. NOT done as mechanics: people leaving or joining (IV1-c, III2-b, I2-c), "no war for 30 days" (regency), council vote delay, tributes by fear (terror), named character killed (VII1-a/b), rebellion campaign chain (VII3-a), new NPC village (N8, IV1-c) |
+| Powers | done: Thư Viện Di Sản (M1), Kinh nghiệm sống sót (M7, blueprints -20%), Đô thành tri thức (M8, research +20%), M4 market fee -15%. Names only, no effect yet: Liên quân (M2), Tai mắt (M3), lính thuê tức thời (M4), Hòa giải (M5), Nơi ẩn náu (M6) |
+| Specialist buildings | only Sàn Thương Hội has its effect (+1 blueprint on the shelf). The other nine can be built but do nothing yet |
+| Stone tips | legacy = first marks, favoured trunk, leaf tilts, and mods for N2 (market fee +20%), N4 (fee -20%, quota +30%), N7 (craft +20%). The other "Ngọn đổi cách game" rows (arrivals x1.5, tribute every 10 days, sworn enemy, daughter village, marriage ally) are not mechanics yet |
+| Not done | Easy mode free blueprint at the middle tip; rumour "clear / few" by mode; `encounters/stone.json` untouched (chapters point at the old scripts by id); M1 does not check "all boss villages beaten" (they all are, at Nhà chung 4) |

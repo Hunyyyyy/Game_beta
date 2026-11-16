@@ -1,66 +1,979 @@
 {
-  "_note": "The hidden marks (Dấu). They are never saved: each is the sum of the deeds done (encounters.deeds) times the weights below. window = days a deed counts for (absent: for ever, as Hợp); carry = share of stone-age deeds kept once the medieval age began (absent: index.json config.carry); era: 'ancient' = a mark of the medieval age only. deeds: deed key -> mark -> points. rumors: a line for the Nhật ký when a mark first reaches `at` (below: true = falls to it).",
-  "marks": [
-    { "id": "nhan", "name": "Nhân", "window": 60 },
-    { "id": "uy", "name": "Uy", "window": 60 },
-    { "id": "tin", "name": "Tín", "window": 60 },
-    { "id": "lo", "name": "Lộ", "window": 60 },
-    { "id": "hop", "name": "Hợp", "carry": 1 },
-    { "id": "luat", "name": "Luật", "window": 120, "era": "ancient" },
-    { "id": "cua", "name": "Của", "era": "ancient" }
-  ],
-  "deeds": {
-    "helped_wanderer": { "nhan": 1 },
-    "took_in_wanderer": { "nhan": 2, "hop": 1 },
-    "refused_wanderer": { "nhan": -1 },
-    "took_in_thief": { "hop": 1 },
-    "thief_again": { "lo": 2 },
-    "pardoned_thief": { "nhan": 1, "lo": 1 },
-    "punished_thief": { "nhan": -1, "uy": 1 },
-    "hosted_travelers": { "nhan": 1, "tin": 1, "lo": 1 },
-    "took_refugees": { "nhan": 2, "lo": 1, "hop": 2 },
-    "fed_refugees": { "nhan": 1 },
-    "refused_refugees": { "nhan": -2 },
-    "handed_over": { "nhan": -3, "tin": 1 },
-    "paid_pursuers": { "uy": -1, "lo": 1 },
-    "defied_pursuers": { "nhan": 1, "uy": 2, "tin": -1 },
-    "hosted_scouts": { "tin": 2, "lo": 1 },
-    "showed_force": { "uy": 3 },
-    "showed_weakness": { "uy": -1, "lo": 3 },
-    "drove_off_scouts": { "uy": 1, "tin": -2 },
-    "paid_tribute": { "uy": -1, "tin": 1, "lo": 1 },
-    "refused_tribute": { "uy": 1, "tin": -1 },
-    "scared_off_tribute": { "uy": 3 },
-    "drove_off_tribute": { "uy": 1, "tin": -1 },
-    "bluff_failed": { "uy": -3, "lo": 2 },
-    "bought_peace": { "tin": 1, "lo": 1 },
-    "bought_time": { "lo": 1 },
-    "defied_ultimatum": { "uy": 2 },
-    "paid_ransom": { "nhan": 2, "tin": 1 },
-    "refused_ransom": { "nhan": -2 },
-
-    "shared_fire": { "hop": 2, "nhan": 1, "lo": 1 },
-    "two_hearths": { "hop": -1, "lo": -1 },
-    "newcomer_watch": { "tin": 2, "hop": 1, "lo": 2 },
-    "fire_tales": { "tin": 1, "hop": 1 },
-    "stored_winter": { "lo": 1 },
-    "shared_meals": { "nhan": 1, "hop": 1 },
-    "food_for_arms": { "uy": 1 },
-    "fire_keeper": { "tin": 1, "hop": 1 },
-    "own_fires": { "hop": -1 },
-    "outsider_keeper": { "hop": 2, "lo": 1 },
-    "stone_ring": { "tin": 2, "hop": 1 },
-    "thick_wall": { "uy": 2, "lo": -2, "hop": -1 },
-    "law_spoken": { "luat": 2 },
-    "law_by_one": { "uy": 1, "luat": -1 },
-    "heir_named": { "luat": 1, "hop": 1 },
-    "heir_by_strength": { "uy": 2 }
+ "_note": "The hidden marks (Dấu). They are never saved: each is the sum of the deeds done (encounters.deeds) times the weights below. window = days a deed counts for (absent: for ever, as Hợp); carry = share of stone-age deeds kept once the medieval age began (absent: index.json config.carry); era: 'ancient' = a mark of the medieval age only. deeds: deed key -> mark -> points. rumors: a line for the Nhật ký when a mark first reaches `at` (below: true = falls to it).",
+ "marks": [
+  {
+   "id": "nhan",
+   "name": "Nhân",
+   "window": 60
   },
-  "rumors": [
-    { "mark": "nhan", "at": 4, "text": "Ngoài đường ai cũng kể làng này có bếp lửa lúc nào cũng còn phần cho người lạ." },
-    { "mark": "uy", "at": 4, "text": "Mấy người Rìu Đá bảo đừng đụng tới làng này." },
-    { "mark": "lo", "at": 4, "text": "Có kẻ đếm kho lương của mình từ bên kia suối." },
-    { "mark": "tin", "at": -2, "below": true, "text": "Thương lái đồn mình nói một đằng làm một nẻo." },
-    { "mark": "hop", "at": 4, "text": "Bữa tối giờ không ai phân biệt đâu là người cũ, đâu là người mới." }
-  ]
+  {
+   "id": "uy",
+   "name": "Uy",
+   "window": 60
+  },
+  {
+   "id": "tin",
+   "name": "Tín",
+   "window": 60
+  },
+  {
+   "id": "lo",
+   "name": "Lộ",
+   "window": 60
+  },
+  {
+   "id": "hop",
+   "name": "Hợp",
+   "carry": 1
+  },
+  {
+   "id": "luat",
+   "name": "Luật",
+   "window": 120,
+   "era": "ancient"
+  },
+  {
+   "id": "cua",
+   "name": "Của",
+   "era": "ancient"
+  }
+ ],
+ "deeds": {
+  "helped_wanderer": {
+   "nhan": 1
+  },
+  "took_in_wanderer": {
+   "nhan": 2,
+   "hop": 1
+  },
+  "refused_wanderer": {
+   "nhan": -1
+  },
+  "took_in_thief": {
+   "hop": 1
+  },
+  "thief_again": {
+   "lo": 2
+  },
+  "pardoned_thief": {
+   "nhan": 1,
+   "lo": 1
+  },
+  "punished_thief": {
+   "nhan": -1,
+   "uy": 1
+  },
+  "hosted_travelers": {
+   "nhan": 1,
+   "tin": 1,
+   "lo": 1
+  },
+  "took_refugees": {
+   "nhan": 2,
+   "lo": 1,
+   "hop": 2
+  },
+  "fed_refugees": {
+   "nhan": 1
+  },
+  "refused_refugees": {
+   "nhan": -2
+  },
+  "handed_over": {
+   "nhan": -3,
+   "tin": 1
+  },
+  "paid_pursuers": {
+   "uy": -1,
+   "lo": 1
+  },
+  "defied_pursuers": {
+   "nhan": 1,
+   "uy": 2,
+   "tin": -1
+  },
+  "hosted_scouts": {
+   "tin": 2,
+   "lo": 1
+  },
+  "showed_force": {
+   "uy": 3
+  },
+  "showed_weakness": {
+   "uy": -1,
+   "lo": 3
+  },
+  "drove_off_scouts": {
+   "uy": 1,
+   "tin": -2
+  },
+  "paid_tribute": {
+   "uy": -1,
+   "tin": 1,
+   "lo": 1
+  },
+  "refused_tribute": {
+   "uy": 1,
+   "tin": -1
+  },
+  "scared_off_tribute": {
+   "uy": 3
+  },
+  "drove_off_tribute": {
+   "uy": 1,
+   "tin": -1
+  },
+  "bluff_failed": {
+   "uy": -3,
+   "lo": 2
+  },
+  "bought_peace": {
+   "tin": 1,
+   "lo": 1
+  },
+  "bought_time": {
+   "lo": 1
+  },
+  "defied_ultimatum": {
+   "uy": 2
+  },
+  "paid_ransom": {
+   "nhan": 2,
+   "tin": 1
+  },
+  "refused_ransom": {
+   "nhan": -2
+  },
+  "betrayed_gate": {
+   "tin": -1
+  },
+  "first_victory": {
+   "uy": 3
+  },
+  "lost_fight": {
+   "lo": 2
+  },
+  "good_name": {
+   "nhan": 1,
+   "hop": 1
+  },
+  "feared_name": {
+   "uy": 2
+  },
+  "bad_shells": {
+   "tin": -1
+  },
+  "winter_shared": {
+   "nhan": 2,
+   "tin": 1
+  },
+  "wall_saved": {
+   "uy": 1,
+   "nhan": -2
+  },
+  "comet": {
+   "tin": 2
+  },
+  "far_drums": {
+   "uy": 1
+  },
+  "war_fought": {
+   "uy": 1
+  },
+  "assimilated": {
+   "hop": 1
+  },
+  "pyrrhic": {
+   "uy": 1
+  },
+  "treaty_broken": {
+   "tin": -2
+  },
+  "inside_man": {
+   "lo": 1
+  },
+  "night_gate": {
+   "uy": 1,
+   "tin": -1
+  },
+  "granary_saved": {
+   "luat": 1,
+   "cua": -2
+  },
+  "mine_known": {
+   "cua": 1,
+   "lo": 2
+  },
+  "assassin_hit": {
+   "uy": -1,
+   "lo": 1
+  },
+  "paranoia": {
+   "tin": -1,
+   "hop": -1
+  },
+  "shared_fire": {},
+  "c_IA3_1": {
+   "hop": 2,
+   "nhan": 1,
+   "lo": 1
+  },
+  "two_hearths": {},
+  "c_IA3_2": {
+   "hop": -1,
+   "lo": -1
+  },
+  "newcomer_watch": {},
+  "c_IA3_3": {
+   "tin": 2,
+   "hop": 1,
+   "lo": 2
+  },
+  "fire_tales": {},
+  "c_IA3_4": {
+   "tin": 1,
+   "hop": 1
+  },
+  "c_IB3_1": {
+   "tin": 1,
+   "lo": 1
+  },
+  "c_IB3_2": {
+   "lo": -1,
+   "hop": 1
+  },
+  "c_IB3_3": {
+   "nhan": -2,
+   "tin": 1
+  },
+  "sent_child": {},
+  "c_IIB2_1": {
+   "tin": 3,
+   "hop": 1
+  },
+  "took_child": {},
+  "c_IIB2_2": {
+   "hop": 2,
+   "nhan": 1,
+   "lo": 1
+  },
+  "c_IIB2_3": {
+   "tin": -1
+  },
+  "c_IIB3_1": {
+   "tin": 1
+  },
+  "c_IIB3_2": {
+   "hop": 1,
+   "tin": -2
+  },
+  "c_IIB3_3": {
+   "hop": 2,
+   "tin": 1
+  },
+  "c_IIIA2_1": {
+   "tin": 2
+  },
+  "c_IIIA2_2": {
+   "tin": 1
+  },
+  "c_IIIA2_3": {
+   "tin": -1,
+   "lo": -1
+  },
+  "salt_party": {},
+  "c_IIIA3_1": {
+   "lo": 1,
+   "tin": 1
+  },
+  "c_IIIA3_2": {
+   "tin": 1
+  },
+  "c_IIIA3_3": {
+   "lo": -1
+  },
+  "stored_winter": {},
+  "c_IIIB1_1": {
+   "lo": 1
+  },
+  "shared_meals": {},
+  "c_IIIB1_2": {
+   "nhan": 1,
+   "hop": 1
+  },
+  "food_for_arms": {},
+  "c_IIIB1_3": {
+   "uy": 1
+  },
+  "fire_keeper": {},
+  "c_IIIB2_1": {
+   "tin": 1,
+   "hop": 1
+  },
+  "own_fires": {},
+  "c_IIIB2_2": {
+   "hop": -1
+  },
+  "outsider_keeper": {},
+  "c_IIIB2_3": {
+   "hop": 2,
+   "lo": 1
+  },
+  "stone_ring": {},
+  "c_IIIB3_1": {
+   "tin": 2,
+   "hop": 1
+  },
+  "thick_wall": {},
+  "c_IIIB3_2": {
+   "uy": 2,
+   "lo": -2,
+   "hop": -1
+  },
+  "f_T1_1": {
+   "hop": 2
+  },
+  "f_T1_2": {
+   "hop": -2,
+   "uy": 1
+  },
+  "f_T1_3": {
+   "tin": 1
+  },
+  "f_T2_1": {
+   "lo": -3,
+   "hop": -2
+  },
+  "f_T2_3": {
+   "nhan": 1,
+   "lo": 2
+  },
+  "f_T3_1": {
+   "nhan": -1
+  },
+  "f_T3_2": {
+   "tin": 1
+  },
+  "f_T3_3": {
+   "uy": 2
+  },
+  "f_T4_1": {
+   "uy": 2
+  },
+  "f_T4_2": {
+   "hop": 1
+  },
+  "f_T4_3": {
+   "tin": -1,
+   "lo": 1
+  },
+  "f_T5_1": {
+   "tin": 2,
+   "lo": 2
+  },
+  "f_T5_2": {
+   "uy": 2
+  },
+  "f_T6_1": {
+   "tin": 3,
+   "lo": 1
+  },
+  "f_T6_2": {
+   "uy": 1,
+   "tin": -1
+  },
+  "f_T7_1": {
+   "nhan": 2
+  },
+  "f_T7_2": {
+   "uy": 3,
+   "tin": -3
+  },
+  "f_T7_3": {
+   "lo": 2
+  },
+  "f_T8_1": {
+   "uy": 1
+  },
+  "f_T8_2": {
+   "tin": 2
+  },
+  "f_T8_3": {
+   "lo": 2
+  },
+  "f_T9_1": {
+   "tin": 3,
+   "hop": 2
+  },
+  "f_T9_2": {
+   "tin": -2
+  },
+  "f_T9_3": {
+   "hop": 3
+  },
+  "f_T10_1": {
+   "nhan": 2
+  },
+  "f_T10_2": {
+   "nhan": -2,
+   "uy": 1
+  },
+  "f_T10_3": {
+   "lo": 1,
+   "tin": -1
+  },
+  "l_II1c_1": {
+   "uy": 1,
+   "tin": -1
+  },
+  "l_II1c_2": {
+   "tin": 2
+  },
+  "l_B3_1": {
+   "nhan": 2,
+   "hop": 1
+  },
+  "l_B3_2": {
+   "nhan": -1
+  },
+  "c_IVA1_1": {
+   "uy": 2
+  },
+  "c_IVA1_2": {
+   "tin": 2,
+   "luat": 1
+  },
+  "c_IVA1_3": {
+   "hop": 2
+  },
+  "c_IVA2_1": {
+   "luat": 1,
+   "tin": 1
+  },
+  "c_IVA2_2": {
+   "hop": -1,
+   "uy": 1
+  },
+  "c_IVA2_3": {
+   "cua": -1,
+   "hop": 1
+  },
+  "c_IVA3_1": {
+   "uy": 1
+  },
+  "c_IVA3_2": {
+   "luat": 2,
+   "hop": 1
+  },
+  "c_IVA3_3": {
+   "lo": -1
+  },
+  "c_IVB1_1": {
+   "tin": 1
+  },
+  "c_IVB1_2": {
+   "luat": 1,
+   "hop": 1
+  },
+  "c_IVB1_3": {
+   "lo": 1,
+   "luat": 1
+  },
+  "c_IVB2_1": {
+   "luat": 2,
+   "tin": 1
+  },
+  "c_IVB2_2": {
+   "uy": 1
+  },
+  "c_IVB2_3": {
+   "luat": 1,
+   "uy": 1,
+   "hop": -1
+  },
+  "c_IVB3_1": {
+   "luat": 2,
+   "uy": -1
+  },
+  "c_IVB3_2": {
+   "uy": 1,
+   "luat": -2,
+   "tin": -1
+  },
+  "c_IVB3_3": {
+   "cua": -1,
+   "luat": 1
+  },
+  "c_VA1_1": {
+   "uy": 2
+  },
+  "c_VA1_2": {
+   "cua": 1,
+   "lo": 1
+  },
+  "c_VA1_3": {
+   "uy": 1,
+   "tin": 1
+  },
+  "c_VA2_1": {
+   "uy": 2
+  },
+  "c_VA2_2": {
+   "cua": 1,
+   "luat": 1
+  },
+  "c_VA2_3": {
+   "tin": 1
+  },
+  "killed_captives": {},
+  "c_VA3_1": {
+   "uy": 2,
+   "tin": -2
+  },
+  "c_VA3_2": {
+   "cua": 2
+  },
+  "took_captives": {},
+  "c_VA3_3": {
+   "hop": 2,
+   "luat": 1
+  },
+  "hired_spy": {},
+  "c_VB1_1": {
+   "lo": 2,
+   "tin": -1
+  },
+  "c_VB1_2": {
+   "uy": 1,
+   "luat": 1
+  },
+  "c_VB1_3": {
+   "cua": -1,
+   "lo": 1
+  },
+  "took_peace": {},
+  "c_VB2_1": {
+   "tin": 1,
+   "hop": 1
+  },
+  "forced_terms": {},
+  "c_VB2_2": {
+   "uy": 1,
+   "cua": 1
+  },
+  "c_VB2_3": {
+   "uy": 1,
+   "tin": -2
+  },
+  "trusted_traitor": {},
+  "c_VB3_1": {
+   "lo": 1
+  },
+  "c_VB3_2": {
+   "luat": 1
+  },
+  "c_VB3_3": {
+   "tin": 1
+  },
+  "dug_ore": {},
+  "c_VIA1_1": {
+   "cua": 1,
+   "uy": 1
+  },
+  "c_VIA1_2": {
+   "cua": 1,
+   "lo": 1
+  },
+  "c_VIA1_3": {
+   "tin": 1
+  },
+  "c_VIA2_1": {
+   "uy": 1,
+   "cua": 1
+  },
+  "c_VIA2_2": {
+   "hop": 1,
+   "luat": 1
+  },
+  "c_VIA2_3": {
+   "cua": 2,
+   "tin": -1
+  },
+  "built_furnace": {},
+  "c_VIA3_1": {
+   "luat": 1
+  },
+  "c_VIA3_2": {
+   "cua": 1,
+   "lo": 1
+  },
+  "c_VIA3_3": {
+   "hop": 1
+  },
+  "filled_granary": {},
+  "c_VIB1_1": {
+   "luat": 1,
+   "cua": 1
+  },
+  "c_VIB1_2": {
+   "cua": 2,
+   "lo": 1
+  },
+  "c_VIB1_3": {
+   "hop": 2,
+   "cua": -1
+  },
+  "c_VIB2_1": {
+   "tin": 2,
+   "cua": -1
+  },
+  "lent_at_interest": {},
+  "c_VIB2_2": {
+   "cua": 1,
+   "tin": -1
+  },
+  "c_VIB2_3": {
+   "luat": 1,
+   "hop": -1
+  },
+  "c_VIB3_1": {
+   "hop": 1,
+   "cua": 1
+  },
+  "c_VIB3_2": {
+   "cua": 2,
+   "tin": -1
+  },
+  "c_VIB3_3": {
+   "luat": 2,
+   "uy": 1
+  },
+  "swore_oath": {},
+  "c_VIIA1_1": {
+   "hop": 2,
+   "tin": 1
+  },
+  "c_VIIA1_2": {
+   "luat": 1,
+   "tin": 1
+  },
+  "c_VIIA1_3": {
+   "uy": 1,
+   "hop": -1
+  },
+  "answered_call": {},
+  "c_VIIA2_1": {
+   "tin": 2
+  },
+  "c_VIIA2_2": {
+   "uy": -1
+  },
+  "asked_ally_help": {},
+  "c_VIIA2_3": {
+   "tin": -2,
+   "hop": -1
+  },
+  "c_VIIA3_1": {
+   "luat": 1
+  },
+  "c_VIIA3_2": {
+   "uy": 1
+  },
+  "c_VIIA3_3": {
+   "tin": 1
+  },
+  "took_strange_guard": {},
+  "c_VIIB1_1": {
+   "uy": 1,
+   "lo": -1
+  },
+  "c_VIIB1_2": {
+   "tin": 1
+  },
+  "c_VIIB1_3": {
+   "luat": 1
+  },
+  "c_VIIB2_1": {
+   "tin": 2,
+   "hop": 1
+  },
+  "c_VIIB2_2": {
+   "lo": 2
+  },
+  "c_VIIB2_3": {
+   "tin": 1,
+   "cua": 1
+  },
+  "one_keeper": {},
+  "c_VIIB3_1": {
+   "tin": 1
+  },
+  "c_VIIB3_2": {
+   "luat": 1,
+   "cua": -1
+  },
+  "c_VIIB3_3": {
+   "uy": -1,
+   "lo": -1
+  },
+  "taught_all": {},
+  "c_VIIIA1_1": {
+   "hop": 1,
+   "luat": 1
+  },
+  "kept_craft": {},
+  "c_VIIIA1_2": {
+   "cua": 1,
+   "uy": 1
+  },
+  "c_VIIIA1_3": {
+   "cua": 1,
+   "tin": 1
+  },
+  "wrote_books": {},
+  "c_VIIIA2_1": {
+   "luat": 1,
+   "tin": 1
+  },
+  "c_VIIIA2_2": {
+   "hop": 1,
+   "lo": -1
+  },
+  "c_VIIIA2_3": {
+   "uy": 1,
+   "lo": -1
+  },
+  "c_VIIIA3_1": {
+   "uy": 1
+  },
+  "c_VIIIA3_2": {
+   "cua": 1
+  },
+  "c_VIIIA3_3": {
+   "hop": 2,
+   "luat": 1
+  },
+  "c_VIIIB1_1": {
+   "cua": -1,
+   "lo": 1
+  },
+  "c_VIIIB1_2": {
+   "tin": -1,
+   "cua": 1
+  },
+  "c_VIIIB1_3": {
+   "luat": 1
+  },
+  "c_VIIIB2_1": {
+   "cua": 1,
+   "lo": -1
+  },
+  "c_VIIIB2_2": {
+   "hop": 1,
+   "lo": 1
+  },
+  "c_VIIIB2_3": {
+   "luat": 1
+  },
+  "c_VIIIB3_1": {
+   "uy": 1,
+   "cua": -1
+  },
+  "c_VIIIB3_2": {
+   "lo": 1,
+   "tin": -1
+  },
+  "c_VIIIB3_3": {
+   "tin": -2,
+   "lo": 2
+  },
+  "f_TM1_1": {
+   "hop": 2
+  },
+  "f_TM1_2": {
+   "luat": 2
+  },
+  "f_TM2_1": {
+   "uy": 2
+  },
+  "f_TM2_2": {
+   "tin": 2
+  },
+  "f_TM3_1": {
+   "cua": 2
+  },
+  "f_TM3_2": {
+   "luat": 2
+  },
+  "f_TM4_1": {
+   "uy": 2,
+   "hop": -2
+  },
+  "f_TM4_2": {
+   "tin": 1,
+   "uy": -1
+  },
+  "f_TM5_1": {
+   "tin": 2
+  },
+  "f_TM5_2": {
+   "uy": 1,
+   "tin": -2
+  },
+  "f_TM6_1": {
+   "uy": 1,
+   "hop": -2
+  },
+  "f_TM6_2": {
+   "hop": 1,
+   "uy": -1
+  },
+  "f_TM7_1": {
+   "uy": 2,
+   "tin": -2
+  },
+  "f_TM7_2": {
+   "tin": 2,
+   "uy": -1
+  },
+  "f_TM8_1": {
+   "uy": 1,
+   "lo": 1
+  },
+  "f_TM8_2": {
+   "tin": 1,
+   "hop": -1
+  },
+  "f_TM9_1": {
+   "hop": 2
+  },
+  "f_TM9_2": {
+   "uy": 2
+  },
+  "f_TM10_1": {
+   "uy": 1,
+   "lo": 1
+  },
+  "f_TM10_2": {
+   "cua": 1,
+   "tin": -1
+  },
+  "l_IV1a_1": {
+   "hop": 2,
+   "luat": 1
+  },
+  "l_IV1a_2": {
+   "luat": 2,
+   "hop": -1
+  },
+  "l_IV1b_1": {
+   "luat": 1
+  },
+  "l_IV1b_2": {
+   "uy": 2,
+   "tin": -2
+  },
+  "l_V1a_1": {
+   "tin": 2,
+   "uy": -1
+  },
+  "l_V1a_2": {
+   "uy": 2,
+   "tin": -2
+  },
+  "l_VI1b_1": {
+   "hop": 2
+  },
+  "l_VI1b_2": {
+   "uy": 2,
+   "hop": -2
+  },
+  "l_VI1b_3": {
+   "tin": 1
+  },
+  "l_VII1a_1": {
+   "nhan": 1,
+   "lo": 1
+  },
+  "l_VII1a_2": {
+   "uy": 2,
+   "hop": -1
+  },
+  "l_VII3a_1": {
+   "uy": 3,
+   "tin": -3,
+   "hop": -2
+  },
+  "l_VII3a_2": {
+   "tin": 2,
+   "uy": -1,
+   "cua": -1
+  },
+  "l_VII3a_3": {
+   "luat": 2
+  },
+  "l_VII3c_1": {
+   "nhan": 2,
+   "hop": 1
+  },
+  "l_VII3c_2": {
+   "nhan": -2,
+   "uy": 1
+  },
+  "l_W3_1": {
+   "luat": 1,
+   "hop": 1
+  },
+  "l_W3_2": {
+   "uy": 1
+  }
+ },
+ "rumors": [
+  {
+   "mark": "nhan",
+   "at": 4,
+   "text": "Ngoài đường ai cũng kể làng này có bếp lửa lúc nào cũng còn phần cho người lạ."
+  },
+  {
+   "mark": "uy",
+   "at": 4,
+   "text": "Mấy người Rìu Đá bảo đừng đụng tới làng này."
+  },
+  {
+   "mark": "lo",
+   "at": 4,
+   "text": "Có kẻ đếm kho lương của mình từ bên kia suối."
+  },
+  {
+   "mark": "tin",
+   "at": -2,
+   "below": true,
+   "text": "Thương lái đồn làng mình nói một đằng làm một nẻo."
+  },
+  {
+   "mark": "hop",
+   "at": 5,
+   "text": "Bữa tối giờ không ai phân biệt đâu là người cũ, đâu là người mới."
+  },
+  {
+   "mark": "luat",
+   "at": 4,
+   "text": "Người làng khác tới nhờ làng mình phân xử: họ bảo ở đây có lệ rõ ràng."
+  },
+  {
+   "mark": "cua",
+   "at": 4,
+   "text": "Thương lái đi đường vòng cũng ghé: họ bảo kho làng này chưa bao giờ trống."
+  },
+  {
+   "mark": "uy",
+   "at": 8,
+   "text": "Trẻ con làng bên bị dọa: không ngoan thì lính làng kia tới."
+  },
+  {
+   "mark": "tin",
+   "at": 6,
+   "text": "Người ta gửi lời hứa qua làng mình, vì lời đi qua đây thì được giữ."
+  }
+ ]
 }

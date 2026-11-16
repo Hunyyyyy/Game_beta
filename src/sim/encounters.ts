@@ -24,11 +24,11 @@ const visitorOf = (sim: Sim, id: number): Visitor | undefined => sim.encounters.
 /** What the village is worth in shells: its stores at the barter rates of the Chợ, and its shells. The richer it is, the likelier it draws thieves. */
 const wealthOf = (sim: Sim): number => sim.stock.coin + (Object.keys(BARTER) as Array<keyof typeof BARTER>).reduce((a, r) => a + sim.stock[r] / BARTER[r], 0);
 
-/** Write a deed to the ledger (the newest 300 are kept). */
+/** Write a deed to the ledger (the newest 600 are kept). */
 export function addDeed(sim: Sim, key: string, tribe?: string): void {
   const st = sim.encounters;
   st.deeds.push({ key, tribe, day: sim.day });
-  if (st.deeds.length > 300) st.deeds.splice(0, st.deeds.length - 300);
+  if (st.deeds.length > 600) st.deeds.splice(0, st.deeds.length - 600);
 }
 
 /** How many of the refugees taken in are still with us. */

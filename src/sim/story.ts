@@ -6,6 +6,7 @@ import type { Sim } from './sim';
 import type { Res } from './resources';
 import type { StoryCond } from './encounterdata';
 import { STORY, type StoryMode, type WorldEffect } from './storyscenes';
+import { unlockName } from './specialdata';
 import { condOf, stepStory, storyMod, type StoryOut, type StoryWorld } from './storydata';
 
 /** The tree runs when index.json has it on, or the dev switch wakes it. */
@@ -18,12 +19,19 @@ function bossContact(sim: Sim): number {
   return bosses.some((t) => t.bossDown || sim.maps.some((m) => m.tribe === t.id)) ? 0.5 : 0;
 }
 
-const worldOf = (sim: Sim): Omit<StoryWorld, 'base'> => ({ day: sim.day, seed: sim.seed, era: sim.era, fireLevel: sim.fireLevel(), bossContact: bossContact(sim), seen: sim.encounters.seen, deeds: sim.encounters.deeds });
+/** The share of the common villages (counted when the game began) that are ours now: taken, surrendered or paying tribute. */
+function power(sim: Sim): number {
+  const base = sim.story.baseVillages;
+  if (!base) return 0;
+  return Math.min(1, (sim.conquests.length + sim.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.tier !== 'boss' && t.tier !== 'rebel' && t.tier !== 'raider' && t.state !== 'free').length) / base);
+}
+
+const worldOf = (sim: Sim): Omit<StoryWorld, 'base'> => ({ day: sim.day, seed: sim.seed, era: sim.era, fireLevel: sim.fireLevel(), bossContact: bossContact(sim), power: power(sim), seen: sim.encounters.seen, deeds: sim.encounters.deeds });
 
 /** What a condition of a visitor script may ask of the tree (marks, lasting flags, leaves...). */
 export const storyCond = (sim: Sim): StoryCond => condOf(sim.story, worldOf(sim));
 /** A multiplier the tips put on the game (legacy.json `mods`); 1 while the tree sleeps. */
-export const mod = (sim: Sim, key: string): number => (storyOn(sim) ? storyMod(sim.story, key) : 1);
+export const mod = (sim: Sim, key: string): number => (storyOn(sim) ? storyMod(sim.story, key, sim.day) : 1);
 
 export function setFlag(sim: Sim, name: string): void { if (!sim.story.flags.includes(name)) sim.story.flags.push(name); }
 export function setMode(sim: Sim, mode: StoryMode): void { sim.story.mode = mode; }
@@ -54,4 +62,13 @@ export function tickStory(sim: Sim, dt: number): void {
   const st = sim.story;
   if (!st.baseVillages) st.baseVillages = sim.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.tier !== 'boss' && t.tier !== 'rebel' && t.tier !== 'raider').length + sim.conquests.length;
   for (const o of stepStory(st, { ...worldOf(sim), base: sim.encounterCond() })) apply(sim, o);
+}
+
+export interface LegacyItem { key: string; kind: 'unit' | 'building' | 'perk' | 'research'; open: boolean; /** Empty while it is not open: how it opens is never told. */ name: string; about: string }
+/** The Di sản list (doc/UPDATE_di_san_mo_khoa.md A1.6): every specialist and power; the open ones by name, the others only as shadows. */
+export function legacyView(sim: Sim): LegacyItem[] {
+  return STORY.unlocks.map((u) => {
+    const open = sim.isUnlocked(u.key);
+    return { key: u.key, kind: u.kind, open, name: open ? u.name ?? unlockName(u.key) : '', about: open ? u.about ?? '' : '' };
+  });
 }

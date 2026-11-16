@@ -1,23 +1,62 @@
 {
-  "_note": "Story tree (doc/story_tree.md, src/sim/storydata.ts). enabled: false keeps the tree asleep in the game (the dev menu can wake it); tools/simStory.mjs always runs it. config: wmin = floor of a leaf's weight; wildChance = chance of a wild leaf at a knot; knotDelay / fruitDelay = days [least, most] between 'ready' and the event; tip = points for a ripe fruit, a fallen leaf and a dominant mark (the `dominant` highest marks); hardMul = weight of `hard` leaves by play mode; carry = share of stone-age deeds kept in the medieval age; oldTaleShare = share of a stone knot's effects when it fires as an old tale in the medieval age; secondShare = share of the second tip's legacy; resendDays = a scene that never came is sent again after this. trees: one per era; onePerTrunk = only the first knot of a trunk fires; tips: when a tip is scored ('eraEnd' = the day the era ends, a number = Nhà chung level).",
-  "version": 1,
-  "enabled": false,
-  "config": {
-    "wmin": 0.25,
-    "wildChance": 0.08,
-    "knotDelay": [2, 6],
-    "fruitDelay": [3, 8],
-    "tip": { "fruit": 3, "leaf": 1, "mark": 0.5, "dominant": 2 },
-    "hardMul": { "easy": 0, "normal": 1, "harsh": 1.5 },
-    "carry": 0.5,
-    "oldTaleShare": 0.5,
-    "secondShare": 0.5,
-    "sceneMaxDelay": 10,
-    "scenePriority": 7,
-    "resendDays": 20
+ "_note": "Story tree (doc/story_tree.md, src/sim/storydata.ts). enabled: false keeps the tree asleep in the game (the dev menu can wake it); tools/simStory.mjs always runs it. config: wmin = floor of a leaf's weight; wildChance = chance of a wild leaf at a knot; knotDelay / fruitDelay = days [least, most] between 'ready' and the event; tip = points for a ripe fruit, a fallen leaf and a dominant mark (the `dominant` highest marks); hardMul = weight of `hard` leaves by play mode; carry = share of stone-age deeds kept in the medieval age; oldTaleShare = share of a stone knot's effects when it fires as an old tale in the medieval age; secondShare = share of the second tip's legacy; resendDays = a scene that never came is sent again after this. trees: one per era; onePerTrunk = only the first knot of a trunk fires; tips: when a tip is scored ('eraEnd' = the day the era ends, a number = Nhà chung level).",
+ "version": 1,
+ "enabled": true,
+ "config": {
+  "wmin": 0.25,
+  "wildChance": 0.08,
+  "knotDelay": [
+   2,
+   6
+  ],
+  "fruitDelay": [
+   3,
+   8
+  ],
+  "tip": {
+   "fruit": 3,
+   "leaf": 1,
+   "mark": 0.5,
+   "dominant": 2
   },
-  "trees": [
-    { "id": "stone", "era": "stone", "onePerTrunk": true, "tips": [{ "slot": "stone", "at": "eraEnd" }] },
-    { "id": "medieval", "era": "ancient", "tips": [{ "slot": "mid", "at": 7 }, { "slot": "end", "at": 10 }] }
-  ]
+  "hardMul": {
+   "easy": 0,
+   "normal": 1,
+   "harsh": 1.5
+  },
+  "carry": 0.5,
+  "oldTaleShare": 0.5,
+  "secondShare": 0.5,
+  "sceneMaxDelay": 10,
+  "scenePriority": 7,
+  "resendDays": 20
+ },
+ "trees": [
+  {
+   "id": "stone",
+   "era": "stone",
+   "onePerTrunk": true,
+   "tips": [
+    {
+     "slot": "stone",
+     "at": "eraEnd"
+    }
+   ]
+  },
+  {
+   "id": "medieval",
+   "era": "ancient",
+   "tips": [
+    {
+     "slot": "mid",
+     "at": 7
+    },
+    {
+     "slot": "end",
+     "at": 10
+    }
+   ],
+   "tipMin": 3
+  }
+ ]
 }

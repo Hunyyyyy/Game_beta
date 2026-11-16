@@ -210,7 +210,7 @@ export function deedCount(deeds: readonly Deed[], key: string, tribe: string | u
 }
 
 /** What the story tree lets a condition ask about (storydata.condOf): the hidden marks, the lasting flags, the leaves and fruits there are, the stages done of each branch, the tips (1 the main one, 0.5 the second). Ids without their prefix. */
-export interface StoryCond { marks: Record<string, number>; flags: readonly string[]; progress: number; leaves: readonly string[]; fruits: readonly string[]; chapters: Record<string, number>; tips: Record<string, number>; mode: string }
+export interface StoryCond { marks: Record<string, number>; flags: readonly string[]; progress: number; leaves: readonly string[]; fruits: readonly string[]; chapters: Record<string, number>; tips: Record<string, number>; mode: string; /** The share of the common villages of the land that are ours, pay us or fell (0..1). */ power: number }
 
 /** What a condition may ask about. */
 export interface CondCtx { stock: Stock; day: number; fireLevel: number; rel: number; truth: string; refugees: number; soldiers: number; captives: number; room: number; party: number; flags: readonly string[]; mood: number; deeds: readonly Deed[]; tribe?: string; story?: StoryCond }
@@ -239,12 +239,13 @@ function condValue(key: string, c: CondCtx, win: number | undefined): number | s
     case 'truth': return c.truth;
     case 'progress': return c.story?.progress ?? 0;
     case 'mode': return c.story?.mode ?? 'normal';
+    case 'power': return c.story?.power ?? 0;
     default: return undefined;
   }
 }
 
 /** The names a condition may use, for the checker of the story (a prefix ends with a dot). */
-export const COND_NAMES = ['stock.', 'deed.', 'flag.', 'mark.', 'sflag.', 'leaf.', 'fruit.', 'chapters.', 'tip.', 'rel', 'day', 'fireLevel', 'refugees', 'soldiers', 'captives', 'room', 'party', 'mood', 'truth', 'progress', 'mode'];
+export const COND_NAMES = ['stock.', 'deed.', 'flag.', 'mark.', 'sflag.', 'leaf.', 'fruit.', 'chapters.', 'tip.', 'rel', 'day', 'fireLevel', 'refugees', 'soldiers', 'captives', 'room', 'party', 'mood', 'truth', 'progress', 'mode', 'power'];
 const TERM = /^\s*([\w.:+\-\s]+?)\s*(>=|<=|==|!=|>|<)\s*(-?[\w.]+?)(?:@(\d+)d)?\s*$/;
 /** The terms of a condition taken apart: the names on the left (added up when joined by `+`), the sign, the value. Null for a term that cannot be read. */
 export const condTerms = (expr: string): Array<{ keys: string[]; op: string; rhs: string; win?: number } | null> => expr.split('&&').map((term) => { const m = TERM.exec(term); return m ? { keys: m[1].split('+').map((k) => k.trim()), op: m[2], rhs: m[3], win: m[4] ? Number(m[4]) : undefined } : null; });
