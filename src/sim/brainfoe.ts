@@ -37,6 +37,7 @@ function nobodyOutside(sim: Sim): boolean {
 export function tickFoe(sim: Sim, f: Villager, dt: number): void {
   tickCommon(sim, f, dt);
   const t = tribeOf(sim, f.team), ai = f.ai;
+  if (ai?.assassin) { sim.tickAssassin(f, dt); sim.moveUnit(f, dt); sim.animate(f, dt); return; } // a killer has no village life: he stalks, strikes and runs (specialists.ts)
   if (ai && ai.role === 'raider' && !ai.siege && !f.fight.target && f.phase !== 'fight' && Math.floor(sim.time) !== Math.floor(sim.time - dt) && (Math.floor(sim.time) + f.id) % 2 === 0 && nobodyOutside(sim)) {
     const house = sim.nearestWork(f.x, f.y, 70, true);
     if (house) ai.siege = house.id;

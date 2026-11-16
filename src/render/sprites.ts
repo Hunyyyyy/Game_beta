@@ -49,6 +49,7 @@ import med_footman_armor from '../data/blueprints/medieval/tools/footman_armor.j
 import med_archer_armor from '../data/blueprints/medieval/tools/archer_armor.json';
 import med_rider_armor from '../data/blueprints/medieval/tools/rider_armor.json';
 import med_watchman_armor from '../data/blueprints/medieval/tools/watchman_armor.json';
+import rankedGear from '../data/blueprints/medieval/tools/ranked.json';
 import handTiers from '../data/handtools/tiers.json';
 import palaceJson from '../data/blueprints/medieval/palace.json';
 import toolBowJson from '../data/blueprints/stone_age/tools/bow.json';
@@ -141,6 +142,7 @@ export class Sprites {
     this.icons.archer4 = make(med_archer_armor, 1).frames[0];
     this.icons.rider4 = make(med_rider_armor, 1).frames[0];
     this.icons.watchman4 = make(med_watchman_armor, 1).frames[0];
+    for (const [id, def] of Object.entries(rankedGear)) this.icons[id] = make(def, 1).frames[0]; // the gear of ranks 6-10 (tools/gen-ranks.mjs), keyed like the recipes
     this.icons.grass1 = make(toolGrassArmorJson, 1).frames[0];
     this.icons.bone2 = this.icons.hide1; // the bone armour has no picture of its own yet: it shows as the hide one
     this.icons.torch1 = this.torchIcon();

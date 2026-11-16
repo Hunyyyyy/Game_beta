@@ -62,6 +62,8 @@ export interface FoeAI {
   life?: { kind: 'gather' | 'hunt' | 'patrol' | 'scout'; idx?: number; job?: string; state?: 'go' | 'work'; units?: number; id?: number; stops?: Array<[number, number]>; i?: number; t?: number };
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
   stuck?: number;
+  /** A hidden killer (specialists.ts): `target` the villager he is after, `hidden` unseen by our soldiers, `fledAt` when he began to run home. */
+  assassin?: { target: number; state: 'stalk' | 'flee'; hidden: boolean; revealedUntil: number; repath: number; born: number; pathAt?: number; fledAt?: number };
   /** A target he could not get to (he only paced before it): left alone until this time. */
   skip?: { id: number; until: number };
   /** The fence or gate he has decided to break down (building id), 0 for none. */
@@ -80,6 +82,8 @@ export interface Slide { x: number; y: number; face: 'left' | 'right' }
 
 export interface Villager {
   id: number;
+  /** A bodyguard (specialists.ts): the villager he keeps; he takes a share of the blows meant for him. */
+  wardOf?: number;
   name: string;
   look: Look;
   /** Vị trí theo đơn vị ô (tâm ô (i,j) là (i+0.5, j+0.5)). */

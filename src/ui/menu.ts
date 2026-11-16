@@ -90,6 +90,7 @@ export class Menu {
       toggle('Bất tử', 'Dân không nhận sát thương', () => sim.dev.god, (on) => { sim.dev.god = on; })));
     page.append(h('div', { class: 'devrow' }, toggle('Thử nâng cấp sang nền rộng: Nhà dân cấp 2 thành 4×4', 'Cho Nhà dân cấp 2 chiếm nền 4×4 (hình vẫn nhỏ) để thử luồng nâng cấp: hình bóng nền mới, tô đỏ công trình vướng, dời đi rồi mới xác nhận; có thể hủy', () => dev.growTestOn(), (on) => dev.growTest(on))));
     page.append(h('div', { class: 'devrow' }, toggle('Xem cung điện (Nhà chính cấp 7)', 'Vẽ Nhà chính thành cung điện 6×6 để xem thử; cây, đá và các công trình quanh đó tạm ẩn (chỉ hình vẽ, không đổi gì trong game)', () => sim.dev.palace, (on) => { sim.dev.palace = on; })));
+    page.append(h('div', { class: 'devrow' }, btn('Sát thủ tới (thử)', () => { const t = sim.tribes.find((x) => x.state === 'free' && !x.boss && !x.bandit); const f = t ? sim.sendAssassin(t.id) : null; toast(f ? `Sát thủ của ${t!.def.name} đã lẻn vào, nhắm vào ${sim.get(f.ai!.assassin!.target)?.name ?? 'ai đó'}` : 'Không có làng nào để gửi sát thủ'); ctl.onChange(); }, 'Gửi một sát thủ ẩn của một làng tới ám sát một dân làng (ưu tiên người có cận vệ). Lính ở gần mới thấy hắn')));
     page.append(h('div', { class: 'devrow' }, toggle('Chạy cây cốt truyện (bản mẫu)', 'Bật máy cốt truyện dù dữ liệu còn tắt (data/story/index.json): nút thắt, lá, trái, ngọn ghi vào Nhật ký; cảnh của truyện tới cổng như khách', () => sim.dev.story, (on) => { sim.dev.story = on; })));
     page.append(h('div', { class: 'devrow' }, h('small', { text: 'Nghiên cứu xong:' }),
       ...dev.RESEARCH_GROUPS.map((g) => btn(g.label, () => toast(dev.researchGroup(sim, g.key)), `Nghiên cứu xong mọi mục của nhóm ${g.label}, không tốn gì`)),
@@ -98,7 +99,7 @@ export class Menu {
       btn('+5 dân', () => toast(dev.addPeople(sim, 5)), 'Thêm 5 dân rảnh quanh lửa trại, kể cả khi vượt sức chứa'),
       btn('+100 mỗi tài nguyên', () => dev.addAllStock(sim, 100), 'Cộng 100 mỗi loại (không quá sức chứa)'),
       btn('Tập hợp quân đầy ô', () => { toast(dev.fillPlan(sim)); ctl.onChange(); }, 'Tạo thêm lính (đồ tốt nhất + đuốc, bỏ qua sức chứa trại) cho đủ mọi ô lính trong kế hoạch của Bãi tập rồi Tập trận ngay'),
-      ...[4, 5, 6, 7].map((r) => btn(`+5 lính bậc ${r} (Trung cổ)`, () => { toast(dev.addRankSoldiers(sim, r)); ctl.onChange(); }, `Thêm 5 bộ binh, 5 cung thủ, 5 kỵ binh bậc ${r} thời Trung cổ (đồ và thú đúng bậc), gọi ra quanh đống lửa để xem`)),
+      ...[4, 5, 6, 7, 8, 9, 10].map((r) => btn(`+5 lính bậc ${r} (Trung cổ)`, () => { toast(dev.addRankSoldiers(sim, r)); ctl.onChange(); }, `Thêm 5 bộ binh, 5 cung thủ, 5 kỵ binh bậc ${r} thời Trung cổ (đồ và thú đúng bậc), gọi ra quanh đống lửa để xem`)),
       btn('Dọn sạch quanh khu quân sự', () => { toast(dev.clearAroundZones(sim)); ctl.onChange(); }, 'Xóa cây, đá, bụi và thú trong khu quân sự và 40 ô xung quanh để thử hành quân (công trình giữ nguyên)'),
       btn('Mẫu nhật ký chiến đấu', () => toast(dev.sampleBattleLog(sim)), 'Thêm (hoặc xóa) vài trận giả vào nhật ký của Lều họp chiến để xem giao diện'),
       btn('Đầy quân + đồ cao nhất + đuốc', () => toast(dev.fullArmy(sim)), 'Mọi trại lính đầy quân, ai cũng có vũ khí và giáp tốt nhất của thời đại và một cây đuốc'),

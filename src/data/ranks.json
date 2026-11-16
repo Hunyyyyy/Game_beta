@@ -1,5 +1,5 @@
 {
-  "_note": "Bậc lính (xem doc/thiet_ke_bac_linh.md). Mỗi nhánh (foot, archer, cavalry) có các bậc theo thang chung 1..6: thời Đá là 1..3, thời Trung cổ là 4..7 (4 là lính đồng). Lính bậc N chỉ mang vũ khí có rank N (weapons.json) và luyện ở trại lính bằng: nghiên cứu đã mở bậc đó + vũ khí trong kho + chi phí cost (kỵ: cost đã gồm giá thú cưỡi nên không cần Chuồng thú). power: hệ số sức mạnh của từng bậc (nhân vào chỉ số gốc, rồi nhân tiếp với 1 + % nghiên cứu; 1 lính bậc 7 ≈ 5 lính bậc 1 khi đánh theo nhóm, vì √25 = 5); statExp: mỗi chỉ số nhân power mũ bao nhiêu (hp và atk lấy căn bậc hai để sức mạnh tổng ≈ power); ration: khẩu phần ăn nhân theo bậc. soon: chưa luyện được (thiếu vật liệu), chỉ có qua dev.",
+  "_note": "Bậc lính (xem doc/thiet_ke_bac_linh.md). Mỗi nhánh (foot, archer, cavalry) có các bậc theo thang chung 1..6: thời Đá là 1..3, thời Trung cổ là 4..10 (4 là lính đồng). Lính bậc N chỉ mang vũ khí có rank N (weapons.json) và luyện ở trại lính bằng: nghiên cứu đã mở bậc đó + vũ khí trong kho + chi phí cost (kỵ: cost đã gồm giá thú cưỡi nên không cần Chuồng thú). power: hệ số sức mạnh của từng bậc (nhân vào chỉ số gốc, rồi nhân tiếp với 1 + % nghiên cứu; 1 lính bậc 7 ≈ 5 lính bậc 1 khi đánh theo nhóm, vì √25 = 5); statExp: mỗi chỉ số nhân power mũ bao nhiêu (hp và atk lấy căn bậc hai để sức mạnh tổng ≈ power); ration: khẩu phần ăn nhân theo bậc. Bậc 8-10 (tools/gen-ranks.mjs, `curve`): sức mạnh x1.35 mỗi bậc; lính bậc N cần Nhà chung cấp N (hoặc cấp cao nhất đã có).",
   "power": [
     1,
     2.25,
@@ -7,7 +7,10 @@
     8.4,
     13,
     18.5,
-    25
+    25,
+    33.8,
+    45.6,
+    61.5
   ],
   "statExp": {
     "hp": 0.5,
@@ -24,7 +27,10 @@
     1.65,
     1.8,
     2,
-    2.25
+    2.25,
+    2.53,
+    2.81,
+    3.09
   ],
   "eraRanks": {
     "stone": [
@@ -39,7 +45,10 @@
       4,
       5,
       6,
-      7
+      7,
+      8,
+      9,
+      10
     ]
   },
   "branches": {
@@ -91,13 +100,12 @@
       },
       {
         "rank": 6,
-        "name": "Hộ vệ hoàng gia",
+        "name": "Trọng giáp binh",
         "weapon": "greatsword",
         "armor": "guard",
         "cost": {
           "coin": 60
-        },
-        "soon": true
+        }
       },
       {
         "rank": 7,
@@ -106,8 +114,34 @@
         "armor": "templar",
         "cost": {
           "coin": 100
-        },
-        "soon": true
+        }
+      },
+      {
+        "rank": 8,
+        "name": "Kích thủ giáp lá",
+        "weapon": "halberd",
+        "armor": "halberdier",
+        "cost": {
+          "coin": 150
+        }
+      },
+      {
+        "rank": 9,
+        "name": "Hiệp sĩ bộ",
+        "weapon": "bastard_sword",
+        "armor": "footknight",
+        "cost": {
+          "coin": 220
+        }
+      },
+      {
+        "rank": 10,
+        "name": "Đội trưởng cấm quân",
+        "weapon": "royal_blade",
+        "armor": "captain",
+        "cost": {
+          "coin": 320
+        }
       }
     ],
     "archer": [
@@ -158,23 +192,48 @@
       },
       {
         "rank": 6,
-        "name": "Cung tiễn hoàng gia",
+        "name": "Xạ thủ trường cung",
         "weapon": "longbow",
         "armor": "marksman",
         "cost": {
           "coin": 60
-        },
-        "soon": true
+        }
       },
       {
         "rank": 7,
-        "name": "Lính bắn tỉa",
+        "name": "Nỏ thủ",
         "weapon": "alloy_crossbow",
         "armor": "sniper",
         "cost": {
           "coin": 100
-        },
-        "soon": true
+        }
+      },
+      {
+        "rank": 8,
+        "name": "Nỏ thủ nặng",
+        "weapon": "heavy_crossbow",
+        "armor": "arbalist",
+        "cost": {
+          "coin": 150
+        }
+      },
+      {
+        "rank": 9,
+        "name": "Hỏa thương thủ",
+        "weapon": "fire_lance",
+        "armor": "firelancer",
+        "cost": {
+          "coin": 220
+        }
+      },
+      {
+        "rank": 10,
+        "name": "Pháo thủ tay",
+        "weapon": "hand_cannon",
+        "armor": "gunner",
+        "cost": {
+          "coin": 320
+        }
       }
     ],
     "cavalry": [
@@ -240,7 +299,7 @@
       },
       {
         "rank": 6,
-        "name": "Kỵ binh hoàng gia",
+        "name": "Kỵ binh bọc giáp",
         "weapon": "heavy_lance",
         "armor": "royalrider",
         "mount": "warhorse",
@@ -248,8 +307,7 @@
           "coin": 260,
           "food": 400,
           "hide": 120
-        },
-        "soon": true
+        }
       },
       {
         "rank": 7,
@@ -261,8 +319,43 @@
           "coin": 500,
           "food": 600,
           "hide": 180
-        },
-        "soon": true
+        }
+      },
+      {
+        "rank": 8,
+        "name": "Kỵ binh nặng giáo dài",
+        "weapon": "long_lance",
+        "armor": "heavyrider",
+        "mount": "destrier",
+        "cost": {
+          "coin": 650,
+          "food": 800,
+          "hide": 240
+        }
+      },
+      {
+        "rank": 9,
+        "name": "Hiệp sĩ kỵ",
+        "weapon": "knight_lance",
+        "armor": "knight",
+        "mount": "knighthorse",
+        "cost": {
+          "coin": 850,
+          "food": 1000,
+          "hide": 300
+        }
+      },
+      {
+        "rank": 10,
+        "name": "Kỵ sĩ vương",
+        "weapon": "royal_lance",
+        "armor": "kingsrider",
+        "mount": "royalhorse",
+        "cost": {
+          "coin": 1100,
+          "food": 1300,
+          "hide": 380
+        }
       }
     ],
     "guard": [
@@ -315,23 +408,48 @@
       },
       {
         "rank": 6,
-        "name": "Cận vệ hoàng gia",
+        "name": "Lính gác chuyên nghiệp",
         "weapon": "pike",
         "armor": "sergeant",
         "cost": {
           "coin": 60
-        },
-        "soon": true
+        }
       },
       {
         "rank": 7,
-        "name": "Vệ binh hoàng gia",
+        "name": "Cận vệ thành trì",
         "weapon": "ward_sword",
         "armor": "warden",
         "cost": {
           "coin": 100
-        },
-        "soon": true
+        }
+      },
+      {
+        "rank": 8,
+        "name": "Cấm vệ",
+        "weapon": "glaive",
+        "armor": "royalguard",
+        "cost": {
+          "coin": 150
+        }
+      },
+      {
+        "rank": 9,
+        "name": "Cận vệ tinh nhuệ",
+        "weapon": "poleaxe",
+        "armor": "eliteguard",
+        "cost": {
+          "coin": 220
+        }
+      },
+      {
+        "rank": 10,
+        "name": "Cận vệ vương",
+        "weapon": "partisan",
+        "armor": "kingsguard",
+        "cost": {
+          "coin": 320
+        }
       }
     ]
   },
@@ -343,5 +461,11 @@
       "defm": 1.4,
       "defr": 1.4
     }
+  },
+  "curve": {
+    "_note": "Ranks past 7 follow this: power x growth per rank, ration + rationStep per rank (data/ranks.json arrays are written by tools/gen-ranks.mjs). The game reads the arrays.",
+    "from": 7,
+    "growth": 1.35,
+    "rationStep": 0.28
   }
 }

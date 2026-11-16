@@ -370,7 +370,12 @@
       "cycle": 1.5,
       "style": "guard_pike",
       "tier": 5,
-      "rank": 6
+      "rank": 6,
+      "cost": {
+        "steel": 3,
+        "hardwood": 3
+      },
+      "time": 110
     },
     "heavy_lance": {
       "name": "Trường thương kỵ binh",
@@ -380,7 +385,12 @@
       "cycle": 1.6,
       "style": "rider_lance",
       "tier": 5,
-      "rank": 6
+      "rank": 6,
+      "cost": {
+        "steel": 4,
+        "hardwood": 4
+      },
+      "time": 120
     },
     "greatsword": {
       "name": "Đại kiếm",
@@ -391,7 +401,13 @@
       "style": "sword_shield",
       "shield": "tower",
       "tier": 5,
-      "rank": 6
+      "rank": 6,
+      "cost": {
+        "steel": 5,
+        "hardwood": 1,
+        "leather": 1
+      },
+      "time": 120
     },
     "longbow": {
       "name": "Trường cung",
@@ -403,7 +419,14 @@
       "projectile": "arrow",
       "style": "shoot",
       "tier": 5,
-      "rank": 6
+      "rank": 6,
+      "cost": {
+        "yew": 3,
+        "sinew": 3,
+        "feather": 3,
+        "steel": 1
+      },
+      "time": 120
     },
     "ward_sword": {
       "name": "Kiếm dài cận vệ",
@@ -413,7 +436,13 @@
       "cycle": 1.1,
       "style": "guard_sword",
       "tier": 5,
-      "rank": 7
+      "rank": 7,
+      "cost": {
+        "fine_steel": 2,
+        "steel": 2,
+        "leather": 1
+      },
+      "time": 140
     },
     "knight_sword": {
       "name": "Kiếm thánh giáo",
@@ -424,7 +453,13 @@
       "style": "sword_shield",
       "shield": "aegis",
       "tier": 5,
-      "rank": 7
+      "rank": 7,
+      "cost": {
+        "fine_steel": 3,
+        "steel": 2,
+        "leather": 1
+      },
+      "time": 150
     },
     "paladin_lance": {
       "name": "Thương thánh kỵ sĩ",
@@ -434,19 +469,236 @@
       "cycle": 1.8,
       "style": "rider_lance",
       "tier": 5,
-      "rank": 7
+      "rank": 7,
+      "cost": {
+        "fine_steel": 3,
+        "hardwood": 4,
+        "cloth": 1
+      },
+      "time": 150
     },
     "alloy_crossbow": {
       "name": "Nỏ hợp kim",
       "type": "pierce",
       "range": 14,
       "damage": 45,
-      "cycle": 3.0,
+      "cycle": 3,
       "ranged": true,
       "projectile": "arrow",
       "style": "crossbow",
       "tier": 5,
-      "rank": 7
+      "rank": 7,
+      "cost": {
+        "fine_steel": 3,
+        "hardwood": 3,
+        "sinew": 3,
+        "steel": 1
+      },
+      "time": 160
+    },
+    "halberd": {
+      "name": "Kích giáp lá",
+      "type": "slash",
+      "range": 1.8,
+      "damage": 36,
+      "cycle": 1.5,
+      "style": "thrust",
+      "tier": 5,
+      "rank": 8,
+      "cost": {
+        "fine_steel": 3,
+        "steel": 3,
+        "hardwood": 4
+      },
+      "time": 170
+    },
+    "heavy_crossbow": {
+      "name": "Nỏ nặng",
+      "type": "pierce",
+      "range": 15,
+      "damage": 62,
+      "cycle": 3.4,
+      "ranged": true,
+      "projectile": "arrow",
+      "style": "crossbow",
+      "tier": 5,
+      "rank": 8,
+      "cost": {
+        "fine_steel": 4,
+        "hardwood": 4,
+        "sinew": 4,
+        "steel": 2
+      },
+      "time": 180
+    },
+    "long_lance": {
+      "name": "Giáo kỵ dài",
+      "type": "pierce",
+      "range": 2.9,
+      "damage": 52,
+      "cycle": 1.8,
+      "style": "rider_lance",
+      "tier": 5,
+      "rank": 8,
+      "cost": {
+        "fine_steel": 4,
+        "hardwood": 5,
+        "cloth": 1
+      },
+      "time": 180
+    },
+    "glaive": {
+      "name": "Đao cán dài",
+      "type": "slash",
+      "range": 2.3,
+      "damage": 22,
+      "cycle": 1.5,
+      "style": "guard_pike",
+      "tier": 5,
+      "rank": 8,
+      "cost": {
+        "fine_steel": 3,
+        "steel": 2,
+        "hardwood": 4
+      },
+      "time": 170
+    },
+    "bastard_sword": {
+      "name": "Kiếm hiệp sĩ",
+      "type": "slash",
+      "range": 1.3,
+      "damage": 44,
+      "cycle": 1.3,
+      "shield": "tower",
+      "style": "sword_shield",
+      "tier": 5,
+      "rank": 9,
+      "cost": {
+        "fine_steel": 6,
+        "steel": 3,
+        "leather": 2
+      },
+      "time": 210
+    },
+    "fire_lance": {
+      "name": "Hỏa thương",
+      "type": "pierce",
+      "range": 9,
+      "damage": 80,
+      "cycle": 3,
+      "ranged": true,
+      "projectile": "arrow",
+      "style": "crossbow",
+      "tier": 5,
+      "rank": 9,
+      "cost": {
+        "fine_steel": 4,
+        "steel": 4,
+        "hardwood": 3,
+        "coal": 4
+      },
+      "time": 220
+    },
+    "knight_lance": {
+      "name": "Thương hiệp sĩ kỵ",
+      "type": "pierce",
+      "range": 3.1,
+      "damage": 66,
+      "cycle": 1.9,
+      "style": "rider_lance",
+      "tier": 5,
+      "rank": 9,
+      "cost": {
+        "fine_steel": 5,
+        "hardwood": 5,
+        "cloth": 2
+      },
+      "time": 210
+    },
+    "poleaxe": {
+      "name": "Rìu thương",
+      "type": "slash",
+      "range": 2.3,
+      "damage": 28,
+      "cycle": 1.5,
+      "style": "guard_pike",
+      "tier": 5,
+      "rank": 9,
+      "cost": {
+        "fine_steel": 5,
+        "steel": 3,
+        "hardwood": 4
+      },
+      "time": 210
+    },
+    "royal_blade": {
+      "name": "Kiếm cấm quân",
+      "type": "slash",
+      "range": 1.4,
+      "damage": 54,
+      "cycle": 1.3,
+      "shield": "aegis",
+      "style": "sword_shield",
+      "tier": 5,
+      "rank": 10,
+      "cost": {
+        "fine_steel": 9,
+        "steel": 4,
+        "leather": 2
+      },
+      "time": 260
+    },
+    "hand_cannon": {
+      "name": "Súng thần công tay",
+      "type": "pierce",
+      "range": 11,
+      "damage": 100,
+      "cycle": 4.2,
+      "ranged": true,
+      "projectile": "arrow",
+      "style": "crossbow",
+      "tier": 5,
+      "rank": 10,
+      "cost": {
+        "fine_steel": 7,
+        "steel": 6,
+        "coal": 6,
+        "hardwood": 3
+      },
+      "time": 280
+    },
+    "royal_lance": {
+      "name": "Thương vương kỵ",
+      "type": "pierce",
+      "range": 3.3,
+      "damage": 82,
+      "cycle": 2,
+      "style": "rider_lance",
+      "tier": 5,
+      "rank": 10,
+      "cost": {
+        "fine_steel": 7,
+        "hardwood": 6,
+        "cloth": 3
+      },
+      "time": 260
+    },
+    "partisan": {
+      "name": "Thương cận vệ vương",
+      "type": "pierce",
+      "range": 2.4,
+      "damage": 36,
+      "cycle": 1.5,
+      "style": "guard_pike",
+      "tier": 5,
+      "rank": 10,
+      "cost": {
+        "fine_steel": 7,
+        "steel": 4,
+        "hardwood": 4,
+        "cloth": 1
+      },
+      "time": 250
     }
   },
   "armor": {
@@ -518,49 +770,254 @@
       "name": "Giáp lính gác chuyên nghiệp (xích + brigandine)",
       "defm": 110,
       "defr": 95,
-      "tier": 5
-    },
-    "warden": {
-      "name": "Giáp cận vệ thành trì (tấm 3/4)",
-      "defm": 165,
-      "defr": 145,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "steel": 6,
+        "leather": 3,
+        "iron": 2
+      },
+      "time": 180
     },
     "guard": {
       "name": "Giáp tấm hộ vệ",
       "defm": 150,
       "defr": 130,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "steel": 9,
+        "leather": 3
+      },
+      "time": 200
     },
     "marksman": {
       "name": "Giáp brigandine",
       "defm": 90,
       "defr": 100,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "steel": 4,
+        "leather": 4,
+        "cloth": 2
+      },
+      "time": 170
     },
     "royalrider": {
       "name": "Giáp tấm kỵ binh hoàng gia",
       "defm": 140,
       "defr": 125,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "steel": 8,
+        "leather": 3,
+        "cloth": 1
+      },
+      "time": 210
     },
     "templar": {
       "name": "Giáp tấm thánh giáo",
       "defm": 200,
       "defr": 175,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "fine_steel": 6,
+        "steel": 6,
+        "cloth": 2,
+        "leather": 2
+      },
+      "time": 260
     },
     "sniper": {
       "name": "Giáp da cao cấp",
       "defm": 105,
       "defr": 125,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "steel": 4,
+        "leather": 5,
+        "cloth": 3
+      },
+      "time": 200
     },
     "paladin": {
       "name": "Giáp tấm thánh kỵ sĩ",
       "defm": 185,
       "defr": 160,
-      "tier": 5
+      "tier": 5,
+      "cost": {
+        "fine_steel": 6,
+        "steel": 5,
+        "cloth": 3,
+        "leather": 2
+      },
+      "time": 270
+    },
+    "warden": {
+      "name": "Giáp cận vệ thành trì (tấm 3/4)",
+      "defm": 165,
+      "defr": 145,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 5,
+        "steel": 6,
+        "leather": 2
+      },
+      "time": 250
+    },
+    "halberdier": {
+      "name": "Giáp lá kích thủ",
+      "defm": 215,
+      "defr": 190,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 7,
+        "steel": 7,
+        "cloth": 3,
+        "leather": 2
+      },
+      "time": 300
+    },
+    "arbalist": {
+      "name": "Giáp nỏ thủ nặng",
+      "defm": 120,
+      "defr": 140,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 3,
+        "steel": 4,
+        "leather": 6,
+        "cloth": 3
+      },
+      "time": 260
+    },
+    "heavyrider": {
+      "name": "Giáp kỵ binh nặng",
+      "defm": 205,
+      "defr": 180,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 7,
+        "steel": 6,
+        "cloth": 4,
+        "leather": 3
+      },
+      "time": 310
+    },
+    "royalguard": {
+      "name": "Giáp cấm vệ",
+      "defm": 190,
+      "defr": 165,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 6,
+        "steel": 7,
+        "cloth": 2,
+        "leather": 3
+      },
+      "time": 300
+    },
+    "footknight": {
+      "name": "Giáp hiệp sĩ bộ",
+      "defm": 245,
+      "defr": 215,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 10,
+        "steel": 9,
+        "cloth": 5,
+        "leather": 3
+      },
+      "time": 360
+    },
+    "firelancer": {
+      "name": "Giáp hỏa thương thủ",
+      "defm": 135,
+      "defr": 155,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 4,
+        "steel": 5,
+        "leather": 7,
+        "cloth": 4
+      },
+      "time": 320
+    },
+    "knight": {
+      "name": "Giáp hiệp sĩ kỵ",
+      "defm": 230,
+      "defr": 200,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 10,
+        "steel": 8,
+        "cloth": 5,
+        "leather": 4
+      },
+      "time": 370
+    },
+    "eliteguard": {
+      "name": "Giáp cận vệ tinh nhuệ",
+      "defm": 215,
+      "defr": 190,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 9,
+        "steel": 9,
+        "cloth": 4,
+        "leather": 4
+      },
+      "time": 350
+    },
+    "captain": {
+      "name": "Giáp đội trưởng cấm quân",
+      "defm": 280,
+      "defr": 245,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 14,
+        "steel": 12,
+        "cloth": 6,
+        "leather": 4
+      },
+      "time": 440
+    },
+    "gunner": {
+      "name": "Giáp pháo thủ",
+      "defm": 150,
+      "defr": 170,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 6,
+        "steel": 6,
+        "leather": 8,
+        "cloth": 5
+      },
+      "time": 380
+    },
+    "kingsrider": {
+      "name": "Giáp kỵ sĩ vương",
+      "defm": 260,
+      "defr": 225,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 14,
+        "steel": 11,
+        "cloth": 7,
+        "leather": 5
+      },
+      "time": 450
+    },
+    "kingsguard": {
+      "name": "Giáp cận vệ vương",
+      "defm": 245,
+      "defr": 215,
+      "tier": 5,
+      "cost": {
+        "fine_steel": 13,
+        "steel": 12,
+        "cloth": 5,
+        "leather": 5
+      },
+      "time": 430
     }
   },
   "rules": {

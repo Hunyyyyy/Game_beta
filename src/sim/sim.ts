@@ -22,6 +22,7 @@ import * as economy from './economy';
 import * as market from './market';
 import * as encounters from './encounters';
 import * as story from './story';
+import * as specialists from './specialists';
 import { initialStory, type StoryState } from './storydata';
 import type { StoryMode } from './storyscenes';
 import type { CondCtx, StoryCond } from './encounterdata';
@@ -460,6 +461,16 @@ export class Sim {
   queueEncounter(script: string, days: number, priority?: number, maxDelay?: number): void { return encounters.queueScript(this, script, days, priority, maxDelay); }
   /** → encounters.addDeed */
   addDeed(key: string, tribe?: string): void { return encounters.addDeed(this, key, tribe); }
+  /** → specialists.setBodyguard */
+  setBodyguard(guardId: number, wardId: number | null): string | null { return specialists.setBodyguard(this, guardId, wardId); }
+  /** → specialists.bodyguardOf */
+  bodyguardOf(v: Villager): Villager | null { return specialists.bodyguardOf(this, v); }
+  /** → specialists.bodyguardShare */
+  bodyguardShare(): number { return specialists.bodyguardShare(); }
+  /** → specialists.sendAssassin */
+  sendAssassin(tribeId: string, targetId?: number): Villager | null { return specialists.sendAssassin(this, tribeId, targetId); }
+  /** → specialists.tickAssassin */
+  tickAssassin(f: Villager, dt: number): void { return specialists.tickAssassin(this, f, dt); }
   /** → story.storyCond */
   storyCond(): StoryCond { return story.storyCond(this); }
   /** → story.setFlag */
@@ -919,7 +930,7 @@ export class Sim {
     encounters.tickEncounters(this, dt);
     story.tickStory(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; specialists.tickBodyguards(this); this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
     this.tickFog();
   }
 

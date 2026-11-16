@@ -1,0 +1,207 @@
+{
+ "_note": "Kích thủ giáp lá (Bộ binh bậc 8): giáp tấm của hộ vệ, tông ấm, lông mào đỏ thẫm. (Bậc 8; tạo bởi tools/gen-ranks.mjs từ guard.)",
+ "name": "Giáp lá kích thủ",
+ "palette": {
+  "steel": "#a9afae",
+  "steelH": "#e6e6df",
+  "steelD": "#666f72",
+  "steelDD": "#3d4549",
+  "slit": "#15181c",
+  "gold": "#d8b04a",
+  "royal": "#a8372c",
+  "royalD": "#6e2018"
+ },
+ "legs": {
+  "near": "steelD",
+  "far": "steelDD"
+ },
+ "wraps": {
+  "arm": {
+   "full": true,
+   "color": "steel",
+   "far": "steelD",
+   "hand": "steelDD",
+   "w": 3,
+   "h": 3
+  },
+  "leg": {
+   "dy": 4,
+   "w": 3,
+   "h": 6,
+   "color": "steel",
+   "edge": "gold"
+  }
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "royal",
+    "R": "royalD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "g": "gold"
+   },
+   "rows": [
+    ".....rrr.....",
+    "....rrRRr....",
+    "...ssHHsss...",
+    "..sHHHssssD..",
+    ".sHHsssssssD.",
+    ".sssssssssssD",
+    ".ssssssssssDD",
+    ".sssssdddddsD",
+    ".sssssdkkkdsD",
+    ".ssssssddddsD",
+    ".sssssssssssD",
+    ".DsssssssssDD",
+    "..DDsssssDDD.",
+    "...DDDDDDD..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD"
+   },
+   "rows": [
+    "ssHHssD",
+    "sHHHssD",
+    "ssHHssD",
+    "sssssdD",
+    "sgsssdD",
+    "dddddDD",
+    "ggggggg",
+    "sssssDD",
+    "sHsssDD",
+    "ssssDD.",
+    "dddd..."
+   ]
+  }
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "royal",
+    "R": "royalD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "g": "gold"
+   },
+   "rows": [
+    ".....rrr....",
+    "....rrRRr...",
+    "...ssHHsss..",
+    "..sHHHssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssdddddddsD",
+    ".ssdkkdkkdsD",
+    ".ssdddddddsD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHHssHHHs",
+    "ssHHssssHs",
+    "ssssdddsss",
+    "ssssdsdsss",
+    "dddddddddd",
+    "gggggggggg",
+    "sssssssssD",
+    "sHsssssHsD",
+    "ssssDDssss",
+    "ddd....ddd"
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "royal",
+    "R": "royalD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "g": "gold"
+   },
+   "rows": [
+    ".....rrr....",
+    "....rrRRr...",
+    "...ssHHsss..",
+    "..sHHHssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "r": "royal",
+    "R": "royalD"
+   },
+   "rows": [
+    "ssHHssssHs",
+    "sHHHssHHHs",
+    "ssHHssssHs",
+    "ssssssssss",
+    "ssssdsdsss",
+    "dddddddddd",
+    "gggggggggg",
+    "sssssssssD",
+    "sHsssssHsD",
+    "ssssDDssss",
+    "ddd....ddd"
+   ]
+  }
+ }
+}

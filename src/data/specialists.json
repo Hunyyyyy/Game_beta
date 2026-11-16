@@ -1,0 +1,5 @@
+{
+  "_note": "The two specialists of the story (doc/story_tree.md, Thân VII). bodyguard: a soldier of the guard branch of rank minRank or more, given one villager to keep (sim.setBodyguard); while he lives and stands within `within` tiles of that villager he takes `share` of every blow meant for him, and he keeps his post (guardAt) within `stay` tiles of him. assassin: a hidden foe sent by a village (sim.sendAssassin): walks to one target, unseen until a soldier or guard is within revealRadius (a tower within towerRadius), strikes once for strikeMult times the health of the target (before armour), then runs home; fleeSeconds is how long he may run before he is gone. A blow reveals him for revealSeconds. spawnDist: tiles from the fire where he appears.",
+  "bodyguard": { "minRank": 7, "share": 0.7, "within": 3, "stay": 2.5 },
+  "assassin": { "strikeMult": 1.2, "revealRadius": 3, "towerRadius": 4.5, "revealSeconds": 8, "spawnDist": 26, "fleeSeconds": 90, "repath": 2, "speedMul": 1.1, "weapon": "bronze_sword" }
+}

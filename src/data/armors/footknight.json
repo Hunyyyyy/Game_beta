@@ -1,0 +1,229 @@
+{
+ "_note": "Hiệp sĩ bộ (Bộ binh bậc 9): giáp tấm thánh giáo, áo choàng xanh sẫm, chữ thập vàng. (Bậc 9; tạo bởi tools/gen-ranks.mjs từ templar.)",
+ "name": "Giáp hiệp sĩ bộ",
+ "palette": {
+  "steel": "#d4dcef",
+  "steelH": "#f2f7ff",
+  "steelD": "#909cb0",
+  "steelDD": "#5a6574",
+  "slit": "#15181c",
+  "gold": "#e0b84e",
+  "cloth": "#243e7a",
+  "clothD": "#18295a",
+  "cross": "#e0b84e",
+  "belt": "#2a1c10",
+  "scab": "#33200f",
+  "hilt": "#9aa2a8"
+ },
+ "legs": {
+  "near": "steelD",
+  "far": "steelDD"
+ },
+ "wraps": {
+  "arm": {
+   "full": true,
+   "color": "steel",
+   "far": "steelD",
+   "hand": "gold",
+   "w": 3,
+   "h": 3
+  },
+  "leg": {
+   "dy": 4,
+   "w": 3,
+   "h": 6,
+   "color": "steel",
+   "edge": "gold"
+  }
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "r": "cross"
+   },
+   "rows": [
+    "..sssssssss..",
+    ".sHHHsssssssD",
+    ".sHHsssssssDD",
+    ".ssssssssssDD",
+    ".ssssssssssDD",
+    ".ssssssddddsD",
+    ".ssssssdkkksD",
+    ".ssssssddddsD",
+    ".ssssssssssDD",
+    ".sssssssssssD",
+    ".DssssssssDDD",
+    "..DDsssssDDD.",
+    "...DDDDDDD..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "ssHHssD",
+    "sHHHssD",
+    "ssHsssD",
+    "sssssdD",
+    "ssssddD",
+    "dddddDD",
+    "ggggggg",
+    "TTTTTTt",
+    "TTTRTTt",
+    "TTRRRTt",
+    "TTTRTt."
+   ]
+  },
+  "over": {
+   "ox": -3,
+   "oy": 6,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "gg...",
+    "gk...",
+    ".kk..",
+    ".kk..",
+    "..kk.",
+    "...k."
+   ]
+  }
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "r": "cross"
+   },
+   "rows": [
+    "..ssssssss..",
+    ".sHHHsssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".sddddsddddD",
+    ".sdkkkdkkkdD",
+    ".sddddsddddD",
+    ".sssssssssD.",
+    ".sssssssssD.",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD.",
+    "....DDDDDD.."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHTTTTHHs",
+    "ssHTTRTHss",
+    "ssssRRRsss",
+    "sssTTRTsss",
+    "ddddTRTddd",
+    "gggggggggg",
+    "TTTTTRTTTt",
+    "TTTTTRTTTt",
+    "TTTRRRRRTt",
+    "TTTTTRTTTt"
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "r": "cross"
+   },
+   "rows": [
+    "..ssssssss..",
+    ".sHHHsssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD.",
+    "....DDDDDD.."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHHssHHHs",
+    "ssHHssHHss",
+    "ssssssssss",
+    "ssssdsdsss",
+    "dddddddddd",
+    "gggggggggg",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt"
+   ]
+  }
+ }
+}

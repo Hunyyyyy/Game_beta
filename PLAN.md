@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 1 done; Phase 2 starts on "tiếp"**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 2 done; Phase 3 starts on "tiếp"**.
 
 ## Survey facts (what the code has today)
 
@@ -127,7 +127,8 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 |---|---|---|
 | 0 | done | this file |
 | 1 | done | engine + sample data; tree asleep in the game (`index.json` `enabled: false`, dev switch "Chạy cây cốt truyện"); save v49 |
-| 2 | next | soldiers rank 8-10, bodyguard, assassin |
+| 2 | done | ranks 6-10 of 4 branches (`tools/gen-ranks.mjs`), `specialists.ts` (bodyguard, assassin) |
+| 3 | next | buildings A1-A7, per-level footprint for every kind, walkable walls, living art |
 
 ## Added by the user after Phase 0 (2026-11-15), for Phase 3
 
@@ -149,3 +150,18 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | `baseVillages` | counted at the first step (seed 4242 gave 4, the doc assumes 7): check in Phase 5 |
 | Play mode | `sim.story.mode` + `sim.setStoryMode` exist; the new-game choice (UI) comes with the hard leaves in Phase 5 |
 | Checker | `node tools/simStory.mjs --check` (no `tools/check-*` file) |
+
+## Phase 2 notes for later phases
+
+| Point | Note |
+|---|---|
+| Ranks | one script, rerun-safe: `node tools/gen-ranks.mjs` writes ranks.json, weapons.json (craft cost + time for ranks 6-10), mounts, research, art. Rank data is edited in the script tables, not by hand |
+| Renames (user allowed) | foot 6 Trọng giáp binh; archer 6 Xạ thủ trường cung, 7 Nỏ thủ; cavalry 6 Kỵ binh bọc giáp; guard 6 Lính gác chuyên nghiệp, 7 Cận vệ thành trì |
+| Curve | `ranks.json curve`: power x1.35 (33.8 / 45.6 / 61.5), ration +0.28 per rank |
+| Rank rule | rank N needs Nhà chung level min(N, highest campfire level defined): tightens by itself when Phase 3 adds levels 5-10 |
+| Craft | recipeLevel of rank N gear = N (workshop level): ranks 5+ stay locked until Phase 3 builds workshop levels. Research leaps of ranks 8-10 ask Nhà nghiên cứu level 4 (`lab` in the leaps): raise it in Phase 3 |
+| Research | 5 new rows per arm (rows 14-18): leaps `<arm>_tier8/9/10`, 20 new research lines of 5 levels each. Tier 10 needs about 100-270 researches |
+| Projectiles | firearms (fire_lance, hand_cannon) still fly as arrows (`projectile: arrow`); a bullet look and a bang sound are not done |
+| Bodyguard | set in the unit panel of a guard rank 7+ ("Cận vệ cho"); no named characters yet (Phase 4) |
+| Assassin | enemy only: dev button "Sát thủ tới (thử)" or `sim.sendAssassin(tribeId, targetId?)` for story leaves; hiring one through a quest is Phase 4/5 |
+| Not done | `medieval_units.json` (viewer list) not updated; the viewers are not built |

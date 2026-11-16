@@ -653,6 +653,51 @@
           },
           "time": 20000
         },
+        "8": {
+          "needLab": 4,
+          "cost": {
+            "food": 6000,
+            "wood": 3000,
+            "stone": 2200,
+            "hide": 700,
+            "coin": 1400,
+            "fine_steel": 50,
+            "cloth": 30,
+            "steel": 60,
+            "leather": 45
+          },
+          "time": 30000
+        },
+        "9": {
+          "needLab": 4,
+          "cost": {
+            "food": 9000,
+            "wood": 4500,
+            "stone": 3300,
+            "hide": 1000,
+            "coin": 2200,
+            "fine_steel": 75,
+            "cloth": 45,
+            "steel": 90,
+            "leather": 65
+          },
+          "time": 42000
+        },
+        "10": {
+          "needLab": 4,
+          "cost": {
+            "food": 14000,
+            "wood": 7000,
+            "stone": 5000,
+            "hide": 1500,
+            "coin": 3500,
+            "fine_steel": 110,
+            "cloth": 65,
+            "steel": 130,
+            "leather": 90
+          },
+          "time": 60000
+        },
         "roles": [
           "foot",
           "cavalry",
@@ -1137,6 +1182,130 @@
                     "desc": "Giảm giá luyện dũng sĩ thánh giáo 5% mỗi cấp.",
                     "effect": {
                       "train_foot_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m11",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier8",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện kích thủ giáp lá",
+                    "short": "Giá kích thủ giáp lá",
+                    "desc": "Giảm giá luyện kích thủ giáp lá 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_8": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m12",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m13",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier9",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện hiệp sĩ bộ",
+                    "short": "Giá hiệp sĩ bộ",
+                    "desc": "Giảm giá luyện hiệp sĩ bộ 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_9": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m14",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "foot_m15",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "foot_tier10",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện đội trưởng cấm quân",
+                    "short": "Giá đội trưởng cấm quân",
+                    "desc": "Giảm giá luyện đội trưởng cấm quân 5% mỗi cấp.",
+                    "effect": {
+                      "train_foot_10": 5
                     }
                   }
                 },
@@ -1809,6 +1978,130 @@
                   "craft_ms2",
                   "research_ms2"
                 ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m11",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier8",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện kỵ binh nặng giáo dài",
+                    "short": "Giá kỵ binh nặng giáo dài",
+                    "desc": "Giảm giá luyện kỵ binh nặng giáo dài 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_8": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m12",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m13",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier9",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện hiệp sĩ kỵ",
+                    "short": "Giá hiệp sĩ kỵ",
+                    "desc": "Giảm giá luyện hiệp sĩ kỵ 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_9": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m14",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "cavalry_m15",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "cavalry_tier10",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện kỵ sĩ vương",
+                    "short": "Giá kỵ sĩ vương",
+                    "desc": "Giảm giá luyện kỵ sĩ vương 5% mỗi cấp.",
+                    "effect": {
+                      "train_cavalry_10": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
               }
             ]
           },
@@ -2464,6 +2757,130 @@
                     "desc": "Giảm giá luyện lính bắn tỉa 5% mỗi cấp.",
                     "effect": {
                       "train_archer_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m11",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier8",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện nỏ thủ nặng",
+                    "short": "Giá nỏ thủ nặng",
+                    "desc": "Giảm giá luyện nỏ thủ nặng 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_8": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m12",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m13",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier9",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện hỏa thương thủ",
+                    "short": "Giá hỏa thương thủ",
+                    "desc": "Giảm giá luyện hỏa thương thủ 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_9": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m14",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "archer_m15",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "archer_tier10",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện pháo thủ tay",
+                    "short": "Giá pháo thủ tay",
+                    "desc": "Giảm giá luyện pháo thủ tay 5% mỗi cấp.",
+                    "effect": {
+                      "train_archer_10": 5
                     }
                   }
                 },
@@ -3136,6 +3553,130 @@
                     "desc": "Giảm giá luyện cận vệ thành trì 5% mỗi cấp.",
                     "effect": {
                       "train_guard_7": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2",
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m11",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier8",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cấm vệ",
+                    "short": "Giá cấm vệ",
+                    "desc": "Giảm giá luyện cấm vệ 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_8": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "craft_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m12",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m13",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier9",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cận vệ tinh nhuệ",
+                    "short": "Giá cận vệ tinh nhuệ",
+                    "desc": "Giảm giá luyện cận vệ tinh nhuệ 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_9": 5
+                    }
+                  }
+                },
+                "cross": [
+                  "research_ms2"
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m14",
+                "nodes": [
+                  {
+                    "stat": "move"
+                  },
+                  {
+                    "stat": "atk"
+                  },
+                  {
+                    "stat": "sta"
+                  }
+                ]
+              },
+              {
+                "era": "ancient",
+                "group": "guard_m15",
+                "nodes": [
+                  {
+                    "stat": "hp"
+                  },
+                  {
+                    "stat": "defm"
+                  },
+                  {
+                    "stat": "defr"
+                  }
+                ],
+                "leap": {
+                  "id": "guard_tier10",
+                  "share": 0.9,
+                  "lab": 4,
+                  "side": {
+                    "name": "Giá luyện cận vệ vương",
+                    "short": "Giá cận vệ vương",
+                    "desc": "Giảm giá luyện cận vệ vương 5% mỗi cấp.",
+                    "effect": {
+                      "train_guard_10": 5
                     }
                   }
                 },

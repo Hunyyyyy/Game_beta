@@ -5,6 +5,7 @@
  */
 import { ARMORS, WEAPONS } from './combat';
 import { discountBill, perkPct, soldierTier } from './research';
+import { maxLevel } from './buildings';
 import { rankDef, ranksOf } from './ranks';
 import type { RankDef, RankRole } from './ranks';
 import { RES_NAME } from './resources';
@@ -33,6 +34,8 @@ export function trainCheck(sim: Sim, role: RankRole, rank: number): TrainCheck {
   if (def.soon) return { def, missing: ['Chưa luyện được: thiếu vật liệu của thời đại'], ok: false };
   if (!ranksOf(role, sim.era).some((d) => d.rank === rank)) return { def, missing: ['Chưa tới thời đại của bậc này'], ok: false };
   const missing: string[] = [];
+  const fireNeed = Math.min(rank, maxLevel('campfire', 'ancient')); // a rank of the medieval age needs a Nhà chung of its own level (or the highest there is)
+  if (rank >= 4 && sim.fireLevel() < fireNeed) missing.push(`Cần Nhà chung cấp ${fireNeed} để luyện ${def.name.toLowerCase()}`);
   if (!rankOpen(sim, role, rank)) missing.push(`Chưa nghiên cứu mở ${def.name.toLowerCase()}`);
   if (!sim.hasWorkshop() && !sim.building('armory')) missing.push('Cần có Nhà chế tạo hoặc Kho vũ khí để lấy đồ');
   else if ((sim.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing.push(`Kho hết ${WEAPONS[def.weapon].name.toLowerCase()}: hãy chế thêm`);

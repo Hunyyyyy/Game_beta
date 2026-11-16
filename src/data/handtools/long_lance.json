@@ -1,0 +1,52 @@
+{
+ "name": "Long lance",
+ "handle": {
+  "length": 24,
+  "width": 1,
+  "color": "wood"
+ },
+ "head": [
+  {
+   "x": 0,
+   "y": -11,
+   "w": 1,
+   "h": 3,
+   "color": "light"
+  },
+  {
+   "x": -1,
+   "y": -9,
+   "w": 3,
+   "h": 7,
+   "color": "head"
+  },
+  {
+   "x": -1,
+   "y": -9,
+   "w": 1,
+   "h": 6,
+   "color": "light"
+  },
+  {
+   "x": 1,
+   "y": -8,
+   "w": 1,
+   "h": 6,
+   "color": "dark"
+  },
+  {
+   "x": -2,
+   "y": -2,
+   "w": 5,
+   "h": 1,
+   "color": "dark"
+  },
+  {
+   "x": -3,
+   "y": 19,
+   "w": 7,
+   "h": 2,
+   "color": "dark"
+  }
+ ]
+}

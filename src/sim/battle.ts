@@ -89,7 +89,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || (player && o.ai?.assassin?.hidden) || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name, fighter: isFighter(o) || (!!o.ai && o.ai.role !== 'civ') });
   }
@@ -133,6 +133,8 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
+  const keeper = sim.bodyguardOf(v); // a bodyguard stands between him and the blow: he takes his share of it (as a blow of his own, armour and all)
+  if (keeper) { const part = dmg * sim.bodyguardShare(); dmg -= part; hurt(sim, { kind: 'unit', id: keeper.id }, part, type, from, src); }
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
   const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
   if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
