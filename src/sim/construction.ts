@@ -1,4 +1,5 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
+import { specialBuilding } from './specialdata';
 import { Building, BuildingKind, BUILDINGS, footOf, footDim, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapOf, levelOffset, POP_BY_FIRE, fireUnlockLevel } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
@@ -106,6 +107,7 @@ export function buildingLimit(sim: Sim, kind: BuildingKind): number {
 
 /** Why a kind of building cannot be built at all right now: it is at its limit, or it needs research or another house first. */
 export function buildingLock(sim: Sim, kind: BuildingKind): string | null {
+  if (specialBuilding(kind) && !sim.isUnlocked(`building:${kind}`)) return 'Chưa mở'; // a specialist building: the legacy opens it (data/story/unlocks.json)
   if (eraLocked(kind, sim) && !sim.dev.freeBuild) return 'Mở khóa ở thời Trung cổ';
   const fireNeed = fireUnlockLevel(kind);
   if (!sim.dev.freeBuild && fireNeed > fireLevel(sim)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${fireNeed} để xây ${BUILDINGS[kind].name.toLowerCase()}`;

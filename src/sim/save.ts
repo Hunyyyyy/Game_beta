@@ -27,7 +27,7 @@ export const SAVED = {
   /** Objects whose keys are filled in place. */
   records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier', 'encounters', 'story'],
   /** Lists of plain data. */
-  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests'],
+  lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests', 'unlocksBought'],
   /** Handled by hand below. */
   special: ['researched', 'questSeen', 'tribes', 'world', 'fog', 'rnd', 'frnd', 'wrnd'],
 } as const satisfies Record<string, readonly (keyof Sim)[]>;
@@ -459,6 +459,7 @@ MIGRATIONS[47] = (d) => {
 MIGRATIONS[48] = (d) => {
   // 48 -> 49: the story tree (story.ts): nothing has happened in it yet; the count of common villages is taken at the first step. A game already in the medieval age gets the default tip of the stone age then
   d.records.story ??= initialStory();
+  d.lists.unlocksBought ??= [];
   return { ...d, version: 49 };
 };
 

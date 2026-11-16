@@ -23,7 +23,8 @@ import * as market from './market';
 import * as encounters from './encounters';
 import * as story from './story';
 import * as specialists from './specialists';
-import { initialStory, type StoryState } from './storydata';
+import type { SpecialistDef } from './specialdata';
+import { initialStory, isUnlocked, type StoryState } from './storydata';
 import type { StoryMode } from './storyscenes';
 import type { CondCtx, StoryCond } from './encounterdata';
 import { applyStats } from './statsys';
@@ -131,6 +132,8 @@ export class Sim {
   encounters: encounters.EncounterState = encounters.initialEncounters();
   /** The story tree (story.ts): the lasting flags, the knots fired and their leaves, the fruits, the tips. The hidden marks are not kept: they come from `encounters.deeds`. */
   story: StoryState = initialStory();
+  /** The keys of unlocks.json bought (a blueprint at the Chợ, the Thư Viện Di Sản): they stay open for good. */
+  unlocksBought: string[] = [];
   /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
   conquests: Conquest[] = [];
   /** The percent every stroke of work gains from the villages taken, by their strength (difficulty.json capture.yieldPerVillage). */
@@ -165,7 +168,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */, story: false /* the story tree runs though data/story/index.json has it off */ };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */, story: false /* the story tree runs though data/story/index.json has it off */, unlockAll: false /* every specialist is open */ };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -346,6 +349,10 @@ export class Sim {
   roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
   /** → barracks.trainCheck: what stands between the village and a soldier of this rank of a branch */
   trainCheck(role: RankRole, rank: number): barracks.TrainCheck { return barracks.trainCheck(this, role, rank); }
+  /** → barracks.specialistCheck / trainSpecialist / specialistCost: the specialist soldiers of the legacy */
+  specialistCheck(def: SpecialistDef): { missing: string[]; ok: boolean } { return barracks.specialistCheck(this, def); }
+  trainSpecialist(ids: readonly number[], def: SpecialistDef): string | null { return barracks.trainSpecialist(this, ids, def); }
+  specialistCost(def: SpecialistDef): Partial<Stock> { return barracks.specialistCost(this, def); }
   /** → barracks.trainSoldier: train villagers as soldiers of a rank of a branch (the camp's "＋") */
   trainSoldier(ids: readonly number[], role: RankRole, rank: number): string | null { return barracks.trainSoldier(this, ids, role, rank); }
   /** → roles.roleCount */
@@ -471,6 +478,8 @@ export class Sim {
   sendAssassin(tribeId: string, targetId?: number): Villager | null { return specialists.sendAssassin(this, tribeId, targetId); }
   /** → specialists.tickAssassin */
   tickAssassin(f: Villager, dt: number): void { return specialists.tickAssassin(this, f, dt); }
+  /** Whether a specialist (a key of data/story/unlocks.json) may be used now; core things are always open. */
+  isUnlocked(key: string): boolean { return this.dev.unlockAll || isUnlocked(this.story, this.unlocksBought, key, this.fireLevel()); }
   /** → story.storyCond */
   storyCond(): StoryCond { return story.storyCond(this); }
   /** → story.setFlag */

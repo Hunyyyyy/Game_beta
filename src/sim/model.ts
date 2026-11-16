@@ -82,6 +82,8 @@ export interface Slide { x: number; y: number; face: 'left' | 'right' }
 
 export interface Villager {
   id: number;
+  /** A specialist soldier (data/specialists.json `units`): his id. He wears the suit of his kind and is worth his rank (the Nhà chung's level when he was trained) by the profile of his kind. */
+  spec?: string;
   /** A bodyguard (specialists.ts): the villager he keeps; he takes a share of the blows meant for him. */
   wardOf?: number;
   name: string;

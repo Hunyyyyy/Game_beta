@@ -13,6 +13,7 @@ import { toolBonus } from './statsys';
 import { TIER_YIELD } from './tools';
 import type { Villager } from './model';
 import { rankRation } from './ranks';
+import { specRation } from './specialdata';
 
 /** Reason the stock cannot pay `cost`, or null. */
 export function missing(sim: Sim, cost: Partial<Stock>): string | null {
@@ -26,7 +27,7 @@ export function pay(sim: Sim, cost: Partial<Stock>, sign = -1): void { for (cons
 
 // ---------------------------------------------------------------- the daily meal (src/data/food.json)
 /** The ration of one person: a soldier of a camp eats the more the higher his rank (ranks.json). */
-const ration = (level: number, v: Villager): number => rationAt(level, v.job === 'fight') * (v.job === 'fight' && !v.guard ? rankRation(v.rank ?? 1) : 1);
+const ration = (level: number, v: Villager): number => rationAt(level, v.job === 'fight') * (v.job === 'fight' && !v.guard ? rankRation(v.rank ?? 1) : 1) + specRation(v.spec);
 
 /** What the village eats at the end of this day: a ration for every villager and a bigger one for every soldier, by the level of the campfire. */
 export function foodNeed(sim: Sim): number {

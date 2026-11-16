@@ -40,7 +40,17 @@
     "tower": 1,
     "trap": 1,
     "wartent": 1,
-    "workshop": 1
+    "workshop": 1,
+    "elder_hall": 1,
+    "tribute_post": 1,
+    "guild_exchange": 1,
+    "bodyguard_lodge": 1,
+    "liaison_post": 1,
+    "twin_camp": 1,
+    "conquest_beacon": 1,
+    "memorial_shrine": 1,
+    "academy": 1,
+    "hidden_forge": 1
   },
   "growth": {
     "cost": 1.45,
@@ -106,6 +116,36 @@
         8,
         9,
         10
+      ],
+      "elder_hall": [
+        1
+      ],
+      "tribute_post": [
+        1
+      ],
+      "guild_exchange": [
+        1
+      ],
+      "bodyguard_lodge": [
+        1
+      ],
+      "liaison_post": [
+        1
+      ],
+      "twin_camp": [
+        1
+      ],
+      "conquest_beacon": [
+        1
+      ],
+      "memorial_shrine": [
+        1
+      ],
+      "academy": [
+        1
+      ],
+      "hidden_forge": [
+        1
       ]
     }
   },
@@ -146,5 +186,17 @@
         10
       ]
     }
-  }
+  },
+  "specialist": [
+    "elder_hall",
+    "tribute_post",
+    "guild_exchange",
+    "bodyguard_lodge",
+    "liaison_post",
+    "twin_camp",
+    "conquest_beacon",
+    "memorial_shrine",
+    "academy",
+    "hidden_forge"
+  ]
 }

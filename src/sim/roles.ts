@@ -93,7 +93,7 @@ export function releaseRole(sim: Sim, ids: readonly number[]): string | null {
     const role = roleOf(v);
     if (!role) continue;
     const e = role === 'scout' ? sim.dismissScouts([v.id]) : ROLES[role].job === 'fight' ? (sim.discharge([v.id]) ? null : `${v.name} đang ngủ say, chưa cho nghỉ được`) : sim.setJob([v.id], 'idle');
-    if (!e && ROLES[role].job === 'fight' && !v.guard) { v.rank = 1; if (role === 'cavalry') v.mount = null; } // a soldier let go starts again from the first rank; his beast goes with him (the price was paid at the camp)
+    if (!e && ROLES[role].job === 'fight' && !v.guard) { v.rank = 1; v.spec = undefined; if (role === 'cavalry') v.mount = null; } // a soldier let go starts again from the first rank; his beast goes with him (the price was paid at the camp)
     if (!e && role === 'hunt') { sim.assignGear([v.id], null, 'weapon'); sim.assignGear([v.id], null, 'armor'); v.manualGear = false; } // a hunter let go hands his weapon and armour back
     if (e) err = e; else n++;
   }

@@ -128,7 +128,7 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | 0 | done | this file |
 | 1 | done | engine + sample data; tree asleep in the game (`index.json` `enabled: false`, dev switch "Chạy cây cốt truyện"); save v49 |
 | 2 | done | ranks 6-10 of 4 branches (`tools/gen-ranks.mjs`), `specialists.ts` (bodyguard, assassin) |
-| 3 | next | buildings A1-A7, per-level footprint for every kind, walkable walls, living art |
+| 3 | in progress | done: levels 4-10 for every kind (`tools/gen-levels.mjs`), per-level footprint, art for every level (`tools/gen-keep.mjs`, `tools/art-derive.mjs`, moving banners/torches/smoke), specialist buildings. Left: walkable walls, walls' sizes |
 
 ## Added by the user after Phase 0 (2026-11-15), for Phase 3
 
@@ -172,9 +172,9 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 
 | Phase | Added work | State |
 |---|---|---|
-| 1 retrofit | `src/data/story/unlocks.json` (schema, empty), `isUnlocked`, `unlocksBought: string[]` in SAVED inside the SAME v49 migration (no second bump), the A5 checks in `validateStory` | todo |
-| 2 retrofit | 7 specialist unit presets, locked by default (`unlockedBy`), stats by Nhà chung level, budget = core of the same rank, training +30%, ration +1: M1 Cấm quân tuần phòng, M2 Cung thủ ngựa, M3 Sát thủ (player-trainable), M4 Cận vệ thuê (hired with Của), M5 Hiệp sĩ đào ngũ, M6 Du kích, M8 Kỹ sư công thành | todo |
-| 3 | 10 specialist buildings made by `art-derive` from a base kind, locked by default (table A2 of the doc) | todo |
+| 1 retrofit | `src/data/story/unlocks.json`, `isUnlocked`, `unlocksBought` in SAVED inside the same v49 migration, A5 checks in `validateStory` (strict only from Phase 5) | done |
+| 2 retrofit | 7 specialist unit presets, locked by default (`unlockedBy`), stats by Nhà chung level, budget = core of the same rank, training +30%, ration +1: M1 Cấm quân tuần phòng, M2 Cung thủ ngựa, M3 Sát thủ (player-trainable), M4 Cận vệ thuê (hired with Của), M5 Hiệp sĩ đào ngũ, M6 Du kích, M8 Kỹ sư công thành | done (`specialists.json units`, `barracks.trainSpecialist`, rolepane cards; dev switch unlocks all) |
+| 3 | 10 specialist buildings (`tools/gen-specialists.mjs`), locked by default (table A2 of the doc) | done (art + data + lock + tray tab "Di sản"; their effects come in Phase 5) |
 | 4/5 | blueprints at the Chợ, side quest "mua bản vẽ", fill `unlocks.json`, Nhật ký > Di sản | later |
 
 ## Decisions of 2026-11-16 (do not ask again)
@@ -185,3 +185,14 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 | M8 specialist | Kỹ sư công thành: breaks walls, gates, towers much faster. Needs a new rule in `siege.ts` (touches old logic: say where before coding) |
 | Capture-a-village blueprint path | No: blueprints only at the Chợ (and side quests) |
 | Walkable walls | A path layer on top of walls, gates and towers from level 6; stairs at gates and towers; soldiers stand and walk; archers on top get the tower bonus; **enemies can climb too** (when they break a gate or stair they may use it). Touches pathfinding, target choice, drawing |
+
+## Phase 3 notes
+
+| Point | Note |
+|---|---|
+| Data | `src/data/artlevels.json` holds growth, names, sizes, `upTo` (which art draws which level), `handMade` (levels the generator never touches), `specialist` kinds. Rerun order: `gen-levels`, `gen-keep`, `art-derive`, `gen-specialists`, then `npm run build` |
+| Caps | a house reaches the Nhà chung's level; the five medieval-only houses (Mỏ, Lò luyện, Xưởng mộc, Xưởng thuộc da, Trại chăn nuôi) level = fire - 3 (`levelCapOf`); they and the specialist kinds are not asked for when leaving a fire level |
+| Numbers | costs x1.45 a level (Nhà chung x1.6) with steel from level 6, coin 7, fine steel 8: **not balanced**, run `npm run economy` when you ask |
+| Sizes | levels 8-9 base+1, 10 base+2 (2x2 -> 3x3 -> 4x4); Nhà chung 5: 2x2, 6: 4x4, 7: 6x6, 8-9: 8x8, 10: 10x10. Walls, field, drill, ranch keep their size for now |
+| Art | A1 hand-made, the rest derived; tents (infantry, scouttent, wartent) and flat kinds get posts, the others a stone turret. Everything alive is baked as 4 frames (banner, torch, smoke, fountain), glow and smoke drawn after the outline |
+| Walls | fence, gate, trap are drawn by the renderer (`drawFence`, `drawGate`): their levels 6-10 show the last art until the wall work |

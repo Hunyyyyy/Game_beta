@@ -19,7 +19,7 @@ const round = (x) => Math.round(x);
 let firstRun = false;
 for (const k of kinds) {
   const p = join(dirs, k, 'building.json'), b = readJson(p), st = b.levels.stone ?? [], an = b.levels.ancient ?? [];
-  if (k === 'fieldtent') continue;
+  if (k === 'fieldtent' || (cfg.specialist ?? []).includes(k)) continue; // (the specialist buildings have one level, made by tools/gen-specialists.mjs)
   if (cfg.handMade[k] === undefined) { cfg.handMade[k] = an.length; firstRun = true; }
   const hand = cfg.handMade[k], medOnly = cfg.medievalOnly.includes(k), total = medOnly ? MAX - 3 : MAX, want = total - st.length;
   const levels = an.slice(0, hand), last = levels[levels.length - 1] ?? st[st.length - 1];

@@ -17,6 +17,7 @@ import M_LEAVES from '../data/story/medieval/leaves.json';
 import M_WILD from '../data/story/medieval/wild.json';
 import M_FRUITS from '../data/story/medieval/fruits.json';
 import M_TIPS from '../data/story/medieval/tips.json';
+import UNLOCKS from '../data/story/unlocks.json';
 import type { Cost, Effect, Node, Script } from './encounterdata';
 
 export type StoryMode = 'easy' | 'normal' | 'harsh';
@@ -45,6 +46,8 @@ export interface Fruit { id: string; name: string; tree: string; needs: Array<st
 export interface Tip { id: string; name: string; tree: string; family: string; fruits: string[]; leaves?: string[]; marks?: string[]; off?: boolean; flowTo?: string; default?: boolean; text: string }
 /** What a stone-age tip leaves to the medieval age: marks to begin with, the trunk that comes first, leaf weights, and game multipliers (`mods`). */
 export interface Legacy { marks?: Record<string, number>; trunk?: string; tilt?: Record<string, number>; mods?: Record<string, number> }
+/** A specialist the legacy may open (data/story/unlocks.json). `from`: the fruits and tips that open it, `sources`: how it can be had (story, blueprint), `blueprintCost`: the price of its blueprint. Never a core thing. */
+export interface Unlock { key: string; kind: 'unit' | 'building' | 'perk' | 'research'; from: string[]; sources: Array<'story' | 'blueprint'>; blueprintCost?: Cost; core: boolean }
 export interface TreeDef { id: string; era: string; onePerTrunk?: boolean; tips: Array<{ slot: string; at: 'eraEnd' | number }> }
 export interface StoryConfig {
   wmin: number; wildChance: number; knotDelay: [number, number]; fruitDelay: [number, number]; tip: { fruit: number; leaf: number; mark: number; dominant: number };
@@ -68,6 +71,9 @@ export const STORY = {
   fruits: list<Fruit>(S_FRUITS, M_FRUITS),
   tips: list<Tip>(S_TIPS, M_TIPS),
   legacy: S_LEGACY.legacy as unknown as Record<string, Legacy>,
+  unlocks: (UNLOCKS.unlocks as unknown as Unlock[]),
+  unlocksStrict: UNLOCKS.strict as boolean,
+  blueprintFactor: UNLOCKS.blueprintFactor as number,
 };
 
 /** Every scene of the tree with the id of what owns it (a chapter, a leaf, a fruit): that id is also the id of its visitor script. */

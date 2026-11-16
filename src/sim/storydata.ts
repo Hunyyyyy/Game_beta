@@ -49,6 +49,17 @@ const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
 const span = (seed: number, tag: string, [lo, hi]: [number, number]): number => lo + Math.floor(seedRoll(seed, tag) * (hi - lo + 1));
 export const storyLeaf = (id: string): Leaf | undefined => LEAF.get(id);
 
+const UNLOCK = byId(STORY.unlocks.map((u) => ({ ...u, id: u.key })));
+/** The one place that says whether a specialist (a key of unlocks.json) may be used: a fruit or a tip it comes from has fired in the saved story (a middle tip from Nhà chung level 8), or it was bought (blueprint, library). A key the table does not list is core: always open. */
+export function isUnlocked(st: StoryState, bought: readonly string[], key: string, fireLevel: number): boolean {
+  const u = UNLOCK.get(key);
+  if (!u) return true;
+  if (bought.includes(key)) return true;
+  return u.from.some((f) => (f.startsWith('fruit:') ? !!st.fruits[f] : (['end', 'mid'] as const).some((slot) => st.tips[slot]?.main === f && (slot === 'end' || fireLevel >= 8))));
+}
+/** Every specialist the table lists. */
+export const unlockList = (): typeof STORY.unlocks => STORY.unlocks;
+
 /** The hidden marks now: each deed counts by the table of marks.json while it is inside the window of the mark; the deeds of the stone age count for a share once the medieval age began (rounded towards zero); the tips add theirs. */
 export function marksOf(deeds: readonly Deed[], day: number, eraDay: number, bonus: Record<string, number> = {}): Record<string, number> {
   const out: Record<string, number> = {};
@@ -359,5 +370,19 @@ export function validateStory(): { errors: string[]; warnings: string[] } {
     for (const leaf of Object.keys(l.tilt ?? {})) if (!LEAF.has(leaf)) err(`legacy ${id}: unknown leaf "${leaf}"`);
   }
   for (const [f, where] of flagsUsed) if (!flagsSet.has(f)) err(`${where}: asks for the flag "${f}" that nothing sets`);
+  // the unlocks: the core is never locked, each specialist can really be had; with `strict` the table of the doc is demanded whole
+  const keys = new Set<string>();
+  for (const u of STORY.unlocks) {
+    if (keys.has(u.key)) err(`unlock ${u.key}: listed twice`); keys.add(u.key);
+    if (u.core) err(`unlock ${u.key}: the core must never be locked (core: true)`);
+    if (!/^(unit|building|perk|research):/.test(u.key) || !u.key.startsWith(`${u.kind}:`)) err(`unlock ${u.key}: key and kind do not agree`);
+    if (!u.sources.length || (!u.sources.includes('blueprint') && !u.from.length)) err(`unlock ${u.key}: no source that can be reached`);
+    if (u.sources.includes('blueprint') && !u.blueprintCost) warn(`unlock ${u.key}: a blueprint source with no price`);
+    for (const f of u.from) if (!(f.startsWith('fruit:') ? FRUIT.has(f) : TIP.has(f))) (STORY.unlocksStrict ? err : warn)(`unlock ${u.key}: unknown source "${f}"`);
+  }
+  if (STORY.unlocksStrict) {
+    for (const f of STORY.fruits.filter((x) => x.tree === 'medieval')) if (STORY.unlocks.filter((u) => u.from.includes(f.id)).length !== 1) err(`${f.id}: must open exactly one specialist`);
+    for (const t of STORY.tips.filter((x) => x.tree === 'medieval' && !x.default)) { const mine = STORY.unlocks.filter((u) => u.from.includes(t.id)); if (mine.filter((u) => u.kind === 'unit').length !== 1 || mine.filter((u) => u.kind === 'perk').length < 1) err(`${t.id}: must open one unit and one power`); }
+  }
   return { errors, warnings };
 }

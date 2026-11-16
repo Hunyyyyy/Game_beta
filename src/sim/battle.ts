@@ -1,5 +1,6 @@
 import animsJson from '../data/anims.json';
 import { armorRank } from './ranks';
+import { specialistDef } from './specialdata';
 import { ARMORS, ArmorDef, damageOf, DmgType, RULES, Team, WeaponDef, WEAPONS } from './combat';
 import { WEATHER } from './calendar';
 import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
@@ -89,7 +90,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || (player && o.ai?.assassin?.hidden) || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || (player && o.ai?.assassin?.hidden) || (!player && o.team === 'player' && specialistDef(o.spec)?.stealth && Math.hypot(o.x - v.x, o.y - v.y) > 3) || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name, fighter: isFighter(o) || (!!o.ai && o.ai.role !== 'civ') });
   }
@@ -218,7 +219,7 @@ function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
-  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, behind) * (behind ? specialistDef(v.spec)?.ambush ?? 1 : 1) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim.wearGear(v, 'weapon');
 }
 

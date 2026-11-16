@@ -7,6 +7,7 @@ import { ARMORS, CRAFTED_WEAPONS, cycleOf, RULES, WEAPONS } from './combat';
 import { craftQuality } from './research';
 import { armPerk } from './statsys';
 import { rankDef } from './ranks';
+import { specialistDef } from './specialdata';
 import type { RankRole } from './ranks';
 import type { Sim } from './sim';
 import { Villager } from './model';
@@ -181,8 +182,9 @@ const AUTO_GEAR = false;
  * May this person carry this weapon? Foot soldiers and riders carry blows only, throwers and the men of a tower only what is fired; a guard of the Trại lính gác and a hunter take
  * whatever there is (the mace is a soldier's weapon alone).
  */
-export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
+export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number; spec?: string }, id: string): boolean {
   const w = WEAPONS[id]; if (!w) return true;
+  const sp = specialistDef(v.spec); if (sp && v.job === 'fight') return sp.weapon === id; // a specialist carries the weapon of his kind, whatever his rank
   const ranked = (w.rank ?? 0) >= 4; // the weapons of the ranks of the medieval age are for the soldiers of those ranks: nobody else takes them from the store
   if (v.job !== 'fight') return id !== 'mace' && !ranked;
   if (v.guard) { if (v.post >= 0) return !!w.ranged && !ranked; const d = rankDef('guard', v.rank ?? 1); return d ? d.weapon === id : true; } // a guard of the Trại lính gác carries the weapon of his rank only, like a soldier of a camp
@@ -191,7 +193,8 @@ export function canCarry(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & {
 }
 
 /** May this person wear this armour? A soldier of a rank wears the armour of that rank (ranks.json); the men of a tower, the hunters and the villagers wear what there is. */
-export function canWear(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number }, id: string): boolean {
+export function canWear(v: Pick<Villager, 'job' | 'arm' | 'guard' | 'post'> & { rank?: number; spec?: string }, id: string): boolean {
+  const sp = specialistDef(v.spec); if (sp && v.job === 'fight') return sp.armor === id;
   if (v.job !== 'fight') return (ARMORS[id]?.tier ?? 1) <= 2; // the armour of the medieval ranks is for those soldiers: the hunters and the villagers wear only the hide and the bone
   if (v.guard && v.post >= 0) return (ARMORS[id]?.tier ?? 1) <= 2;
   const d = rankDef((v.guard ? 'guard' : v.arm) as RankRole, v.rank ?? 1);

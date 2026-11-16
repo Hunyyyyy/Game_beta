@@ -6,7 +6,8 @@
 import { ARMORS, WEAPONS } from './combat';
 import { discountBill, perkPct, soldierTier } from './research';
 import { maxLevel } from './buildings';
-import { rankDef, ranksOf } from './ranks';
+import { MAX_RANK, rankDef, ranksOf } from './ranks';
+import type { SpecialistDef } from './specialdata';
 import type { RankDef, RankRole } from './ranks';
 import { RES_NAME } from './resources';
 import type { Res, Stock } from './resources';
@@ -44,6 +45,52 @@ export function trainCheck(sim: Sim, role: RankRole, rank: number): TrainCheck {
     if ((sim.stock[res] ?? 0) < amount) missing.push(`Thiếu ${RES_NAME[res].toLowerCase()}: cần ${amount}, có ${Math.floor(sim.stock[res] ?? 0)}`);
   }
   return { def, missing, ok: missing.length === 0 };
+}
+
+// ---------------------------------------------------------------- the specialists (data/specialists.json)
+/** A specialist is worth the Nhà chung's level (4..10) when he is trained: his rank. */
+export const specialistRank = (sim: Sim): number => Math.max(4, Math.min(MAX_RANK, sim.fireLevel()));
+/** What one costs: the price of the core soldier of the same rank in his camp, times his factor. */
+export function specialistCost(sim: Sim, def: SpecialistDef): Partial<Stock> {
+  const out: Partial<Stock> = {};
+  for (const [res, n] of Object.entries(rankDef(def.camp, specialistRank(sim))?.cost ?? {}) as Array<[Res, number]>) out[res] = Math.max(1, Math.round(n * def.costMult));
+  return out;
+}
+/** What stands between the village and one of them (empty when he can be trained or hired). */
+export function specialistCheck(sim: Sim, def: SpecialistDef): { missing: string[]; ok: boolean } {
+  const missing: string[] = [];
+  if (!sim.isUnlocked(def.key)) missing.push('Chưa mở');
+  if (sim.era !== 'ancient') missing.push('Chưa tới thời Trung cổ');
+  if (!def.hire) {
+    if (!sim.hasWorkshop() && !sim.building('armory')) missing.push('Cần có Nhà chế tạo hoặc Kho vũ khí để lấy đồ');
+    else {
+      if ((sim.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing.push(`Kho hết ${WEAPONS[def.weapon].name.toLowerCase()}: hãy chế thêm`);
+      if (ARMORS[def.armor] && (sim.toolStock[armorKey(def.armor)] ?? 0) <= 0) missing.push(`Kho hết ${ARMORS[def.armor].name.toLowerCase()}: hãy chế thêm`);
+    }
+  }
+  for (const [res, amount] of Object.entries(specialistCost(sim, def)) as Array<[Res, number]>) if ((sim.stock[res] ?? 0) < amount) missing.push(`Thiếu ${RES_NAME[res].toLowerCase()}: cần ${amount}, có ${Math.floor(sim.stock[res] ?? 0)}`);
+  return { missing, ok: missing.length === 0 };
+}
+/** Train (or hire) the chosen villagers as specialists in their camp; the rank is the Nhà chung's level now. Returns why none could be, or null. */
+export function trainSpecialist(sim: Sim, ids: readonly number[], def: SpecialistDef): string | null {
+  let done = 0, why: string | null = null;
+  for (const v of sim.mine(ids)) {
+    const chk = specialistCheck(sim, def);
+    if (!chk.ok) { why ??= chk.missing[0]; break; }
+    const err = sim.assignRole([v.id], def.camp);
+    if (err) { why ??= err; break; }
+    v.rank = specialistRank(sim); v.spec = def.id;
+    let gear: string | null = null;
+    if (def.hire) { sim.giveGear([v.id], def.weapon, 'weapon'); sim.giveGear([v.id], def.armor, 'armor'); } // a hired one comes with his own gear
+    else gear = sim.assignGear([v.id], def.weapon, 'weapon') ?? sim.assignGear([v.id], def.armor, 'armor');
+    if (gear) { sim.releaseRole([v.id]); why ??= gear; break; }
+    sim.pay(specialistCost(sim, def));
+    v.manualGear = true;
+    if (def.mount) v.mount = def.mount as typeof v.mount;
+    done++;
+    sim.say(`${v.name} thành ${def.name.toLowerCase()}.`);
+  }
+  return done ? null : why ?? 'Chọn người để luyện';
 }
 
 /**

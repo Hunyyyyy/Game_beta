@@ -18,6 +18,7 @@ import type { Ctx } from './panels';
 const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable', 'ranch'];
 
 const OPEN_LABEL: Record<BuildingKind, string> = {
+  elder_hall: 'Mở', tribute_post: 'Mở', guild_exchange: 'Mở', bodyguard_lodge: 'Mở', liaison_post: 'Mở', twin_camp: 'Mở', conquest_beacon: 'Mở', memorial_shrine: 'Mở', academy: 'Mở', hidden_forge: 'Mở',
   campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', market: 'Giao thương', workshop: 'Chế tạo', smelter: 'Chế biến', carpentry: 'Chế biến', tannery: 'Chế biến', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', mine: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Lính gác', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', ranch: 'Chăn nuôi', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
 };
 

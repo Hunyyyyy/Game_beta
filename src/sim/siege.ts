@@ -11,6 +11,7 @@ import { FORMATIONS, formationOffsets, placeOffset } from './formations';
 import { Tile } from './world';
 import type { Sim } from './sim';
 import type { Breaking, Mission, Obstacle, Plan, Pt, Squad, Villager } from './model';
+import { specSiege } from './specialdata';
 
 export const NODE_NAME = { tree: 'cây', rock: 'đá', bush: 'bụi quả', ore: 'mạch quặng' } as const;
 export const PROP_NAME: Record<string, string> = { fire: 'Đống lửa', pile: 'Kho lương', tower: 'Chòi canh', fence: 'Hàng rào', gate: 'Cổng', house: 'Nhà' };
@@ -174,7 +175,7 @@ export function breachFor(sim: Sim, v: Villager, tx: number, ty: number): boolea
       if (segDist(cx, cy, v.x, v.y, tx, ty) > 3.5) continue;
       const crew = sim.villagers.filter((o) => o.breaks?.kind === 'prop' && o.breaks.x === p.x && o.breaks.y === p.y).length;
       if (crew >= SIEGE.struct.breakers) continue;
-      const rate = (dmg * structMult(w, p.kind)) / cycle * (crew + 1);
+      const rate = (dmg * structMult(w, p.kind) * specSiege(v.spec)) / cycle * (crew + 1);
       const time = Math.hypot(cx - v.x, cy - v.y) / 2.2 + (p.hp ?? propHp(p.kind)) / Math.max(0.1, rate) + 3 * towers.filter((q) => Math.hypot(q.x - p.x, q.y - p.y) < 14).length;
       if (time < bestTime) { bestTime = time; best = { t, p }; }
     }
@@ -213,7 +214,7 @@ export function breakBrain(sim: Sim, v: Villager, dt: number): boolean {
       v.swing = { t: 0, hitAt, end, target: { kind: 'unit', id: -1 } }; // the blow has no living target: the work takes it
       v.atkCd = swingCycle(sim, v, w);
       if (b.kind === 'prop') sim.addSfx(w.id, !!w.ranged, b.x, b.y); // the blow on a work sounds as the weapon of the one who strikes
-      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind) * (1 + armPerk(sim, v, 'siege') / 100)); // the research of siege
+      if (b.kind === 'prop') damageProp(sim, b.tribe!, b.x, b.y, (weaponDamage(sim, v, w) + RULES.strengthDamage * v.stats.str) * specSiege(v.spec) * structMult(w, sim.tribes.find((q) => q.id === b.tribe)?.props.find((q) => q.x === b.x && q.y === b.y)?.kind) * (1 + armPerk(sim, v, 'siege') / 100)); // the research of siege
     }
     if (b.kind === 'node') {
       const kind = sim.world.nodeAt(b.x, b.y)!.kind;
