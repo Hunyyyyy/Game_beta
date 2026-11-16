@@ -15,7 +15,13 @@
   168,
   168,
   221,
-  256
+  256,
+  287,
+  321,
+  360,
+  403,
+  451,
+  505
  ],
  "repeat": true,
  "levels": {
@@ -73,6 +79,108 @@
     "craftSpeed": 1.25,
     "slots": 0,
     "hp": 3000,
+    "sight": 0
+   },
+   {
+    "name": "Gạch ngói gia cố",
+    "cost": {
+     "wood": 42,
+     "stone": 12,
+     "iron": 4,
+     "hardwood": 3
+    },
+    "buildTime": 124,
+    "cap": 0,
+    "craftSpeed": 1.33,
+    "slots": 0,
+    "hp": 4200,
+    "sight": 0
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 61,
+     "stone": 17,
+     "iron": 6,
+     "hardwood": 4,
+     "steel": 1
+    },
+    "buildTime": 146,
+    "cap": 0,
+    "craftSpeed": 1.41,
+    "slots": 0,
+    "hp": 5880,
+    "sight": 0
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 88,
+     "stone": 24,
+     "iron": 9,
+     "hardwood": 6,
+     "steel": 2,
+     "coin": 8
+    },
+    "buildTime": 173,
+    "cap": 0,
+    "craftSpeed": 1.49,
+    "slots": 0,
+    "hp": 8232,
+    "sight": 0
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 128,
+     "stone": 35,
+     "iron": 13,
+     "hardwood": 9,
+     "steel": 3,
+     "coin": 15,
+     "fine_steel": 1
+    },
+    "buildTime": 204,
+    "cap": 0,
+    "craftSpeed": 1.57,
+    "slots": 0,
+    "hp": 11525,
+    "sight": 0
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 186,
+     "stone": 51,
+     "iron": 19,
+     "hardwood": 13,
+     "steel": 4,
+     "coin": 23,
+     "fine_steel": 2
+    },
+    "buildTime": 240,
+    "cap": 0,
+    "craftSpeed": 1.65,
+    "slots": 0,
+    "hp": 16135,
+    "sight": 0
+   },
+   {
+    "name": "Cung các mạ vàng",
+    "cost": {
+     "wood": 270,
+     "stone": 74,
+     "iron": 28,
+     "hardwood": 19,
+     "steel": 5,
+     "coin": 30,
+     "fine_steel": 2
+    },
+    "buildTime": 283,
+    "cap": 0,
+    "craftSpeed": 1.73,
+    "slots": 0,
+    "hp": 22589,
     "sight": 0
    }
   ]

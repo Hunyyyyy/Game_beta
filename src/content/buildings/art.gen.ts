@@ -3,34 +3,60 @@ import archery_L1 from './archery/L1.json';
 import archery_L2 from './archery/L2.json';
 import archery_L3 from './archery/L3.json';
 import archery_A1 from './archery/A1.json';
+import archery_A2 from './archery/A2.json';
+import archery_A3 from './archery/A3.json';
+import archery_A4 from './archery/A4.json';
 import armory_L1 from './armory/L1.json';
 import armory_L2 from './armory/L2.json';
 import armory_L3 from './armory/L3.json';
 import armory_A1 from './armory/A1.json';
+import armory_A2 from './armory/A2.json';
+import armory_A3 from './armory/A3.json';
+import armory_A4 from './armory/A4.json';
 import builder_L1 from './builder/L1.json';
 import builder_L2 from './builder/L2.json';
 import builder_L3 from './builder/L3.json';
 import builder_A1 from './builder/A1.json';
+import builder_A2 from './builder/A2.json';
+import builder_A3 from './builder/A3.json';
+import builder_A4 from './builder/A4.json';
 import campfire_L1 from './campfire/L1.json';
 import campfire_L2 from './campfire/L2.json';
 import campfire_L3 from './campfire/L3.json';
 import campfire_L4 from './campfire/L4.json';
 import campfire_A1 from './campfire/A1.json';
+import campfire_A2 from './campfire/A2.json';
+import campfire_A3 from './campfire/A3.json';
+import campfire_A4 from './campfire/A4.json';
+import campfire_A5 from './campfire/A5.json';
+import campfire_A6 from './campfire/A6.json';
+import campfire_A7 from './campfire/A7.json';
 import carpentry_A1 from './carpentry/A1.json';
 import carpentry_A2 from './carpentry/A2.json';
 import carpentry_A3 from './carpentry/A3.json';
+import carpentry_A4 from './carpentry/A4.json';
+import carpentry_A5 from './carpentry/A5.json';
 import cavalry_L1 from './cavalry/L1.json';
 import cavalry_L2 from './cavalry/L2.json';
 import cavalry_L3 from './cavalry/L3.json';
 import cavalry_A1 from './cavalry/A1.json';
+import cavalry_A2 from './cavalry/A2.json';
+import cavalry_A3 from './cavalry/A3.json';
+import cavalry_A4 from './cavalry/A4.json';
 import drill_L1 from './drill/L1.json';
 import drill_L2 from './drill/L2.json';
 import drill_L3 from './drill/L3.json';
 import drill_A1 from './drill/A1.json';
+import drill_A2 from './drill/A2.json';
+import drill_A3 from './drill/A3.json';
+import drill_A4 from './drill/A4.json';
 import farmhouse_L1 from './farmhouse/L1.json';
 import farmhouse_L2 from './farmhouse/L2.json';
 import farmhouse_L3 from './farmhouse/L3.json';
 import farmhouse_A1 from './farmhouse/A1.json';
+import farmhouse_A2 from './farmhouse/A2.json';
+import farmhouse_A3 from './farmhouse/A3.json';
+import farmhouse_A4 from './farmhouse/A4.json';
 import fence_L1 from './fence/L1.json';
 import fence_L2 from './fence/L2.json';
 import fence_A1 from './fence/A1.json';
@@ -38,6 +64,9 @@ import field_L1 from './field/L1.json';
 import field_L2 from './field/L2.json';
 import field_L3 from './field/L3.json';
 import field_A1 from './field/A1.json';
+import field_A2 from './field/A2.json';
+import field_A3 from './field/A3.json';
+import field_A4 from './field/A4.json';
 import fieldtent_L1 from './fieldtent/L1.json';
 import gate_L1 from './gate/L1.json';
 import gate_L2 from './gate/L2.json';
@@ -49,69 +78,118 @@ import guardpost_L1 from './guardpost/L1.json';
 import guardpost_L2 from './guardpost/L2.json';
 import guardpost_L3 from './guardpost/L3.json';
 import guardpost_A1 from './guardpost/A1.json';
+import guardpost_A2 from './guardpost/A2.json';
+import guardpost_A3 from './guardpost/A3.json';
 import house_L1 from './house/L1.json';
 import house_L2 from './house/L2.json';
 import house_L3 from './house/L3.json';
 import house_A1 from './house/A1.json';
+import house_A2 from './house/A2.json';
+import house_A3 from './house/A3.json';
+import house_A4 from './house/A4.json';
 import huntlodge_L1 from './huntlodge/L1.json';
 import huntlodge_L2 from './huntlodge/L2.json';
 import huntlodge_L3 from './huntlodge/L3.json';
 import huntlodge_A1 from './huntlodge/A1.json';
+import huntlodge_A2 from './huntlodge/A2.json';
+import huntlodge_A3 from './huntlodge/A3.json';
+import huntlodge_A4 from './huntlodge/A4.json';
 import infantry_L1 from './infantry/L1.json';
 import infantry_L2 from './infantry/L2.json';
 import infantry_L3 from './infantry/L3.json';
 import infantry_A1 from './infantry/A1.json';
+import infantry_A2 from './infantry/A2.json';
+import infantry_A3 from './infantry/A3.json';
+import infantry_A4 from './infantry/A4.json';
 import lab_L1 from './lab/L1.json';
 import lab_L2 from './lab/L2.json';
 import lab_L3 from './lab/L3.json';
 import lab_L4 from './lab/L4.json';
 import lab_A1 from './lab/A1.json';
+import lab_A2 from './lab/A2.json';
+import lab_A3 from './lab/A3.json';
+import lab_A4 from './lab/A4.json';
 import lumberyard_L1 from './lumberyard/L1.json';
 import lumberyard_L2 from './lumberyard/L2.json';
 import lumberyard_L3 from './lumberyard/L3.json';
 import lumberyard_A1 from './lumberyard/A1.json';
+import lumberyard_A2 from './lumberyard/A2.json';
+import lumberyard_A3 from './lumberyard/A3.json';
+import lumberyard_A4 from './lumberyard/A4.json';
 import market_L1 from './market/L1.json';
 import market_L2 from './market/L2.json';
 import market_L3 from './market/L3.json';
+import market_A1 from './market/A1.json';
+import market_A2 from './market/A2.json';
+import market_A3 from './market/A3.json';
+import market_A4 from './market/A4.json';
 import mine_A1 from './mine/A1.json';
 import mine_A2 from './mine/A2.json';
 import mine_A3 from './mine/A3.json';
+import mine_A4 from './mine/A4.json';
+import mine_A5 from './mine/A5.json';
 import quarry_L1 from './quarry/L1.json';
 import quarry_L2 from './quarry/L2.json';
 import quarry_L3 from './quarry/L3.json';
 import quarry_A1 from './quarry/A1.json';
+import quarry_A2 from './quarry/A2.json';
+import quarry_A3 from './quarry/A3.json';
+import quarry_A4 from './quarry/A4.json';
 import ranch_A1 from './ranch/A1.json';
 import ranch_A2 from './ranch/A2.json';
 import ranch_A3 from './ranch/A3.json';
+import ranch_A4 from './ranch/A4.json';
+import ranch_A5 from './ranch/A5.json';
 import scouttent_L1 from './scouttent/L1.json';
 import scouttent_L2 from './scouttent/L2.json';
 import scouttent_L3 from './scouttent/L3.json';
 import scouttent_A1 from './scouttent/A1.json';
+import scouttent_A2 from './scouttent/A2.json';
+import scouttent_A3 from './scouttent/A3.json';
+import scouttent_A4 from './scouttent/A4.json';
 import smelter_A1 from './smelter/A1.json';
 import smelter_A2 from './smelter/A2.json';
 import smelter_A3 from './smelter/A3.json';
+import smelter_A4 from './smelter/A4.json';
+import smelter_A5 from './smelter/A5.json';
 import stable_L1 from './stable/L1.json';
 import stable_L2 from './stable/L2.json';
 import stable_L3 from './stable/L3.json';
 import stable_A1 from './stable/A1.json';
+import stable_A2 from './stable/A2.json';
+import stable_A3 from './stable/A3.json';
+import stable_A4 from './stable/A4.json';
 import storage_L1 from './storage/L1.json';
 import storage_L2 from './storage/L2.json';
 import storage_L3 from './storage/L3.json';
 import storage_A1 from './storage/A1.json';
+import storage_A2 from './storage/A2.json';
+import storage_A3 from './storage/A3.json';
+import storage_A4 from './storage/A4.json';
 import supplycamp_L1 from './supplycamp/L1.json';
 import supplycamp_L2 from './supplycamp/L2.json';
 import supplycamp_L3 from './supplycamp/L3.json';
 import supplycamp_A1 from './supplycamp/A1.json';
+import supplycamp_A2 from './supplycamp/A2.json';
+import supplycamp_A3 from './supplycamp/A3.json';
+import supplycamp_A4 from './supplycamp/A4.json';
 import tannery_A1 from './tannery/A1.json';
 import tannery_A2 from './tannery/A2.json';
 import tannery_A3 from './tannery/A3.json';
+import tannery_A4 from './tannery/A4.json';
+import tannery_A5 from './tannery/A5.json';
 import toolstore_L1 from './toolstore/L1.json';
 import toolstore_L2 from './toolstore/L2.json';
 import toolstore_L3 from './toolstore/L3.json';
 import toolstore_A1 from './toolstore/A1.json';
+import toolstore_A2 from './toolstore/A2.json';
+import toolstore_A3 from './toolstore/A3.json';
+import toolstore_A4 from './toolstore/A4.json';
 import tower_L1 from './tower/L1.json';
 import tower_L2 from './tower/L2.json';
 import tower_A1 from './tower/A1.json';
+import tower_A2 from './tower/A2.json';
+import tower_A3 from './tower/A3.json';
 import trap_L1 from './trap/L1.json';
 import trap_L2 from './trap/L2.json';
 import trap_A1 from './trap/A1.json';
@@ -119,10 +197,16 @@ import wartent_L1 from './wartent/L1.json';
 import wartent_L2 from './wartent/L2.json';
 import wartent_L3 from './wartent/L3.json';
 import wartent_A1 from './wartent/A1.json';
+import wartent_A2 from './wartent/A2.json';
+import wartent_A3 from './wartent/A3.json';
+import wartent_A4 from './wartent/A4.json';
 import workshop_L1 from './workshop/L1.json';
 import workshop_L2 from './workshop/L2.json';
 import workshop_L3 from './workshop/L3.json';
 import workshop_A1 from './workshop/A1.json';
+import workshop_A2 from './workshop/A2.json';
+import workshop_A3 from './workshop/A3.json';
+import workshop_A4 from './workshop/A4.json';
 /** Drawings of each kind in the stone age, one per level (a gate lists its open drawings after the shut ones). */
 export const STONE_ART: Record<string, unknown[]> = {
   archery: [archery_L1, archery_L2, archery_L3],
@@ -161,35 +245,36 @@ export const STONE_ART: Record<string, unknown[]> = {
 };
 /** Drawings of the first medieval level (level 5): A1.json, and for a gate its open drawing after the shut one. */
 export const ANCIENT_ART: Record<string, unknown[]> = {
-  archery: [archery_A1],
-  armory: [armory_A1],
-  builder: [builder_A1],
-  campfire: [campfire_A1],
-  carpentry: [carpentry_A1, carpentry_A2, carpentry_A3],
-  cavalry: [cavalry_A1],
-  drill: [drill_A1],
-  farmhouse: [farmhouse_A1],
+  archery: [archery_A1, archery_A2, archery_A3, archery_A4],
+  armory: [armory_A1, armory_A2, armory_A3, armory_A4],
+  builder: [builder_A1, builder_A2, builder_A3, builder_A4],
+  campfire: [campfire_A1, campfire_A2, campfire_A3, campfire_A4, campfire_A5, campfire_A6, campfire_A7],
+  carpentry: [carpentry_A1, carpentry_A2, carpentry_A3, carpentry_A4, carpentry_A5],
+  cavalry: [cavalry_A1, cavalry_A2, cavalry_A3, cavalry_A4],
+  drill: [drill_A1, drill_A2, drill_A3, drill_A4],
+  farmhouse: [farmhouse_A1, farmhouse_A2, farmhouse_A3, farmhouse_A4],
   fence: [fence_A1],
-  field: [field_A1],
+  field: [field_A1, field_A2, field_A3, field_A4],
   gate: [gate_A1, gate_A1open],
-  guardpost: [guardpost_A1],
-  house: [house_A1],
-  huntlodge: [huntlodge_A1],
-  infantry: [infantry_A1],
-  lab: [lab_A1],
-  lumberyard: [lumberyard_A1],
-  mine: [mine_A1, mine_A2, mine_A3],
-  quarry: [quarry_A1],
-  ranch: [ranch_A1, ranch_A2, ranch_A3],
-  scouttent: [scouttent_A1],
-  smelter: [smelter_A1, smelter_A2, smelter_A3],
-  stable: [stable_A1],
-  storage: [storage_A1],
-  supplycamp: [supplycamp_A1],
-  tannery: [tannery_A1, tannery_A2, tannery_A3],
-  toolstore: [toolstore_A1],
-  tower: [tower_A1],
+  guardpost: [guardpost_A1, guardpost_A2, guardpost_A3],
+  house: [house_A1, house_A2, house_A3, house_A4],
+  huntlodge: [huntlodge_A1, huntlodge_A2, huntlodge_A3, huntlodge_A4],
+  infantry: [infantry_A1, infantry_A2, infantry_A3, infantry_A4],
+  lab: [lab_A1, lab_A2, lab_A3, lab_A4],
+  lumberyard: [lumberyard_A1, lumberyard_A2, lumberyard_A3, lumberyard_A4],
+  market: [market_A1, market_A2, market_A3, market_A4],
+  mine: [mine_A1, mine_A2, mine_A3, mine_A4, mine_A5],
+  quarry: [quarry_A1, quarry_A2, quarry_A3, quarry_A4],
+  ranch: [ranch_A1, ranch_A2, ranch_A3, ranch_A4, ranch_A5],
+  scouttent: [scouttent_A1, scouttent_A2, scouttent_A3, scouttent_A4],
+  smelter: [smelter_A1, smelter_A2, smelter_A3, smelter_A4, smelter_A5],
+  stable: [stable_A1, stable_A2, stable_A3, stable_A4],
+  storage: [storage_A1, storage_A2, storage_A3, storage_A4],
+  supplycamp: [supplycamp_A1, supplycamp_A2, supplycamp_A3, supplycamp_A4],
+  tannery: [tannery_A1, tannery_A2, tannery_A3, tannery_A4, tannery_A5],
+  toolstore: [toolstore_A1, toolstore_A2, toolstore_A3, toolstore_A4],
+  tower: [tower_A1, tower_A2, tower_A3],
   trap: [trap_A1],
-  wartent: [wartent_A1],
-  workshop: [workshop_A1],
+  wartent: [wartent_A1, wartent_A2, wartent_A3, wartent_A4],
+  workshop: [workshop_A1, workshop_A2, workshop_A3, workshop_A4],
 };

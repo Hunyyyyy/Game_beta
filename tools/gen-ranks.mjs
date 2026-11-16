@@ -215,7 +215,7 @@ const indentBlock = (txt, n) => txt.split('\n').map((l, i) => (i ? ' '.repeat(n)
 {
   const p = D('researchtree.json'), { text: raw, crlf } = read(p);
   let text = raw;
-  const LAB = 4, costs = {
+  const LAB = 4, LABS = { 8: 6, 9: 7, 10: 8 }, costs = {
     8: { cost: { food: 6000, wood: 3000, stone: 2200, hide: 700, coin: 1400, fine_steel: 50, cloth: 30, steel: 60, leather: 45 }, time: 30000 },
     9: { cost: { food: 9000, wood: 4500, stone: 3300, hide: 1000, coin: 2200, fine_steel: 75, cloth: 45, steel: 90, leather: 65 }, time: 42000 },
     10: { cost: { food: 14000, wood: 7000, stone: 5000, hide: 1500, coin: 3500, fine_steel: 110, cloth: 65, steel: 130, leather: 90 }, time: 60000 },
@@ -224,7 +224,7 @@ const indentBlock = (txt, n) => txt.split('\n').map((l, i) => (i ? ' '.repeat(n)
   const rt = text.indexOf('"rankTiers"');
   const rolesAt = text.indexOf('        "roles": [', rt);
   if (!/"8": \{/.test(text.slice(rt, rolesAt))) {
-    const add = Object.entries(costs).map(([n, c]) => `        "${n}": ${indentBlock(JSON.stringify({ needLab: LAB, ...c }, null, 2), 8)},\n`).join('');
+    const add = Object.entries(costs).map(([n, c]) => `        "${n}": ${indentBlock(JSON.stringify({ needLab: LABS[n], ...c }, null, 2), 8)},\n`).join('');
     text = text.slice(0, rolesAt) + add + text.slice(rolesAt);
   }
   // the rows of each arm: after the row of rank 7 come five rows, rows 1, 3 and 5 hold the leaps of ranks 8, 9 and 10
@@ -240,7 +240,7 @@ const indentBlock = (txt, n) => txt.split('\n').map((l, i) => (i ? ' '.repeat(n)
     const leapRow = (n, g) => {
       const d = RANKS[role].find((x) => x.rank === n).name, row = structuredClone(row7);
       row.group = `${prefix}${g}`;
-      row.leap = { id: `${role}_tier${n}`, share: 0.9, lab: LAB, side: { name: `Giá luyện ${d.toLowerCase()}`, short: `Giá ${d.toLowerCase()}`, desc: `Giảm giá luyện ${d.toLowerCase()} 5% mỗi cấp.`, effect: { [`train_${role}_${n}`]: 5 } } };
+      row.leap = { id: `${role}_tier${n}`, share: 0.9, lab: LABS[n], side: { name: `Giá luyện ${d.toLowerCase()}`, short: `Giá ${d.toLowerCase()}`, desc: `Giảm giá luyện ${d.toLowerCase()} 5% mỗi cấp.`, effect: { [`train_${role}_${n}`]: 5 } } };
       row.cross = CROSS[n];
       return row;
     };

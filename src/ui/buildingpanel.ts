@@ -1,4 +1,4 @@
-import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, buildingName, levelCapByFire, levelCapOf, levelDef, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { huntRange } from '../sim/hunting';
 import { ARMORS, WEAPONS } from '../sim/combat';
 import { JOBS, ROLES, STAT_NAME } from '../sim/jobs';
@@ -404,7 +404,7 @@ export class BuildingPanel {
     if (this.peopleFor !== b.id) { this.peopleFor = b.id; this.peopleOpen = false; } // another house: its page first
     if (ctl.openPeople) { ctl.openPeople = false; this.peopleOpen = !!STAFF_OF[b.kind as keyof typeof STAFF_OF] && b.done; }
     if (b.kind !== 'lab') this.labSub = null;
-    const def = BUILDINGS[b.kind], lv = levelDef(b), fire0 = sim.campfire(), top = b.kind === 'campfire' || !fire0 || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapByFire(fire0.level)), ready = b.done;
+    const def = BUILDINGS[b.kind], lv = levelDef(b), fire0 = sim.campfire(), top = b.kind === 'campfire' || !fire0 || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapOf(b.kind, fire0.level)), ready = b.done;
     this.title.textContent = `${buildingName(b.kind, b.era, b.level)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
     const pk = `${b.kind}${b.level}${b.done}`;
     if (pk !== this.picKey) { this.picKey = pk; try { this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0])); } catch { this.picBox.textContent = '🏠'; this.picBox.className = 'dpic glyph'; } }

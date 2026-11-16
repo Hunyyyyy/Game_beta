@@ -1,0 +1,150 @@
+{
+  "_note": "The levels of the buildings past the first medieval one (written by tools/gen-levels.mjs, read by render/sprites.ts and tools/art-derive.mjs). maxLevel: the Nhà chung's top level; a house stops at the level of the Nhà chung (the five medieval-only houses at the level of the Nhà chung minus 3, see medievalOnly). handMade: how many `ancient` levels of a kind were made by hand: the generator never touches them, it writes the levels after them. growth: each new level is the last hand-made one times cost / time / hp / cap / slots to the power of the steps past it; craft and sight add; limit: the count allowed for each Nhà chung level grows by this share. materials: from this level (counted as Nhà chung level) the cost asks for steel (A at 6), fine steel (7: coin, 8: fine steel). tierName: name of a level by the Nhà chung level it matches. upTo: for each art the last level it draws, in order (A1, A2, ...): the picture of a level is the first art whose upTo is not below it; `kinds` gives a kind its own list (the Nhà chung has one art each level from 4). sizes: footprint [w, h] of a level, per kind or group (`default`: base size, then `add` tiles more from level `from`); a level not listed keeps the size before it.",
+  "maxLevel": 10,
+  "medievalOnly": [
+    "mine",
+    "smelter",
+    "tannery",
+    "carpentry",
+    "ranch"
+  ],
+  "handMade": {
+    "archery": 1,
+    "armory": 1,
+    "builder": 1,
+    "campfire": 1,
+    "carpentry": 3,
+    "cavalry": 1,
+    "drill": 1,
+    "farmhouse": 1,
+    "fence": 1,
+    "field": 1,
+    "gate": 1,
+    "guardpost": 1,
+    "house": 1,
+    "huntlodge": 1,
+    "infantry": 1,
+    "lab": 1,
+    "lumberyard": 1,
+    "market": 0,
+    "mine": 3,
+    "quarry": 1,
+    "ranch": 3,
+    "scouttent": 1,
+    "smelter": 3,
+    "stable": 1,
+    "storage": 1,
+    "supplycamp": 1,
+    "tannery": 3,
+    "toolstore": 1,
+    "tower": 1,
+    "trap": 1,
+    "wartent": 1,
+    "workshop": 1
+  },
+  "growth": {
+    "cost": 1.45,
+    "time": 1.18,
+    "hp": 1.4,
+    "cap": 1.3,
+    "slots": 1.16,
+    "craft": 0.08,
+    "sight": 3,
+    "limit": 0.12,
+    "campfireCost": 1.6
+  },
+  "materials": {
+    "steel": 6,
+    "coin": 7,
+    "fine_steel": 8
+  },
+  "tierName": {
+    "5": "Gạch ngói gia cố",
+    "6": "Đá hộc, mái ngói xám",
+    "7": "Đá hộc, mái ngói xám",
+    "8": "Xây tháp góc, mái chì",
+    "9": "Xây tháp góc, mái chì",
+    "10": "Cung các mạ vàng"
+  },
+  "popByFire": [
+    30,
+    50,
+    80,
+    120,
+    170,
+    230,
+    300,
+    380,
+    470,
+    570
+  ],
+  "upTo": {
+    "default": [
+      5,
+      7,
+      9,
+      10
+    ],
+    "defence": [
+      5,
+      8,
+      10
+    ],
+    "medieval": [
+      1,
+      2,
+      3,
+      5,
+      7
+    ],
+    "kinds": {
+      "campfire": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ]
+    }
+  },
+  "sizes": {
+    "default": {
+      "from": [
+        8,
+        10
+      ],
+      "add": [
+        1,
+        2
+      ]
+    },
+    "campfire": {
+      "5": [
+        2,
+        2
+      ],
+      "6": [
+        4,
+        4
+      ],
+      "7": [
+        6,
+        6
+      ],
+      "8": [
+        8,
+        8
+      ],
+      "9": [
+        8,
+        8
+      ],
+      "10": [
+        10,
+        10
+      ]
+    }
+  }
+}

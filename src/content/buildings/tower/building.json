@@ -15,7 +15,13 @@
   0,
   1,
   3,
-  6
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12
  ],
  "levels": {
   "stone": [
@@ -74,6 +80,121 @@
     "slots": 5,
     "hp": 1200,
     "sight": 21
+   },
+   {
+    "name": "Gạch ngói gia cố",
+    "cost": {
+     "wood": 178,
+     "stone": 39,
+     "iron": 22,
+     "steel": 9,
+     "hardwood": 12
+    },
+    "buildTime": 605,
+    "cap": 0,
+    "craftSpeed": 1.33,
+    "slots": 6,
+    "hp": 1680,
+    "sight": 24
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 259,
+     "stone": 57,
+     "iron": 32,
+     "steel": 15,
+     "hardwood": 17
+    },
+    "buildTime": 714,
+    "cap": 0,
+    "craftSpeed": 1.41,
+    "slots": 7,
+    "hp": 2352,
+    "sight": 27
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 375,
+     "stone": 82,
+     "iron": 46,
+     "steel": 22,
+     "hardwood": 24,
+     "coin": 15
+    },
+    "buildTime": 843,
+    "cap": 0,
+    "craftSpeed": 1.49,
+    "slots": 8,
+    "hp": 3293,
+    "sight": 30
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 544,
+     "stone": 119,
+     "iron": 66,
+     "steel": 33,
+     "hardwood": 35,
+     "coin": 30,
+     "fine_steel": 2
+    },
+    "buildTime": 995,
+    "cap": 0,
+    "craftSpeed": 1.57,
+    "slots": 9,
+    "hp": 4610,
+    "sight": 33,
+    "size": [
+     3,
+     3
+    ]
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 788,
+     "stone": 173,
+     "iron": 96,
+     "steel": 46,
+     "hardwood": 51,
+     "coin": 45,
+     "fine_steel": 3
+    },
+    "buildTime": 1174,
+    "cap": 0,
+    "craftSpeed": 1.65,
+    "slots": 11,
+    "hp": 6454,
+    "sight": 36,
+    "size": [
+     3,
+     3
+    ]
+   },
+   {
+    "name": "Cung các mạ vàng",
+    "cost": {
+     "wood": 1143,
+     "stone": 251,
+     "iron": 139,
+     "steel": 66,
+     "hardwood": 74,
+     "coin": 60,
+     "fine_steel": 5
+    },
+    "buildTime": 1385,
+    "cap": 0,
+    "craftSpeed": 1.73,
+    "slots": 12,
+    "hp": 9035,
+    "sight": 39,
+    "size": [
+     4,
+     4
+    ]
    }
   ]
  }

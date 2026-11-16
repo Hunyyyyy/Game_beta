@@ -165,3 +165,23 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | Bodyguard | set in the unit panel of a guard rank 7+ ("Cận vệ cho"); no named characters yet (Phase 4) |
 | Assassin | enemy only: dev button "Sát thủ tới (thử)" or `sim.sendAssassin(tribeId, targetId?)` for story leaves; hiring one through a quest is Phase 4/5 |
 | Not done | `medieval_units.json` (viewer list) not updated; the viewers are not built |
+
+## Update doc `doc/UPDATE_di_san_mo_khoa.md` (read 2026-11-16): what it changes
+
+Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, basic goods); it unlocks only "specialists" (units, buildings, perks) through `isUnlocked(key)`.
+
+| Phase | Added work | State |
+|---|---|---|
+| 1 retrofit | `src/data/story/unlocks.json` (schema, empty), `isUnlocked`, `unlocksBought: string[]` in SAVED inside the SAME v49 migration (no second bump), the A5 checks in `validateStory` | todo |
+| 2 retrofit | 7 specialist unit presets, locked by default (`unlockedBy`), stats by Nhà chung level, budget = core of the same rank, training +30%, ration +1: M1 Cấm quân tuần phòng, M2 Cung thủ ngựa, M3 Sát thủ (player-trainable), M4 Cận vệ thuê (hired with Của), M5 Hiệp sĩ đào ngũ, M6 Du kích, M8 Kỹ sư công thành | todo |
+| 3 | 10 specialist buildings made by `art-derive` from a base kind, locked by default (table A2 of the doc) | todo |
+| 4/5 | blueprints at the Chợ, side quest "mua bản vẽ", fill `unlocks.json`, Nhật ký > Di sản | later |
+
+## Decisions of 2026-11-16 (do not ask again)
+
+| Question | Answer |
+|---|---|
+| Blueprint price | 3x the cost of one specialist unit (or building); a global factor in `unlocks.json` |
+| M8 specialist | Kỹ sư công thành: breaks walls, gates, towers much faster. Needs a new rule in `siege.ts` (touches old logic: say where before coding) |
+| Capture-a-village blueprint path | No: blueprints only at the Chợ (and side quests) |
+| Walkable walls | A path layer on top of walls, gates and towers from level 6; stairs at gates and towers; soldiers stand and walk; archers on top get the tower bonus; **enemies can climb too** (when they break a gate or stair they may use it). Touches pathfinding, target choice, drawing |

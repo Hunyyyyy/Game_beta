@@ -654,7 +654,7 @@
           "time": 20000
         },
         "8": {
-          "needLab": 4,
+          "needLab": 6,
           "cost": {
             "food": 6000,
             "wood": 3000,
@@ -669,7 +669,7 @@
           "time": 30000
         },
         "9": {
-          "needLab": 4,
+          "needLab": 7,
           "cost": {
             "food": 9000,
             "wood": 4500,
@@ -684,7 +684,7 @@
           "time": 42000
         },
         "10": {
-          "needLab": 4,
+          "needLab": 8,
           "cost": {
             "food": 14000,
             "wood": 7000,
@@ -1207,7 +1207,7 @@
                 "leap": {
                   "id": "foot_tier8",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 6,
                   "side": {
                     "name": "Giá luyện kích thủ giáp lá",
                     "short": "Giá kích thủ giáp lá",
@@ -1253,7 +1253,7 @@
                 "leap": {
                   "id": "foot_tier9",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 7,
                   "side": {
                     "name": "Giá luyện hiệp sĩ bộ",
                     "short": "Giá hiệp sĩ bộ",
@@ -1299,7 +1299,7 @@
                 "leap": {
                   "id": "foot_tier10",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 8,
                   "side": {
                     "name": "Giá luyện đội trưởng cấm quân",
                     "short": "Giá đội trưởng cấm quân",
@@ -1996,7 +1996,7 @@
                 "leap": {
                   "id": "cavalry_tier8",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 6,
                   "side": {
                     "name": "Giá luyện kỵ binh nặng giáo dài",
                     "short": "Giá kỵ binh nặng giáo dài",
@@ -2042,7 +2042,7 @@
                 "leap": {
                   "id": "cavalry_tier9",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 7,
                   "side": {
                     "name": "Giá luyện hiệp sĩ kỵ",
                     "short": "Giá hiệp sĩ kỵ",
@@ -2088,7 +2088,7 @@
                 "leap": {
                   "id": "cavalry_tier10",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 8,
                   "side": {
                     "name": "Giá luyện kỵ sĩ vương",
                     "short": "Giá kỵ sĩ vương",
@@ -2782,7 +2782,7 @@
                 "leap": {
                   "id": "archer_tier8",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 6,
                   "side": {
                     "name": "Giá luyện nỏ thủ nặng",
                     "short": "Giá nỏ thủ nặng",
@@ -2828,7 +2828,7 @@
                 "leap": {
                   "id": "archer_tier9",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 7,
                   "side": {
                     "name": "Giá luyện hỏa thương thủ",
                     "short": "Giá hỏa thương thủ",
@@ -2874,7 +2874,7 @@
                 "leap": {
                   "id": "archer_tier10",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 8,
                   "side": {
                     "name": "Giá luyện pháo thủ tay",
                     "short": "Giá pháo thủ tay",
@@ -3578,7 +3578,7 @@
                 "leap": {
                   "id": "guard_tier8",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 6,
                   "side": {
                     "name": "Giá luyện cấm vệ",
                     "short": "Giá cấm vệ",
@@ -3624,7 +3624,7 @@
                 "leap": {
                   "id": "guard_tier9",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 7,
                   "side": {
                     "name": "Giá luyện cận vệ tinh nhuệ",
                     "short": "Giá cận vệ tinh nhuệ",
@@ -3670,7 +3670,7 @@
                 "leap": {
                   "id": "guard_tier10",
                   "share": 0.9,
-                  "lab": 4,
+                  "lab": 8,
                   "side": {
                     "name": "Giá luyện cận vệ vương",
                     "short": "Giá cận vệ vương",

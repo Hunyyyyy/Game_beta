@@ -1,5 +1,5 @@
 /** Placing, upgrading, moving and demolishing buildings, and what the buildings give the village (room, population, build speed). */
-import { Building, BuildingKind, BUILDINGS, footOf, footDim, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapByFire, POP_BY_FIRE, fireUnlockLevel } from './buildings';
+import { Building, BuildingKind, BUILDINGS, footOf, footDim, Era, eraLocked, buildingSight, needsWork, CLEARANCE, WALL_KINDS, holdsGoods, levelDef, levelsOf, maxHp, maxLevel, topLevel, levelCapOf, levelOffset, POP_BY_FIRE, fireUnlockLevel } from './buildings';
 import { isStaffJob, ROLES } from './jobs';
 import { Res, RES_NAME, Stock } from './resources';
 import { buildingOpen, discountBill, perkPct, techForBuilding } from './research';
@@ -89,7 +89,7 @@ export function fireUpgradeBlock(sim: Sim, level: number): string | null {
   // the houses of the producers (Nông trại, Xưởng gỗ, Xưởng đá, Chòi săn) must stand at the level; nothing else is asked of the village
   for (const [group, at] of Object.entries(fireUpgradeGroups(level))) for (const k of Object.keys(BUILDINGS) as BuildingKind[]) {
     const d = BUILDINGS[k];
-    if (d.group !== group || !d.buildable || eraLocked(k, sim)) continue;
+    if (d.group !== group || !d.buildable || eraLocked(k, sim) || !d.levels.stone?.length) continue; // (the houses of the medieval age only, Mỏ and Trại chăn nuôi, are not asked for)
     const mine = sim.buildings.filter((b) => b.kind === k), want = Math.min(at, maxLevel(k, sim.era));
     if (!mine.length) return `Cần dựng ${d.name} trước khi nâng Nhà chung`;
     if (mine.some((b) => !b.done || b.upgrading || b.level < want)) return `Cần nâng ${d.name} lên cấp ${want} trước khi nâng Nhà chung`;
@@ -158,7 +158,7 @@ export function canUpgrade(sim: Sim, b: Building): string | null {
     const why = fireUpgradeBlock(sim, b.level); if (why) return why;
   }
   const fire = sim.campfire();
-  if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapByFire(fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 1}`;
+  if (b.kind !== 'campfire' && fire && !sim.dev.freeBuild && b.level + 1 > levelCapOf(b.kind, fire.level)) return `Cần nâng ${BUILDINGS.campfire.name} lên cấp ${b.level + 1 + levelOffset(b.kind)}`;
   return sim.freeCost() ? null : sim.missing(buildBill(sim, levelDef({ ...b, era: upgradeEra(b) }, b.level + 1).cost));
 }
 

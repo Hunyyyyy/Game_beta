@@ -69,6 +69,132 @@
     "slots": 19,
     "hp": 675,
     "sight": 0
+   },
+   {
+    "name": "Gạch ngói gia cố",
+    "cost": {
+     "wood": 178,
+     "hide": 71,
+     "stone": 131,
+     "iron": 22,
+     "hardwood": 15,
+     "leather": 15
+    },
+    "buildTime": 413,
+    "cap": 0,
+    "craftSpeed": 1.33,
+    "slots": 22,
+    "hp": 945,
+    "sight": 0
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 259,
+     "hide": 103,
+     "stone": 189,
+     "iron": 32,
+     "hardwood": 21,
+     "leather": 21,
+     "steel": 3
+    },
+    "buildTime": 487,
+    "cap": 0,
+    "craftSpeed": 1.41,
+    "slots": 26,
+    "hp": 1323,
+    "sight": 0
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 375,
+     "hide": 149,
+     "stone": 274,
+     "iron": 46,
+     "hardwood": 30,
+     "leather": 30,
+     "steel": 6,
+     "coin": 21
+    },
+    "buildTime": 575,
+    "cap": 0,
+    "craftSpeed": 1.49,
+    "slots": 30,
+    "hp": 1852,
+    "sight": 0
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 544,
+     "hide": 217,
+     "stone": 398,
+     "iron": 66,
+     "hardwood": 44,
+     "leather": 44,
+     "steel": 9,
+     "coin": 43,
+     "fine_steel": 2
+    },
+    "buildTime": 679,
+    "cap": 0,
+    "craftSpeed": 1.57,
+    "slots": 34,
+    "hp": 2593,
+    "sight": 0,
+    "size": [
+     3,
+     3
+    ]
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 788,
+     "hide": 314,
+     "stone": 577,
+     "iron": 96,
+     "hardwood": 64,
+     "leather": 64,
+     "steel": 11,
+     "coin": 64,
+     "fine_steel": 4
+    },
+    "buildTime": 801,
+    "cap": 0,
+    "craftSpeed": 1.65,
+    "slots": 40,
+    "hp": 3630,
+    "sight": 0,
+    "size": [
+     3,
+     3
+    ]
+   },
+   {
+    "name": "Cung các mạ vàng",
+    "cost": {
+     "wood": 1143,
+     "hide": 455,
+     "stone": 836,
+     "iron": 139,
+     "hardwood": 93,
+     "leather": 93,
+     "steel": 14,
+     "coin": 85,
+     "fine_steel": 6
+    },
+    "buildTime": 945,
+    "cap": 0,
+    "craftSpeed": 1.73,
+    "slots": 46,
+    "hp": 5082,
+    "sight": 0,
+    "size": [
+     4,
+     4
+    ]
    }
   ]
  }

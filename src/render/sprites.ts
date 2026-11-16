@@ -50,6 +50,7 @@ import med_archer_armor from '../data/blueprints/medieval/tools/archer_armor.jso
 import med_rider_armor from '../data/blueprints/medieval/tools/rider_armor.json';
 import med_watchman_armor from '../data/blueprints/medieval/tools/watchman_armor.json';
 import rankedGear from '../data/blueprints/medieval/tools/ranked.json';
+import artLevels from '../data/artlevels.json';
 import handTiers from '../data/handtools/tiers.json';
 import palaceJson from '../data/blueprints/medieval/palace.json';
 import toolBowJson from '../data/blueprints/stone_age/tools/bow.json';
@@ -229,7 +230,7 @@ export class Sprites {
 
   /** Sprite of a building at its level and construction stage (0..4). */
   building(kind: BuildingKind, era: Era, level: number, st: number, open = false): Prop {
-    if (kind === 'campfire' && st >= 4) { // a finished fire: the art of its level without drawn flames, and a fire made by code over its hearth
+    if (kind === 'campfire' && st >= 4 && !(era === 'ancient' && level >= 5)) { // a finished fire (the hall and the palaces from level 5 are drawn whole, and move by themselves): the art of its level without drawn flames, and a fire made by code over its hearth
       const key = era === 'ancient' && level > BUILDINGS.campfire.levels.stone!.length ? 'ancient' : `stone${Math.min(level, BUILDINGS.campfire.levels.stone!.length)}`;
       let p = this.campfireFx.get(key);
       if (!p) this.campfireFx.set(key, p = bakeCampfire(this.campfireBase(era, level, st), key));
@@ -243,11 +244,19 @@ export class Sprites {
     return this.buildingArt('campfire', era, level, st, false);
   }
 
+  /** Which of the medieval drawings (A1, A2...) a level shows: the first whose `upTo` (data/artlevels.json) reaches it. */
+  private artIndex(kind: BuildingKind, level: number): number {
+    const al = artLevels.upTo as { default: number[]; defence: number[]; medieval: number[]; kinds: Record<string, number[]> };
+    const ups = al.kinds[kind] ?? ((artLevels.medievalOnly as string[]).includes(kind) ? al.medieval : BUILDINGS[kind].group === 'defence' ? al.defence : al.default);
+    const i = ups.findIndex((u) => level <= u);
+    return i < 0 ? ups.length - 1 : i;
+  }
+
   private buildingArt(kind: BuildingKind, era: Era, level: number, st: number, open: boolean): Prop {
     const stoneN = BUILDINGS[kind].levels.stone!.length;
     if (era === 'ancient' && level > stoneN && ANCIENT_ART[kind]) { // the medieval levels have their own drawings, after the stone ones
       const set = this.buildingSet(kind, 'ancient'), half = kind === 'gate' ? set.length / 2 : set.length;
-      return set[Math.min(half, level - stoneN) - 1 + (open ? half : 0)][st];
+      return set[Math.min(half, this.artIndex(kind, level) + 1) - 1 + (open ? half : 0)][st];
     }
     const lv = this.buildingSet(kind, 'stone'), at = open ? level + 2 : level; // a gate lists its open drawings after the shut ones
     return lv[Math.min(lv.length, Math.max(1, at)) - 1][st];

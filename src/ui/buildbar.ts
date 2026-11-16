@@ -1,6 +1,6 @@
 import { CAMP_KINDS, CAMP_PCT, campPicks, TENT_PCT } from '../sim/upgradebonus';
 import MARKET from '../data/market.json';
-import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelCapOf, levelDef, maxHp, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
 import { isProcessKind, PROCESS_HOUSES } from '../sim/processdata';
@@ -179,7 +179,7 @@ export class BuildingBar {
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
     const fire = sim.campfire(), def = BUILDINGS[b.kind], lv = levelDef(b);
-    const top = b.kind === 'campfire' || !fire || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapByFire(fire.level)); // a house may not rise above what the campfire allows
+    const top = b.kind === 'campfire' || !fire || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapOf(b.kind, fire.level)); // a house may not rise above what the campfire allows
     const st = sim.staffing(b), crowd = st ? ` 👥 ${st.have}/${st.slots}` : ''; // the people of the house, beside its name
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.repairing ? `đang sửa chữa ${Math.round((b.hp / maxHp(b)) * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';

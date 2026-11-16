@@ -70,6 +70,126 @@
     "slots": 6,
     "hp": 675,
     "sight": 0
+   },
+   {
+    "name": "Gạch ngói gia cố",
+    "cost": {
+     "wood": 94,
+     "stone": 55,
+     "hide": 35,
+     "iron": 15,
+     "hardwood": 12
+    },
+    "buildTime": 386,
+    "cap": 195,
+    "craftSpeed": 1.33,
+    "slots": 7,
+    "hp": 945,
+    "sight": 0
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 137,
+     "stone": 80,
+     "hide": 50,
+     "iron": 21,
+     "hardwood": 17,
+     "steel": 1
+    },
+    "buildTime": 455,
+    "cap": 254,
+    "craftSpeed": 1.41,
+    "slots": 8,
+    "hp": 1323,
+    "sight": 0
+   },
+   {
+    "name": "Đá hộc, mái ngói xám",
+    "cost": {
+     "wood": 198,
+     "stone": 116,
+     "hide": 73,
+     "iron": 30,
+     "hardwood": 24,
+     "steel": 3,
+     "coin": 10
+    },
+    "buildTime": 537,
+    "cap": 330,
+    "craftSpeed": 1.49,
+    "slots": 9,
+    "hp": 1852,
+    "sight": 0
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 287,
+     "stone": 168,
+     "hide": 106,
+     "iron": 44,
+     "hardwood": 35,
+     "steel": 4,
+     "coin": 21,
+     "fine_steel": 1
+    },
+    "buildTime": 634,
+    "cap": 428,
+    "craftSpeed": 1.57,
+    "slots": 11,
+    "hp": 2593,
+    "sight": 0,
+    "size": [
+     3,
+     3
+    ]
+   },
+   {
+    "name": "Xây tháp góc, mái chì",
+    "cost": {
+     "wood": 417,
+     "stone": 244,
+     "hide": 154,
+     "iron": 64,
+     "hardwood": 51,
+     "steel": 5,
+     "coin": 31,
+     "fine_steel": 2
+    },
+    "buildTime": 748,
+    "cap": 557,
+    "craftSpeed": 1.65,
+    "slots": 13,
+    "hp": 3630,
+    "sight": 0,
+    "size": [
+     3,
+     3
+    ]
+   },
+   {
+    "name": "Cung các mạ vàng",
+    "cost": {
+     "wood": 604,
+     "stone": 353,
+     "hide": 223,
+     "iron": 93,
+     "hardwood": 74,
+     "steel": 7,
+     "coin": 41,
+     "fine_steel": 3
+    },
+    "buildTime": 883,
+    "cap": 724,
+    "craftSpeed": 1.73,
+    "slots": 15,
+    "hp": 5082,
+    "sight": 0,
+    "size": [
+     4,
+     4
+    ]
    }
   ]
  }

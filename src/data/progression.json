@@ -33,6 +33,60 @@
       {
         "level": 4,
         "buildingMaxLevel": 4,
+        "upgradeNeeds": {
+          "groupAtLeastLevel": {
+            "production": 4
+          }
+        }
+      },
+      {
+        "level": 5,
+        "buildingMaxLevel": 5,
+        "upgradeNeeds": {
+          "groupAtLeastLevel": {
+            "production": 5
+          }
+        }
+      },
+      {
+        "level": 6,
+        "buildingMaxLevel": 6,
+        "upgradeNeeds": {
+          "groupAtLeastLevel": {
+            "production": 6
+          }
+        }
+      },
+      {
+        "level": 7,
+        "buildingMaxLevel": 7,
+        "upgradeNeeds": {
+          "groupAtLeastLevel": {
+            "production": 7
+          }
+        }
+      },
+      {
+        "level": 8,
+        "buildingMaxLevel": 8,
+        "upgradeNeeds": {
+          "groupAtLeastLevel": {
+            "production": 8
+          }
+        }
+      },
+      {
+        "level": 9,
+        "buildingMaxLevel": 9,
+        "upgradeNeeds": {
+          "groupAtLeastLevel": {
+            "production": 9
+          }
+        }
+      },
+      {
+        "level": 10,
+        "buildingMaxLevel": 10,
         "upgradeNeeds": null
       }
     ]
