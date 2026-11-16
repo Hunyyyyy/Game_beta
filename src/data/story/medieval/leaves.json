@@ -67,6 +67,13 @@
       "food": 40,
       "coin": 10
      }
+    },
+    {
+     "leave": {
+      "share": 0.2,
+      "max": 8,
+      "soldiers": true
+     }
     }
    ]
   },
@@ -76,6 +83,11 @@
    "text": "Không ai dám ngồi. Một người nhiếp chính tạm lo việc, và không ai dám quyết điều gì lớn.",
    "flags": [
     "regency"
+   ],
+   "effects": [
+    {
+     "warBan": 30
+    }
    ]
   },
   {
@@ -151,6 +163,9 @@
    "effects": [
     {
      "deed": "assimilated"
+    },
+    {
+     "join": 4
     }
    ]
   },
@@ -164,6 +179,13 @@
    "effects": [
     {
      "deed": "pyrrhic"
+    },
+    {
+     "leave": {
+      "share": 0.1,
+      "max": 4,
+      "soldiers": true
+     }
     }
    ]
   },
@@ -269,6 +291,12 @@
     {
      "take": {
       "food": 40
+     }
+    },
+    {
+     "leave": {
+      "share": 0.1,
+      "max": 6
      }
     }
    ],
@@ -391,6 +419,13 @@
       "food": 30,
       "coin": 15
      }
+    },
+    {
+     "leave": {
+      "share": 0.15,
+      "max": 6,
+      "soldiers": true
+     }
     }
    ],
    "scene": {
@@ -423,6 +458,9 @@
    "effects": [
     {
      "deed": "assassin_hit"
+    },
+    {
+     "assassin": true
     }
    ]
   },
@@ -533,10 +571,7 @@
    ],
    "effects": [
     {
-     "raid": {
-      "tribe": "axe",
-      "size": 12
-     }
+     "rebel": true
     }
    ],
    "scene": {
@@ -575,6 +610,13 @@
     {
      "take": {
       "coin": 30
+     }
+    },
+    {
+     "leave": {
+      "share": 0.25,
+      "max": 10,
+      "soldiers": true
      }
     }
    ]

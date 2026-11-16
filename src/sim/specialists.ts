@@ -27,6 +27,8 @@ export function setBodyguard(sim: Sim, guardId: number, wardId: number | null): 
   if (wardId === null) { g.wardOf = undefined; return null; }
   const err = wardError(sim, g, sim.get(wardId));
   if (err) return err;
+  const slots = sim.legacyFx('wardSlots'); // one bodyguard for a villager; the Phòng Hộ Vệ gives one more
+  if (sim.villagers.filter((x) => x.id !== g.id && x.wardOf === wardId && x.health > 0).length >= slots) return slots > 1 ? `Người này đã có đủ ${slots} cận vệ` : 'Người này đã có cận vệ (Phòng Hộ Vệ cho thêm một người)';
   g.wardOf = wardId;
   return null;
 }

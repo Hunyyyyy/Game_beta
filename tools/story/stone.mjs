@@ -88,15 +88,15 @@ export const knots = [
 
 const AXE = 'axe', CAVE = 'cave';
 export const leaves = [
-  { id: 'I1-a', name: 'Xóm mới', text: 'Đêm đó người mới dựng mái nhà riêng bên rìa làng, gọi là "bếp thứ hai". Làng đông thêm, và có thêm một tiếng nói riêng.', flags: ['xom_moi'], effects: [{ give: { wood: 20 } }] },
+  { id: 'I1-a', name: 'Xóm mới', text: 'Đêm đó người mới dựng mái nhà riêng bên rìa làng, gọi là "bếp thứ hai". Làng đông thêm, và có thêm một tiếng nói riêng.', flags: ['xom_moi'], effects: [{ give: { wood: 20 } }, { join: 2 }] },
   { id: 'I1-b', name: 'Nội gián mở cổng', text: 'Người được tin giao gác đã mở lối. Sáng ra kho lương vơi hẳn.', hard: true, flags: ['noi_gian'], effects: [{ take: { food: 30 } }, { deed: 'betrayed_gate' }, { raid: { tribe: AXE, size: 3 } }] },
   { id: 'I1-c', name: 'Bệnh sốt từ đường xa', text: 'Một phần ba dân nằm liệt sáu ngày. Việc đồng áng bỏ dở.', hard: true, flags: ['benh_sot'], effects: [{ take: { food: 20 } }] },
-  { id: 'I1-d', name: 'Người có tài', text: 'Một người được nhận hóa ra có tay nghề hiếm. Cả làng học được đôi điều.', flags: ['nhan_tai'], effects: [{ give: { stone: 20, coin: 2 } }] },
+  { id: 'I1-d', name: 'Người có tài', text: 'Một người được nhận hóa ra có tay nghề hiếm. Cả làng học được đôi điều.', flags: ['nhan_tai'], effects: [{ give: { stone: 20, coin: 2 } }, { join: 1 }] },
   { id: 'I1-nhat', name: 'Một đêm dài', text: 'Đêm đó ai cũng thức, nhưng rồi không có gì xảy ra.' },
   { id: 'I2-a', name: 'Kẻ đuổi thành sứ giả', text: 'Thủ lĩnh nhóm đuổi quay lại một mình, không vũ khí: bên kia muốn nói chuyện.', flags: ['su_gia'], effects: [{ rel: { tribe: AXE, n: 8 } }] },
   { id: 'I2-b', name: 'Chiến thắng đầu tiên', text: 'Bên kia kéo tới trả thù và bị đánh bật. Vũ khí họ bỏ lại giờ treo ở Nhà chung.', needs: 'soldiers>=10', alt: 'I2-b2', flags: ['thang_dau'], effects: [{ deed: 'first_victory' }, { give: { hide: 15 } }, { raid: { tribe: AXE, size: 5 } }] },
   { id: 'I2-b2', name: 'Trận thua đầu tiên', text: 'Bên kia kéo tới trả thù. Làng quá ít lính: mất lương, và cả vùng biết làng yếu.', flags: ['thua_dau'], effects: [{ deed: 'lost_fight' }, { take: { food: 30 } }, { raid: { tribe: AXE, size: 5 } }] },
-  { id: 'I2-c', name: 'Tiếng lành đồn xa', text: 'Người được cứu kể lại ở làng cũ. Người ta bắt đầu tìm đến xin ở nhờ.', flags: ['tieng_lanh'], effects: [{ deed: 'good_name' }, { give: { food: 15 } }] },
+  { id: 'I2-c', name: 'Tiếng lành đồn xa', text: 'Người được cứu kể lại ở làng cũ. Người ta bắt đầu tìm đến xin ở nhờ.', flags: ['tieng_lanh'], effects: [{ deed: 'good_name' }, { join: 6 }] },
   { id: 'I2-d', name: 'Người bị bỏ lại trở về', text: 'Người từng bị giao nộp quay lại, dẫn theo kẻ cướp biết rõ kho làng ở đâu.', hard: true, flags: ['no_mau'], effects: [{ take: { food: 25 } }, { raid: { tribe: AXE, size: 4 } }] },
   { id: 'I2-nhat', name: 'Sương tan không tiếng', text: 'Tiếng gọi xa dần rồi tắt. Không ai tới nữa.' },
   { id: 'II1-a', name: 'Vòng xoáy cống nạp', text: 'Giá đòi tăng sau mỗi lần trả, dần thành "thuế mùa". Trả thì yên, nhưng mùa nào cũng mất một phần.', hard: true, flags: ['chu_no'], effects: [{ take: { food: 30, coin: 2 } }] },
@@ -119,7 +119,7 @@ export const leaves = [
   { id: 'III1-d', name: 'Thương lái bị cướp', text: 'Một thương lái bị cướp và chết trên đường quanh làng. Các làng đổ lỗi cho nhau.', flags: ['duong_du'], mods: { marketQuota: 0.8 }, modDays: 20 },
   { id: 'III1-nhat', name: 'Đường vắng', text: 'Thương lái thưa dần. Không ai nói vì sao.' },
   { id: 'III2-a', name: 'Mùa đông chia đều', text: 'Tuyết phủ mười hai ngày. Ai cũng bớt miếng ăn, nhưng không ai bị bỏ lại.', flags: ['ngay_chia'], effects: [{ deed: 'winter_shared' }] },
-  { id: 'III2-b', name: 'Mùa đông giành giật', text: 'Lương vơi nhanh, bè phái chia nhau kho. Một nhóm đòi tách đi.', hard: true, flags: ['phan_ly'], effects: [{ take: { food: 40 } }] },
+  { id: 'III2-b', name: 'Mùa đông giành giật', text: 'Lương vơi nhanh, bè phái chia nhau kho. Một nhóm đòi tách đi.', hard: true, flags: ['phan_ly'], effects: [{ take: { food: 40 } }, { leave: { share: 0.15, max: 6 } }] },
   { id: 'III2-c', name: 'Lửa thiêng', text: 'Người giữ lửa thành người chỉ ngày nhóm lửa, ngày dọn kho. Hang Gấu nghe tin và kính trọng.', flags: ['lua_thieng'], effects: [{ rel: { tribe: CAVE, n: 10 } }] },
   { id: 'III2-d', name: 'Tường cứu mạng', text: 'Đêm tuyết, bầy sói tràn xuống; tường và cổng chặn được. Sáng ra, có người xin trú đã nằm ngoài tuyết.', flags: ['cua_dong'], effects: [{ deed: 'wall_saved' }] },
   { id: 'III2-nhat', name: 'Một mùa đông như mọi mùa', text: 'Mùa đông qua đi. Không ai kể gì về nó.' },

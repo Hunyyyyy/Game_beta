@@ -1,5 +1,5 @@
 {
-  "_note": "The two specialists of the story (doc/story_tree.md, Thân VII). bodyguard: a soldier of the guard branch of rank minRank or more, given one villager to keep (sim.setBodyguard); while he lives and stands within `within` tiles of that villager he takes `share` of every blow meant for him, and he keeps his post (guardAt) within `stay` tiles of him. assassin: a hidden foe sent by a village (sim.sendAssassin): walks to one target, unseen until a soldier or guard is within revealRadius (a tower within towerRadius), strikes once for strikeMult times the health of the target (before armour), then runs home; fleeSeconds is how long he may run before he is gone. A blow reveals him for revealSeconds. spawnDist: tiles from the fire where he appears. units: the seven specialist soldiers the legacy may open (doc/UPDATE_di_san_mo_khoa.md; unlocks.json lists the keys). Each is trained in the camp `camp` like a core soldier of the same Nhà chung level (his rank is that level, from 4 to 10), wears one fixed suit (`weapon`, `armor`, `mount`) taken from the stores (`hire`: it comes with him), and is worth the core of the same rank by trade-offs (`profile`: factor on each stat). costMult: the price of the core rank; rationAdd: more food a day than the core. stealth: unseen by the enemy beyond 3 tiles. siege: his blows on walls, gates and towers hit this much harder. ambush: his blows from behind hit this much harder.",
+  "_note": "The two specialists of the story (doc/story_tree.md, Thân VII). bodyguard: a soldier of the guard branch of rank minRank or more, given one villager to keep (sim.setBodyguard); while he lives and stands within `within` tiles of that villager he takes `share` of every blow meant for him, and he keeps his post (guardAt) within `stay` tiles of him. assassin: a hidden foe sent by a village (sim.sendAssassin): walks to one target, unseen until a soldier or guard is within revealRadius (a tower within towerRadius), strikes once for strikeMult times the health of the target (before armour), then runs home; fleeSeconds is how long he may run before he is gone. A blow reveals him for revealSeconds. spawnDist: tiles from the fire where he appears. units: the seven specialist soldiers the legacy may open (doc/UPDATE_di_san_mo_khoa.md; unlocks.json lists the keys). Each is trained in the camp `camp` like a core soldier of the same Nhà chung level (his rank is that level, from 4 to 10), wears one fixed suit (`weapon`, `armor`, `mount`) taken from the stores (`hire`: it comes with him), and is worth the core of the same rank by trade-offs (`profile`: factor on each stat). costMult: the price of the core rank; rationAdd: more food a day than the core. stealth: unseen by the enemy beyond 3 tiles. siege: his blows on walls, gates and towers hit this much harder. ambush: his blows from behind hit this much harder. effects: what each specialist building that stands and each power of a tip does (src/sim/legacyfx.ts): elder_hall betrayMul (chance a tributary turns on us), tribute_post tributeMul, bodyguard_lodge wardSlots (more bodyguards for one villager; 1 without it), liaison_post aidDays (allies called to keep the village, once a season), twin_camp squadsAdd, conquest_beacon marchMul (pace of a squad on the march), memorial_shrine grudgeDamage (our blows on a hostile village), academy researchSlots (researches under way at once), hidden_forge gearCostMul (weapons and armour); powers: coalition allyMul (allied soldiers), eyes warnDays (raids told earlier), mercenary hireCostMul (hired specialists), reconcile relationLossMul (relation a tribute costs), refuge relationGainMul (relation gained).",
   "bodyguard": {
     "minRank": 7,
     "share": 0.7,
@@ -159,7 +159,7 @@
       "name": "Hội Quán Trưởng Lão",
       "base": "house",
       "from": "fruit:TM1",
-      "does": "+1 ô cố vấn, giảm bất ổn"
+      "does": "làng cống nạp ít phản lại hơn một nửa"
     },
     {
       "id": "tribute_post",
@@ -167,7 +167,7 @@
       "name": "Đồn Thu Cống",
       "base": "storage",
       "from": "fruit:TM2",
-      "does": "thu tài nguyên định kỳ từ làng đã khuất phục"
+      "does": "cống nạp nhận được nhiều hơn 25%"
     },
     {
       "id": "guild_exchange",
@@ -175,7 +175,7 @@
       "name": "Sàn Thương Hội",
       "base": "market",
       "from": "fruit:TM3",
-      "does": "đoàn thương lái, kho bản vẽ ở Chợ rộng hơn"
+      "does": "Chợ bày thêm một bản vẽ mỗi mùa"
     },
     {
       "id": "bodyguard_lodge",
@@ -183,7 +183,7 @@
       "name": "Phòng Hộ Vệ",
       "base": "guardpost",
       "from": "fruit:TM4",
-      "does": "thêm 1 ô cận vệ gán nhân vật"
+      "does": "mỗi người được gán thêm một cận vệ"
     },
     {
       "id": "liaison_post",
@@ -191,7 +191,7 @@
       "name": "Trạm Liên Lạc",
       "base": "scouttent",
       "from": "fruit:TM5",
-      "does": "gọi đồng minh viện trợ một lần mỗi mùa"
+      "does": "mỗi mùa gọi một lần lính đồng minh tới giữ làng"
     },
     {
       "id": "twin_camp",
@@ -199,7 +199,7 @@
       "name": "Trại Kép",
       "base": "wartent",
       "from": "fruit:TM6",
-      "does": "thêm 1 đội xuất quân song song"
+      "does": "lập thêm được một đội quân"
     },
     {
       "id": "conquest_beacon",
@@ -207,7 +207,7 @@
       "name": "Đài Chinh Phạt",
       "base": "drill",
       "from": "fruit:TM7",
-      "does": "tăng tầm hành quân, dẹp loạn nhanh hơn"
+      "does": "các đội hành quân nhanh hơn 20%"
     },
     {
       "id": "memorial_shrine",
@@ -215,7 +215,7 @@
       "name": "Đền Tưởng Niệm",
       "base": "house",
       "from": "fruit:TM8",
-      "does": "sĩ khí cộng thêm khi đánh kẻ thù đã gây thù"
+      "does": "lính đánh làng đang thù mình mạnh hơn 10%"
     },
     {
       "id": "academy",
@@ -223,7 +223,7 @@
       "name": "Học Viện",
       "base": "lab",
       "from": "fruit:TM9",
-      "does": "+1 ô nghiên cứu song song"
+      "does": "nghiên cứu được hai thứ cùng lúc"
     },
     {
       "id": "hidden_forge",
@@ -231,7 +231,51 @@
       "name": "Xưởng Mật",
       "base": "workshop",
       "from": "fruit:TM10",
-      "does": "chế một trang bị đặc biệt (chốt ở Phase 5)"
+      "does": "chế vũ khí và giáp rẻ hơn 20%"
     }
-  ]
+  ],
+  "effects": {
+    "elder_hall": {
+      "betrayMul": 0.5
+    },
+    "tribute_post": {
+      "tributeMul": 1.25
+    },
+    "bodyguard_lodge": {
+      "wardSlots": 1
+    },
+    "liaison_post": {
+      "aidDays": 2
+    },
+    "twin_camp": {
+      "squadsAdd": 1
+    },
+    "conquest_beacon": {
+      "marchMul": 1.2
+    },
+    "memorial_shrine": {
+      "grudgeDamage": 1.1
+    },
+    "academy": {
+      "researchSlots": 1
+    },
+    "hidden_forge": {
+      "gearCostMul": 0.8
+    },
+    "coalition": {
+      "allyMul": 2
+    },
+    "eyes": {
+      "warnDays": 1
+    },
+    "mercenary": {
+      "hireCostMul": 0.7
+    },
+    "reconcile": {
+      "relationLossMul": 0.5
+    },
+    "refuge": {
+      "relationGainMul": 2
+    }
+  }
 }

@@ -137,7 +137,7 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const keeper = sim.bodyguardOf(v); // a bodyguard stands between him and the blow: he takes his share of it (as a blow of his own, armour and all)
   if (keeper) { const part = dmg * sim.bodyguardShare(); dmg -= part; hurt(sim, { kind: 'unit', id: keeper.id }, part, type, from, src); }
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
+  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v) * sim.grudgeEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
   if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes

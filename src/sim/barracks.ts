@@ -53,7 +53,7 @@ export const specialistRank = (sim: Sim): number => Math.max(4, Math.min(MAX_RAN
 /** What one costs: the price of the core soldier of the same rank in his camp, times his factor. */
 export function specialistCost(sim: Sim, def: SpecialistDef): Partial<Stock> {
   const out: Partial<Stock> = {};
-  for (const [res, n] of Object.entries(rankDef(def.camp, specialistRank(sim))?.cost ?? {}) as Array<[Res, number]>) out[res] = Math.max(1, Math.round(n * def.costMult));
+  for (const [res, n] of Object.entries(rankDef(def.camp, specialistRank(sim))?.cost ?? {}) as Array<[Res, number]>) out[res] = Math.max(1, Math.round(n * def.costMult * (def.hire ? sim.legacyFx('hireCostMul') : 1))); // (the power Hợp đồng lính thuê: hired ones are cheaper)
   return out;
 }
 /** What stands between the village and one of them (empty when he can be trained or hired). */

@@ -216,7 +216,7 @@ export class ResearchPane {
       this.dialog.show(dlg.card({ label: title }, head, dlg.text(text)));
       return;
     }
-    const st = sim.techState(tech), busy = st.state === 'ready' && sim.currentResearch() !== null, short = st.state === 'ready' && !busy ? sim.researchShort(tech) : null, block = st.state === 'queued' ? sim.researchBlock(tech) : null;
+    const st = sim.techState(tech), busy = st.state === 'ready' && sim.researchBusy(), short = st.state === 'ready' && !busy ? sim.researchShort(tech) : null, block = st.state === 'queued' ? sim.researchBlock(tech) : null;
     const note = busy ? 'Đợi nghiên cứu hiện tại xong' : short ?? (st.state === 'locked' ? st.why ?? '' : st.state === 'active' ? 'Đang nghiên cứu…' : st.state === 'queued' ? block ?? 'Đã trả vật liệu, chờ bắt đầu' : '');
     const btn = dlg.button({ done: '✓ Xong', active: 'Đang làm', queued: 'Hủy đơn', ready: 'Nghiên cứu', locked: 'Khóa' }[st.state],
       () => { if (st.state === 'queued') sim.unqueueResearch(tech.id); else { const e = sim.queueResearch(tech.id); if (e) toast(e); else this.sel = null; } ctl.onChange(); this.showDetail(); this.update(true); },

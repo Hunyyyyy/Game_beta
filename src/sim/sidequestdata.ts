@@ -7,7 +7,7 @@ import FLAGS from '../data/story/quests/from_flags.json';
 import type { Cost, Node, Script } from './encounterdata';
 
 /** One answer of a step. `roll`: it may go wrong (`fail` is then said): the quest is lost (`ends`) or another tag is kept. */
-export interface SideOption { text: string; reply: string; tag?: string; cost?: Cost; cond?: string; roll?: { p: number; fail: string; ends?: boolean; tag?: string } }
+export interface SideOption { text: string; reply: string; tag?: string; cost?: Cost; cond?: string; roll?: { p: number; fail: string; ends?: boolean; tag?: string; /** Added to the chance while a condition holds. */ bonus?: Array<{ cond: string; add: number }> } }
 export interface SideStep { /** The character who comes (data/characters); the giver when absent. */ cast?: string; say: string[]; options: SideOption[] }
 export interface SideQuest {
   id: string; name: string; kind: string; giver: string; fire: [number, number]; days: number; cond?: string; steps: SideStep[];
@@ -35,7 +35,7 @@ export const sideCode = (id: string, step: number, opt: number, ok: boolean): st
 function stepScript(q: SideQuest, i: number, medieval: boolean): Script {
   const st = q.steps[i], mul = medieval ? SIDE.config.costMulMedieval : 1;
   const price = (c: Cost | undefined): Cost | undefined => (c ? Object.fromEntries(Object.entries(c).map(([k, n]) => [k, Math.round((n ?? 0) * mul)])) : undefined);
-  const nodes: Record<string, Node> = { start: { say: st.say, choices: st.options.map((o, k) => ({ text: o.text, cond: o.cond, cost: price(o.cost), ...(o.roll ? { roll: { p: o.roll.p, yes: `o${k}`, no: `o${k}f` } } : { then: `o${k}` }) })) } };
+  const nodes: Record<string, Node> = { start: { say: st.say, choices: st.options.map((o, k) => ({ text: o.text, cond: o.cond, cost: price(o.cost), ...(o.roll ? { roll: { p: o.roll.p, yes: `o${k}`, no: `o${k}f`, bonus: o.roll.bonus } } : { then: `o${k}` }) })) } };
   st.options.forEach((o, k) => {
     nodes[`o${k}`] = { say: o.reply, effects: [{ quest: sideCode(q.id, i, k, true) }] };
     if (o.roll) nodes[`o${k}f`] = { say: o.roll.fail, effects: [{ quest: sideCode(q.id, i, k, false) }] };

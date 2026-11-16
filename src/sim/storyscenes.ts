@@ -37,7 +37,19 @@ export interface KnotLeaf { leaf: string; base: number; affinity?: Record<string
 /** A knot fires when `chapters` stages of its branches are done, the progress (stone age, 0..1) or the Nhà chung level (`fire`) is in its window and `cond` holds; past the window with `cond` still false it fires its pale `fallback`. */
 export interface Knot { id: string; name: string; tree: string; trunk: string; fedBy: string[]; when: { chapters: number; progress?: [number, number]; fire?: [number, number]; cond?: string }; fallback: string; leaves: KnotLeaf[] }
 /** What a leaf or a fruit does to the world with no visitor about: goods, a deed, the relation with a village (`@boss`: the strongest leader left), a raid. */
-export interface WorldEffect { give?: Cost; take?: Cost; deed?: string; rel?: { tribe: string; n: number }; raid?: { tribe: string; size: number } }
+export interface WorldEffect {
+  give?: Cost; take?: Cost; deed?: string; rel?: { tribe: string; n: number }; raid?: { tribe: string; size: number };
+  /** People leave the village for good: `share` of them, `max` at most; `soldiers`: soldiers (a band that goes over to another), else common villagers. Never in the easy mode, never while a war is on. */
+  leave?: { share: number; max: number; soldiers?: boolean };
+  /** That many newcomers settle by the fire (as many as there are beds for). */
+  join?: number;
+  /** No war may be begun for that many days (Ngai rỗng). */
+  warBan?: number;
+  /** A hidden killer is sent by the village that likes us least (specialists.ts): guards and bodyguards may stop him. Not in the easy mode. */
+  assassin?: boolean;
+  /** The tributary that likes us least turns on us (tribes.rebelTributary). Not in the easy mode. */
+  rebel?: boolean;
+}
 /** A leaf: `text` goes to the Nhật ký, `flags` stay for good, `hard` is a painful one (play mode), `needs` a condition (soldiers...) without which `alt` is drawn in its place. */
 export interface Leaf { id: string; name: string; text: string; hard?: boolean; flags?: string[]; effects?: WorldEffect[]; scene?: Scene; needs?: string; alt?: string; /** Game multipliers while the leaf stands (storyMod keys: marketFee, marketQuota, researchSpeed, craftSpeed, blueprintPrice), for `modDays` days (absent: for good). */ mods?: Record<string, number>; modDays?: number }
 /** A fruit ripens when `min` (2) of its `needs` (a leaf, or one of a list) from different trunks were drawn; it leaves `flag`. */

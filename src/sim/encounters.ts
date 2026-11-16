@@ -40,7 +40,7 @@ function refugeesAlive(sim: Sim): number {
 
 /** What a condition of a script may ask about, for this visitor (or for no one yet). */
 function ctxOf(sim: Sim, v?: Visitor): CondCtx {
-  return { stock: sim.stock, day: sim.day, fireLevel: sim.fireLevel(), rel: (v && tribeOf(sim, v.tribe)?.relation) || 0, truth: v?.truth ?? 'honest', refugees: refugeesAlive(sim), soldiers: sim.villagers.filter((s) => s.job === 'fight' && s.health > 0).length, captives: sim.encounters.captives.length, room: Math.max(0, sim.popCap() - sim.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim.encounters.deeds, tribe: v?.tribe, story: sim.storyCond() };
+  return { stock: sim.stock, day: sim.day, fireLevel: sim.fireLevel(), rel: (v && tribeOf(sim, v.tribe)?.relation) || 0, truth: v?.truth ?? 'honest', refugees: refugeesAlive(sim), soldiers: sim.villagers.filter((s) => s.job === 'fight' && s.health > 0).length, captives: sim.encounters.captives.length, room: Math.max(0, sim.popCap() - sim.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim.encounters.deeds, tribe: v?.tribe, story: sim.storyCond(), specs: sim.villagers.reduce<Record<string, number>>((m, s) => { if (s.spec && s.health > 0) m[s.spec] = (m[s.spec] ?? 0) + 1; return m; }, {}) };
 }
 
 /** What a condition may ask about now, with no visitor (for the story tree). */
@@ -466,7 +466,7 @@ export function chooseEncounter(sim: Sim, index: number): string | null {
     return 'Bạn không nhận ra điều gì khác thường.';
   }
   if (c.stay) { a.line = 9999; return c.note ?? null; } // stays here (the shop: another piece), the payment is told
-  let next = c.by?.[v.truth] ?? c.branch?.find((b) => evalCond(b.cond, ctxOf(sim, v)))?.then ?? (c.roll ? (seedRoll(v.seed, key) < Math.max(0.05, Math.min(0.95, c.roll.p + (c.roll.mood ?? 0) * (v.mood ?? 0))) ? c.roll.yes : c.roll.no) : c.then);
+  let next = c.by?.[v.truth] ?? c.branch?.find((b) => evalCond(b.cond, ctxOf(sim, v)))?.then ?? (c.roll ? (seedRoll(v.seed, key) < Math.max(0.05, Math.min(0.95, c.roll.p + (c.roll.mood ?? 0) * (v.mood ?? 0) + (c.roll.bonus ?? []).reduce((a, b) => a + (evalCond(b.cond, ctxOf(sim, v)) ? b.add : 0), 0))) ? c.roll.yes : c.roll.no) : c.then);
   const T = s.talk;
   if (T && next === '@round') { // an exchange is over: on to the next, or to the visitor's terms when they are done
     a.round = (a.round ?? 0) + 1;

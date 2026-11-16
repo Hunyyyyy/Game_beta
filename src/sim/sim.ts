@@ -12,6 +12,7 @@ import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from './fauna';
 import * as tribeLod from './tribelod';
 import { tickFoe } from './brainfoe';
+import { rebelTributary } from './tribes';
 import { addRelation, adoptTribe, guestsToRaid, launchRaid, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribeSeen, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
@@ -23,6 +24,7 @@ import * as market from './market';
 import * as encounters from './encounters';
 import * as story from './story';
 import * as sidequests from './sidequests';
+import * as legacyfx from './legacyfx';
 import { initialSide, type SideState } from './sidequestdata';
 import * as specialists from './specialists';
 import * as walltop from './walltop';
@@ -137,6 +139,8 @@ export class Sim {
   story: StoryState = initialStory();
   /** The tops of the walls worked out from the buildings (walltop.ts): derived, not saved. */
   wallCache: walltop.Tops | null = null;
+  /** What the legacy keeps (legacyfx.ts, story.ts): allies called to keep the village, a ban on war, the vote of the council, free blueprints. */
+  legacy: legacyfx.LegacyState = legacyfx.initialLegacy();
   /** Side quests offered or under way (sidequests.ts): apart from the story tree. */
   side: SideState = initialSide();
   /** The keys of unlocks.json bought (a blueprint at the Chợ, the Thư Viện Di Sản): they stay open for good. */
@@ -512,6 +516,17 @@ export class Sim {
   setStoryFlag(name: string): void { return story.setFlag(this, name); }
   /** → story.setMode */
   setStoryMode(mode: StoryMode): void { return story.setMode(this, mode); }
+  /** → legacyfx.fx: one number of the legacy (a specialist building that stands, a power of a tip) */
+  legacyFx(key: legacyfx.FxKey): number { return legacyfx.fx(this, key); }
+  /** → legacyfx.grudgeEdge */
+  grudgeEdge(from: Villager | undefined, to: Villager): number { return legacyfx.grudgeEdge(this, from, to); }
+  /** → legacyfx.aidBlock / callAid: the allies called to keep the village (Trạm Liên Lạc) */
+  aidBlock(): string | null { return legacyfx.aidBlock(this); }
+  callAid(): string | null { return legacyfx.callAid(this); }
+  /** → story.warBlock: why a war may not be begun now (Ngai rỗng, the vote of the council), or null */
+  warBlock(tribe: string | null): string | null { return story.warBlock(this, tribe); }
+  /** → tribes.rebelTributary: the tributary that likes us least turns on us (a leaf of the story) */
+  rebelTributary(): string | null { return rebelTributary(this); }
   /** → story.legacyView */
   legacyView(): story.LegacyItem[] { return story.legacyView(this); }
   /** → story.mod */
@@ -622,6 +637,8 @@ export class Sim {
   /** → works.researchBlock */
   researchBlock(t: Tech): string | null { return works.researchBlock(this, t); }
 
+  /** → works.researchBusy */
+  researchBusy(): boolean { return works.researchBusy(this); }
   /** → works.currentResearch */
   currentResearch(): string | null { return works.currentResearch(this); }
 
@@ -676,7 +693,7 @@ export class Sim {
   /** → defense.tickTowers */
   tickTowers(dt: number): void { return defense.tickTowers(this, dt); }
   /** → tribes.summonAllies */
-  summonAllies(target: Tribe): number { return summonAllies(this, target); }
+  summonAllies(target?: Tribe): number { return summonAllies(this, target); }
   /** → tribes.dismissAllies */
   dismissAllies(): void { return dismissAllies(this); }
   /** A person is gone from the village without a trace (an ally who has left): not a death. */
@@ -976,7 +993,7 @@ export class Sim {
     story.tickStory(this, dt);
     sidequests.tickSideQuests(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; specialists.tickBodyguards(this); this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; specialists.tickBodyguards(this); legacyfx.tickLegacy(this); this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
     this.tickFog();
   }
 

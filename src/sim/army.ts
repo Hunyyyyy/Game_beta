@@ -12,7 +12,7 @@ const COLORS = ['#e0523c', '#3c8ce0', '#e0b43c', '#5cb85c', '#a85cd8', '#3cd0c8'
 // ---------------------------------------------------------------- squads
 /** How many squads may be raised (4 to start, more with research); none without a war tent. */
 export function squadLimit(sim: Sim): number {
-  if (sim.building('wartent') || sim.dev.freeBuild) return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : unlockedMax(sim.researched, 'squads', SQUADS_DEFAULT);
+  if (sim.building('wartent') || sim.dev.freeBuild) return sim.dev.freeBuild ? COMMAND.squadLimit[COMMAND.squadLimit.length - 1] : unlockedMax(sim.researched, 'squads', SQUADS_DEFAULT) + sim.legacyFx('squadsAdd'); // (Trại Kép: one more squad)
   return 0;
 }
 /** The most cells a formation has (so the most soldiers in one squad): 5 to start, more with research. */

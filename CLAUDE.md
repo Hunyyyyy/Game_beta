@@ -61,7 +61,7 @@ Hard rules when editing `src/sim`:
 
 ## Conventions
 
-- **Player orders are absolute and always have the highest priority**, whatever rules are added later (only physical limits, shown as a toast, may refuse one).
+- **Player orders are absolute and always have the highest priority**, whatever rules are added later (only physical limits, shown as a toast, may refuse one). One exception decided by the user (2026-11-16): the story tree may refuse to begin a war (`story.warBlock`: Ngai rỗng for 30 days, a day of council vote).
 - Tools and items pivot at the **handle end**. Tool JSON is handle + head, **side view only**.
 - Config and balance numbers belong in `src/data/*.json` or `src/content/`, not hardcoded in systems.
 - Adding a building means adding a directory under `src/content/buildings/<kind>/`.

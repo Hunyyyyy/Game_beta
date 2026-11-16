@@ -6,8 +6,9 @@ import type { Sim } from './sim';
 import type { Res } from './resources';
 import type { StoryCond } from './encounterdata';
 import { STORY, type StoryMode, type WorldEffect } from './storyscenes';
-import { unlockName } from './specialdata';
+import { unlockAbout, unlockName } from './specialdata';
 import { condOf, stepStory, storyMod, type StoryOut, type StoryWorld } from './storydata';
+import { seedRoll } from './encounterdata';
 
 /** The tree runs when index.json has it on, or the dev switch wakes it. */
 export const storyOn = (sim: Sim): boolean => STORY.enabled || sim.dev.story;
@@ -48,6 +49,29 @@ function applyWorld(sim: Sim, e: WorldEffect, share: number): void {
   if (e.deed) sim.addDeed(e.deed);
   if (e.rel) { const id = tribeOf(sim, e.rel.tribe); if (id) sim.tribeRelationAdd(id, e.rel.n * share); }
   if (e.raid) { const id = tribeOf(sim, e.raid.tribe); if (id) sim.raidFrom(id, Math.max(1, Math.round(e.raid.size * share))); }
+  if (e.warBan) sim.legacy.warBanUntil = Math.max(sim.legacy.warBanUntil, sim.day + Math.round(e.warBan * share));
+  if (e.join) settle(sim, Math.round(e.join * share));
+  const gentle = sim.story.mode === 'easy'; // the easy mode never takes people
+  if (e.leave && !gentle) depart(sim, e.leave, share);
+  if (e.assassin && !gentle) { const t = sim.tribes.filter((x) => x.state === 'free' && !x.bandit).sort((a, b) => a.relation - b.relation)[0]; if (t && sim.sendAssassin(t.id)) sim.say('Có tin một kẻ lạ mặt đã lẻn vào làng trong đêm. Hãy để lính gác và cận vệ ở gần người cần giữ.'); }
+  if (e.rebel && !gentle) { const name = sim.rebelTributary(); if (name) sim.say(`${name} đã đứng dậy chống lại làng.`); }
+}
+
+/** Newcomers of a leaf settle by the fire: as many as the village has beds for. */
+function settle(sim: Sim, n: number): void {
+  const fire = sim.campfire(), room = Math.max(0, sim.popCap() - sim.villagers.length);
+  let done = 0;
+  for (let i = 0; i < Math.min(n, room) && fire; i++) { const at = sim.nearestFree(fire.x + 1, fire.y + 3, new Set()); if (!at) break; sim.spawn(at[0], at[1], seedRoll(sim.seed, 'settle', sim.day * 10 + i) < 0.5 ? 'm' : 'f'); done++; }
+  if (done) sim.say(`${done} người mới tới xin ở lại và được nhận.`);
+}
+
+/** People leave the village because of a leaf: common villagers (those with no trade first), or soldiers. Not while a war is on (the army is away), never the allies, never more than the leaf says. */
+function depart(sim: Sim, l: NonNullable<WorldEffect['leave']>, share: number): void {
+  if (sim.atWar()) return;
+  const pool = sim.villagers.filter((v) => !v.ally && v.health > 0 && (v.job === 'fight') === !!l.soldiers && !v.wardOf).sort((a, b) => Number(b.job === 'idle') - Number(a.job === 'idle') || seedRoll(sim.seed, 'depart', a.id) - seedRoll(sim.seed, 'depart', b.id));
+  const n = Math.min(pool.length, Math.max(1, Math.round(l.max * share)), Math.floor(pool.length * l.share));
+  for (const v of pool.slice(0, n)) { sim.releaseRole([v.id]); sim.leaveSquad([v.id]); sim.takeAway(v); }
+  if (n > 0) sim.say(l.soldiers ? `${n} lính đã bỏ làng, đi theo người khác.` : `${n} người đã gói đồ rời làng.`);
 }
 
 function apply(sim: Sim, o: StoryOut): void {
@@ -62,6 +86,7 @@ export function tickStory(sim: Sim, dt: number): void {
   const st = sim.story;
   if (!st.baseVillages) st.baseVillages = sim.tribes.filter((t) => !t.boss && !t.bandit && !t.rebel && t.tier !== 'boss' && t.tier !== 'rebel' && t.tier !== 'raider').length + sim.conquests.length;
   for (const o of stepStory(st, { ...worldOf(sim), base: sim.encounterCond() })) apply(sim, o);
+  if (st.mode === 'easy' && st.tips.mid && !sim.legacy.tokenGiven) { sim.legacy.tokenGiven = true; sim.legacy.planTokens++; sim.say('Một người thợ già để lại cho làng một lời hứa: Chợ sẽ trao một bản vẽ tùy chọn, không lấy gì.'); }
 }
 
 export interface LegacyItem { key: string; kind: 'unit' | 'building' | 'perk' | 'research'; open: boolean; /** Empty while it is not open: how it opens is never told. */ name: string; about: string }
@@ -69,6 +94,18 @@ export interface LegacyItem { key: string; kind: 'unit' | 'building' | 'perk' | 
 export function legacyView(sim: Sim): LegacyItem[] {
   return STORY.unlocks.map((u) => {
     const open = sim.isUnlocked(u.key);
-    return { key: u.key, kind: u.kind, open, name: open ? u.name ?? unlockName(u.key) : '', about: open ? u.about ?? '' : '' };
+    return { key: u.key, kind: u.kind, open, name: open ? u.name ?? unlockName(u.key) : '', about: open ? u.about ?? unlockAbout(u.key) : '' };
   });
+}
+
+/** Why a war may not be begun now, or null. Ngai rỗng: nobody may order a war for some days. Hội đồng trưởng lão: a war on a village needs a day of voting (the vote holds for three days after). The one rule that refuses an order of the player (user's decision, 2026-11-16). */
+export function warBlock(sim: Sim, tribe: string | null): string | null {
+  if (!storyOn(sim) || sim.dev.freeWorks) return null;
+  const st = sim.legacy;
+  if (sim.day < st.warBanUntil) return `Ngai còn trống: chưa ai có quyền ra lệnh xuất quân (còn ${st.warBanUntil - sim.day} ngày)`;
+  if (!sim.story.flags.includes('council')) return null;
+  const on = tribe ?? '';
+  if (!st.vote || st.vote.tribe !== on || sim.day > st.vote.day + 3) { st.vote = { tribe: on, day: sim.day + 1 }; return 'Hội đồng trưởng lão phải bỏ phiếu về cuộc chiến này: ngày mai mới xuất quân được'; }
+  if (sim.day < st.vote.day) return 'Hội đồng trưởng lão đang bỏ phiếu: ngày mai mới xuất quân được';
+  return null;
 }

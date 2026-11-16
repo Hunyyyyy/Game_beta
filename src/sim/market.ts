@@ -201,11 +201,12 @@ const plansShown = (sim: Sim): number => MARKET.blueprints.show + (sim.buildings
 export function blueprintShelf(sim: Sim): PlanOffer[] {
   if (!plansOpen(sim)) return [];
   const drawn = sim.market.plans?.keys ?? [], price = sim.storyMod('blueprintPrice');
-  const rest = sim.isUnlocked('perk:library') ? STORY.unlocks.filter((u) => u.sources.includes('blueprint') && u.blueprintCost && !drawn.includes(u.key) && !sim.isUnlocked(u.key)).map((u) => u.key) : [];
+  const free = sim.legacy.planTokens > 0; // a blueprint for nothing (the easy mode): any specialist left may be chosen
+  const rest = sim.isUnlocked('perk:library') || free ? STORY.unlocks.filter((u) => u.sources.includes('blueprint') && u.blueprintCost && !drawn.includes(u.key) && !sim.isUnlocked(u.key)).map((u) => u.key) : [];
   return [...drawn, ...rest].flatMap((key, at) => {
     const u = STORY.unlocks.find((x) => x.key === key);
     if (!u) return [];
-    const mul = price * (at >= drawn.length ? MARKET.blueprints.libraryFactor : 1), cost = Object.fromEntries(Object.entries(u.blueprintCost ?? {}).map(([k, n]) => [k, Math.max(1, Math.round((n ?? 0) * mul))])) as Cost;
+    const mul = free ? 0 : price * (at >= drawn.length ? MARKET.blueprints.libraryFactor : 1), cost = free ? {} : Object.fromEntries(Object.entries(u.blueprintCost ?? {}).map(([k, n]) => [k, Math.max(1, Math.round((n ?? 0) * mul))])) as Cost;
     const owned = sim.unlocksBought.includes(key) || sim.isUnlocked(key), lack = shortOf(cost, sim.stock);
     return [{ key, name: unlockName(key), kind: u.kind, cost: Object.entries(cost).map(([res, n]) => ({ res: res as Res, n: n ?? 0 })), owned, why: owned ? 'Đã có' : lack ? `Thiếu ${RES_NAME[lack.res].toLowerCase()} (có ${lack.have}/${lack.need})` : null }];
   });
@@ -216,6 +217,7 @@ export function buyBlueprint(sim: Sim, key: string): string | null {
   if (!o) return 'Chợ không có bản vẽ này';
   if (o.why) return o.why;
   for (const c of o.cost) sim.stock[c.res] -= c.n;
+  if (sim.legacy.planTokens > 0) sim.legacy.planTokens--;
   sim.unlocksBought.push(key);
   sim.say(`Đã mua bản vẽ ${o.name}: ${o.kind === 'building' ? 'công trình này dựng được từ nay' : 'đơn vị này huấn luyện được từ nay'}.`);
   return null;

@@ -21,3 +21,5 @@ export const specRation = (id: string | undefined): number => specialistDef(id)?
 export const specSiege = (id: string | undefined): number => specialistDef(id)?.siege ?? 1;
 /** The name of a specialist by its key of unlocks.json (`unit:<id>`, `building:<kind>`). */
 export const unlockName = (key: string): string => { const [kind, id] = key.split(':'); return kind === 'unit' ? specialistDef(id)?.name ?? id : kind === 'building' ? buildingName(id as BuildingKind, 'ancient') : id; };
+/** What a specialist does, in a line, by its key of unlocks.json. */
+export const unlockAbout = (key: string): string => { const [kind, id] = key.split(':'); return kind === 'unit' ? specialistDef(id)?.about ?? '' : kind === 'building' ? `${(SPEC.buildings as Array<{ id: string; does?: string }>).find((b) => b.id === id)?.does ?? ''}.`.replace(/^(.)/, (c) => c.toUpperCase()) : ''; };

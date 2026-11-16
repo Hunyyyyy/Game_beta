@@ -29,7 +29,7 @@ export interface Effect {
 }
 /** `by`: the next node by what the visitor really is; `roll`: by chance, drawn from the visitor's seed; `reveals`: ask closely (adds a clue, once); `cond`: the choice shows only when it holds. */
 export interface Choice { text: string; /** Choices with the same group are folded under one button on the screen ("Hỏi họ"), opened by a click. */ group?: string; /** What the player says when he takes it, shown as his own line before the answer ("Các bạn từ đâu tới?"); without it nothing is said aloud. */ say?: string;
-  /** Stay at this node after the choice (the shop: buy again), saying `note` to the player. */ stay?: boolean; note?: string; cost?: Cost; effects?: Effect[]; then?: string; /** The first of these whose condition holds decides the node; else `then`. */ branch?: Array<{ cond: string; then: string }>; by?: Record<string, string>; roll?: { p: number; yes: string; no: string; /** The chance goes up by this for each point of the visitor's mood (p + mood x this). */ mood?: number; }; reveals?: boolean; cond?: string }
+  /** Stay at this node after the choice (the shop: buy again), saying `note` to the player. */ stay?: boolean; note?: string; cost?: Cost; effects?: Effect[]; then?: string; /** The first of these whose condition holds decides the node; else `then`. */ branch?: Array<{ cond: string; then: string }>; by?: Record<string, string>; roll?: { p: number; yes: string; no: string; /** The chance goes up by this for each point of the visitor's mood (p + mood x this). */ mood?: number; /** Added to the chance while a condition holds (`spec.assassin>=1`, `mark.lo>=4`). */ bonus?: Array<{ cond: string; add: number }> }; reveals?: boolean; cond?: string }
 /** `effects` run when the node is entered. */
 /**
  * One beat of what is said (each beat is one or more lines, a page each): a plain line, `{ any: [...] }` (one of the options, drawn for this visitor and this beat), or `{ tone: [...] }` (the option at the visitor's
@@ -213,7 +213,7 @@ export function deedCount(deeds: readonly Deed[], key: string, tribe: string | u
 export interface StoryCond { marks: Record<string, number>; flags: readonly string[]; progress: number; leaves: readonly string[]; fruits: readonly string[]; chapters: Record<string, number>; tips: Record<string, number>; mode: string; /** The share of the common villages of the land that are ours, pay us or fell (0..1). */ power: number }
 
 /** What a condition may ask about. */
-export interface CondCtx { stock: Stock; day: number; fireLevel: number; rel: number; truth: string; refugees: number; soldiers: number; captives: number; room: number; party: number; flags: readonly string[]; mood: number; deeds: readonly Deed[]; tribe?: string; story?: StoryCond }
+export interface CondCtx { stock: Stock; day: number; fireLevel: number; rel: number; truth: string; refugees: number; soldiers: number; captives: number; room: number; party: number; flags: readonly string[]; mood: number; deeds: readonly Deed[]; tribe?: string; story?: StoryCond; /** How many specialist soldiers of each kind we have (`spec.<id>`). */ specs?: Record<string, number> }
 
 /** The value of one name of a condition; undefined for a name nobody knows. */
 function condValue(key: string, c: CondCtx, win: number | undefined): number | string | undefined {
@@ -226,6 +226,7 @@ function condValue(key: string, c: CondCtx, win: number | undefined): number | s
   if (key.startsWith('fruit.')) return c.story?.fruits.includes(key.slice(6)) ? 1 : 0;
   if (key.startsWith('chapters.')) return c.story?.chapters[key.slice(9)] ?? 0;
   if (key.startsWith('tip.')) return c.story?.tips[key.slice(4)] ?? 0;
+  if (key.startsWith('spec.')) return c.specs?.[key.slice(5)] ?? 0;
   switch (key) {
     case 'rel': return c.rel;
     case 'day': return c.day;
@@ -245,7 +246,7 @@ function condValue(key: string, c: CondCtx, win: number | undefined): number | s
 }
 
 /** The names a condition may use, for the checker of the story (a prefix ends with a dot). */
-export const COND_NAMES = ['stock.', 'deed.', 'flag.', 'mark.', 'sflag.', 'leaf.', 'fruit.', 'chapters.', 'tip.', 'rel', 'day', 'fireLevel', 'refugees', 'soldiers', 'captives', 'room', 'party', 'mood', 'truth', 'progress', 'mode', 'power'];
+export const COND_NAMES = ['stock.', 'deed.', 'flag.', 'mark.', 'sflag.', 'leaf.', 'fruit.', 'chapters.', 'tip.', 'spec.', 'rel', 'day', 'fireLevel', 'refugees', 'soldiers', 'captives', 'room', 'party', 'mood', 'truth', 'progress', 'mode', 'power'];
 const TERM = /^\s*([\w.:+\-\s]+?)\s*(>=|<=|==|!=|>|<)\s*(-?[\w.]+?)(?:@(\d+)d)?\s*$/;
 /** The terms of a condition taken apart: the names on the left (added up when joined by `+`), the sign, the value. Null for a term that cannot be read. */
 export const condTerms = (expr: string): Array<{ keys: string[]; op: string; rhs: string; win?: number } | null> => expr.split('&&').map((term) => { const m = TERM.exec(term); return m ? { keys: m[1].split('+').map((k) => k.trim()), op: m[2], rhs: m[3], win: m[4] ? Number(m[4]) : undefined } : null; });

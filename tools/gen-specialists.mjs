@@ -15,16 +15,16 @@ const FACTOR = unl.blueprintFactor;
 
 // fruit that opens it, id of the kind, name, the kind it is made from, the colour of its roof and of its pennant, what it does (done in Phase 5)
 const B = [
-  { id: 'elder_hall', from: 'fruit:TM1', name: 'Hội Quán Trưởng Lão', base: 'house', tint: 'purple', flag: ['purple', 'purpleD'], does: '+1 ô cố vấn, giảm bất ổn' },
-  { id: 'tribute_post', from: 'fruit:TM2', name: 'Đồn Thu Cống', base: 'storage', tint: 'gray', flag: ['black', 'blackD'], does: 'thu tài nguyên định kỳ từ làng đã khuất phục' },
-  { id: 'guild_exchange', from: 'fruit:TM3', name: 'Sàn Thương Hội', base: 'market', tint: 'gold', flag: ['gold', 'goldD'], does: 'đoàn thương lái, kho bản vẽ ở Chợ rộng hơn' },
-  { id: 'bodyguard_lodge', from: 'fruit:TM4', name: 'Phòng Hộ Vệ', base: 'guardpost', tint: 'blue', flag: ['blue', 'blueD'], does: 'thêm 1 ô cận vệ gán nhân vật' },
-  { id: 'liaison_post', from: 'fruit:TM5', name: 'Trạm Liên Lạc', base: 'scouttent', tint: 'teal', flag: ['teal', 'tealD'], does: 'gọi đồng minh viện trợ một lần mỗi mùa' },
-  { id: 'twin_camp', from: 'fruit:TM6', name: 'Trại Kép', base: 'wartent', tint: 'green', flag: ['bushL', 'bush'], does: 'thêm 1 đội xuất quân song song' },
-  { id: 'conquest_beacon', from: 'fruit:TM7', name: 'Đài Chinh Phạt', base: 'drill', tint: 'blue', flag: ['red', 'redD'], does: 'tăng tầm hành quân, dẹp loạn nhanh hơn' },
-  { id: 'memorial_shrine', from: 'fruit:TM8', name: 'Đền Tưởng Niệm', base: 'house', tint: 'gray', flag: ['white', 'whiteD'], does: 'sĩ khí cộng thêm khi đánh kẻ thù đã gây thù' },
-  { id: 'academy', from: 'fruit:TM9', name: 'Học Viện', base: 'lab', tint: 'teal', flag: ['blue', 'blueD'], does: '+1 ô nghiên cứu song song' },
-  { id: 'hidden_forge', from: 'fruit:TM10', name: 'Xưởng Mật', base: 'workshop', tint: 'purple', flag: ['black', 'blackD'], does: 'chế một trang bị đặc biệt (chốt ở Phase 5)' },
+  { id: 'elder_hall', from: 'fruit:TM1', name: 'Hội Quán Trưởng Lão', base: 'house', tint: 'purple', flag: ['purple', 'purpleD'], does: 'làng cống nạp ít phản lại hơn một nửa' },
+  { id: 'tribute_post', from: 'fruit:TM2', name: 'Đồn Thu Cống', base: 'storage', tint: 'gray', flag: ['black', 'blackD'], does: 'cống nạp nhận được nhiều hơn 25%' },
+  { id: 'guild_exchange', from: 'fruit:TM3', name: 'Sàn Thương Hội', base: 'market', tint: 'gold', flag: ['gold', 'goldD'], does: 'Chợ bày thêm một bản vẽ mỗi mùa' },
+  { id: 'bodyguard_lodge', from: 'fruit:TM4', name: 'Phòng Hộ Vệ', base: 'guardpost', tint: 'blue', flag: ['blue', 'blueD'], does: 'mỗi người được gán thêm một cận vệ' },
+  { id: 'liaison_post', from: 'fruit:TM5', name: 'Trạm Liên Lạc', base: 'scouttent', tint: 'teal', flag: ['teal', 'tealD'], does: 'mỗi mùa gọi một lần lính đồng minh tới giữ làng' },
+  { id: 'twin_camp', from: 'fruit:TM6', name: 'Trại Kép', base: 'wartent', tint: 'green', flag: ['bushL', 'bush'], does: 'lập thêm được một đội quân' },
+  { id: 'conquest_beacon', from: 'fruit:TM7', name: 'Đài Chinh Phạt', base: 'drill', tint: 'blue', flag: ['red', 'redD'], does: 'các đội hành quân nhanh hơn 20%' },
+  { id: 'memorial_shrine', from: 'fruit:TM8', name: 'Đền Tưởng Niệm', base: 'house', tint: 'gray', flag: ['white', 'whiteD'], does: 'lính đánh làng đang thù mình mạnh hơn 10%' },
+  { id: 'academy', from: 'fruit:TM9', name: 'Học Viện', base: 'lab', tint: 'teal', flag: ['blue', 'blueD'], does: 'nghiên cứu được hai thứ cùng lúc' },
+  { id: 'hidden_forge', from: 'fruit:TM10', name: 'Xưởng Mật', base: 'workshop', tint: 'purple', flag: ['black', 'blackD'], does: 'chế vũ khí và giáp rẻ hơn 20%' },
 ];
 const TINT = { purple: ([r, g, b]) => [r * 0.62, g * 0.7, r * 0.95], blue: ([r, g, b]) => [b, g * 0.95, r * 1.0], teal: ([r, g, b]) => [g * 0.6, r * 0.85, r * 0.8], green: ([r, g, b]) => [g * 0.85, r * 0.95, b], gold: ([r, g, b]) => [r * 1.0, g * 1.55, b * 1.1], gray: ([r, g, b]) => { const m = (r + g + b) / 3; return [m * 0.95, m * 0.97, m * 1.03]; } };
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)), toHex = (c) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');

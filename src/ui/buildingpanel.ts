@@ -63,6 +63,7 @@ export class BuildingPanel {
   private marketKeepOn = true;
   private readonly planBox = h('div', { class: 'barter' });
   private planKey = '#';
+  private aidSync: () => void = () => {};
   private readonly marketHead = h('p', { class: 'sub' });
   private marketMake: ((give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin') => MarketRow) | null = null;
   private readonly swapBox = h('div', { class: 'barter' });
@@ -217,6 +218,12 @@ export class BuildingPanel {
       this.resRows.push({ res, num, bar, row }); stockRows.push(row);
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }];
+    { // Trạm Liên Lạc (a specialist building): call the allies to keep the village, once a season
+      const why = h('p', { class: 'sub' }), call = h('button', { type: 'button', text: 'Gọi viện binh giữ làng' }) as HTMLButtonElement;
+      call.addEventListener('click', () => { const e = sim.callAid(); if (e) c.toast(e); ctl.onChange(); });
+      this.aidSync = () => { const no = sim.aidBlock(); call.disabled = !!no; why.textContent = no ?? 'Các làng đứng về phía mình (làng cống nạp, làng thân thiết hết mức) gửi lính tới giữ làng vài ngày. Mỗi mùa một lần.'; };
+      (this.tabs as Record<string, typeof this.tabs.market>).liaison_post = [{ label: 'Viện binh', page: page(hint('Viện binh', 'Gọi lính của các làng đồng minh tới giữ làng trong vài ngày, mỗi mùa một lần. Họ tự về khi hết hạn.'), why, call) }];
+    }
     this.tabs.market = [{ label: 'Giao thương', page: page(market()) }, { label: 'Bản vẽ', page: page(hint('Bản vẽ', 'Mỗi mùa Chợ bày vài bản vẽ của các đơn vị và công trình chuyên chưa mở. Mua một bản vẽ là mở hẳn thứ đó: đơn vị thì huấn luyện ở trại của nó, công trình thì dựng ở mục Di sản. Giá cao: đây là đường bù cho thứ cốt truyện chưa mở.'), this.planBox), show: () => sim.blueprintsOpen() }];
     // the processing houses: the order at work with its bar above the tabs, and a forge bench (recipes, slots in and out, queue) in the tab
     for (const k of ['smelter', 'carpentry', 'tannery'] as const) {
@@ -419,6 +426,7 @@ export class BuildingPanel {
     if (b.kind === 'campfire' && ready) this.updateCampfire();
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
     if (b.kind === 'market' && ready) this.updateMarket();
+    if ((b.kind as string) === 'liaison_post' && ready) this.aidSync();
     if (ready && isProcessKind(b.kind)) this.updateProcess(b, b.kind as 'smelter' | 'carpentry' | 'tannery');
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
@@ -531,7 +539,7 @@ export class BuildingPanel {
     const { sim } = this.c;
     this.staffBoxes.research.update(b); this.activeBoxes.research.update(b);
     const waiting = sim.researchQueue[0];
-    this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
+    this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : sim.legacyFx('researchSlots') > 1 ? 'Có Học Viện: nghiên cứu được hai thứ cùng lúc' : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
     this.research.update();
   }
 

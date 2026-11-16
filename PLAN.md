@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 5 done; Phase 6 (acceptance) starts on "tiếp"**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 5 done; leftovers in three batches (A done) before Phase 6**.
 
 ## Survey facts (what the code has today)
 
@@ -239,3 +239,45 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 | Specialist buildings | only Sàn Thương Hội has its effect (+1 blueprint on the shelf). The other nine can be built but do nothing yet |
 | Stone tips | legacy = first marks, favoured trunk, leaf tilts, and mods for N2 (market fee +20%), N4 (fee -20%, quota +30%), N7 (craft +20%). The other "Ngọn đổi cách game" rows (arrivals x1.5, tribute every 10 days, sworn enemy, daughter village, marriage ally) are not mechanics yet |
 | Not done | Easy mode free blueprint at the middle tip; rumour "clear / few" by mode; `encounters/stone.json` untouched (chapters point at the old scripts by id); M1 does not check "all boss villages beaten" (they all are, at Nhà chung 4) |
+
+## Leftovers before Phase 6: decisions of 2026-11-16 (do not ask again)
+
+| Question | Answer |
+|---|---|
+| Effects of the 9 specialist buildings and 5 powers (the game has no morale, unrest, advisors or march range) | mapped on existing systems, numbers in `data/specialists.json effects` (table below) |
+| Leaves that forbid a war (Ngai rỗng 30 days, council vote 1 day) | really block `startPlan` with a toast: the one exception to "player orders are absolute" (noted in CLAUDE.md) |
+| Painful leaves taking people | real, limited: normal and harsh modes only, never during a war, never allies or bodyguards, capped by share and count; assassination = the real hidden assassin |
+| Side quests and trunk V on the map | all on the map, on a "stage" apart from the world's books: mission units flagged (no population, rations, power, tribes, alarm, raid, war mode, relation), spawn on free tiles, vanish at the end; small saved record (template, step, seed); one `applyReward()` gate; our soldiers and their losses are real, merchant and bandits are stage units; talk version stays as the fallback (and a config switch turns the map off); trunk V listens to battle events (enemy leader down, our army under 50%, a village about to fall) and offers a short choice; a "no effect" test (hash of core state before and after a mission with an empty reward); dev command per mission. Order: bandits, escort, guard, then trunk V |
+
+## Batch A (done): legacy effects and real leaves
+
+| Thing | Effect | Hook |
+|---|---|---|
+| Hội Quán Trưởng Lão | tributary betrayal chance x0.5 | `tribes.payTribute` |
+| Đồn Thu Cống | tribute goods x1.25 | `tribes.payTribute` |
+| Sàn Thương Hội | +1 blueprint on the shelf | `market.plansShown` |
+| Phòng Hộ Vệ | 2 bodyguards for one villager (1 without: **new limit**, guards already set stay) | `specialists.setBodyguard` |
+| Trạm Liên Lạc | once a season the allies come to keep the village for 2 days (tab "Viện binh") | `legacyfx.callAid`, `tribes.summonAllies(target?)` |
+| Trại Kép | +1 squad (not a second war plan: the war mode runs one plan) | `army.squadLimit` |
+| Đài Chinh Phạt | squads march 20% faster | `warplan.squadPace` |
+| Đền Tưởng Niệm | our blows on a hostile village x1.1 | `battle` damage line, `legacyfx.grudgeEdge` |
+| Học Viện | a second research at once, worked by the lab's people at the same pace | `works.tickWorks`, `researchBusy` |
+| Xưởng Mật | weapons and armour cost x0.8 | `works.recipeMult` |
+| Liên quân (M2) | allied soldiers x2 | `tribes.summonAllies` |
+| Tai mắt (M3) | raids told a day earlier | `tribes` event warning |
+| Hợp đồng lính thuê (M4) | hired specialists cost x0.7 (hiring was already instant) | `barracks.specialistCost` |
+| Hòa giải (M5) | relation a tribute costs x0.5 | `tribes.payTribute` |
+| Nơi ẩn náu (M6) | relation gained x2 | `tribes.addRelation` |
+
+| Leaf effect (WorldEffect) | Leaves |
+|---|---|
+| `warBan: 30` | IV1-d Ngai rỗng |
+| council vote (flag `council`) | IV1-a: `story.warBlock` asks a day, the vote holds 3 days |
+| `leave` (people gone for good) | IV1-c, VII3-b, VII1-a, V1-d (soldiers); VI1-b, III2-b (villagers) |
+| `join` (newcomers) | I1-a, I1-d, I2-c, V1-c |
+| `assassin` (real hidden killer from the least friendly village) | VII1-b |
+| `rebel` (the least friendly tributary turns on us) | VII3-a |
+
+Also: easy mode gives one free blueprint of choice when the middle tip is scored (`legacy.planTokens`, spent at the Chợ); the assassination quest's odds read `spec.assassin>=1` (+25%) and `mark.lo>=4` (-15%) through `roll.bonus`; save v51 (`legacy` record). Checked headless: every number, two researches, vote, ban, soldiers leaving, token, v50 -> v51.
+
+Still open after batch A: the stone tips as mechanics (arrivals x1.5, paying tribute, sworn enemy, marriage ally), the daughter village as a new NPC village, "terror" tribute by fear.

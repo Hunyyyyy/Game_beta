@@ -286,7 +286,7 @@
    ],
    "core": false,
    "name": "Liên quân",
-   "about": "Đồng minh gửi quân trợ chiến khi làng ra trận."
+   "about": "Đồng minh gửi gấp đôi lính khi làng ra trận."
   },
   {
    "key": "perk:eyes",
@@ -299,7 +299,7 @@
    ],
    "core": false,
    "name": "Tai mắt",
-   "about": "Làng biết trước hướng hành quân của làng địch."
+   "about": "Tập kích được báo trước sớm hơn một ngày."
   },
   {
    "key": "perk:mercenary",
@@ -312,7 +312,7 @@
    ],
    "core": false,
    "name": "Hợp đồng lính thuê",
-   "about": "Phí chợ thấp hơn; thuê được lính chuyên nghiệp tức thời."
+   "about": "Phí chợ thấp hơn 15%; thuê lính chuyên rẻ hơn 30%."
   },
   {
    "key": "perk:reconcile",
@@ -325,7 +325,7 @@
    ],
    "core": false,
    "name": "Hòa giải",
-   "about": "Dập một cuộc nổi dậy rẻ hơn."
+   "about": "Thu cống nạp ít làm mất lòng các làng hơn một nửa."
   },
   {
    "key": "perk:refuge",
@@ -338,7 +338,7 @@
    ],
    "core": false,
    "name": "Nơi ẩn náu",
-   "about": "Có nơi để lui về; danh tiếng hồi lại nhanh hơn."
+   "about": "Quan hệ với các làng hồi lại nhanh gấp đôi."
   },
   {
    "key": "perk:survivor",
