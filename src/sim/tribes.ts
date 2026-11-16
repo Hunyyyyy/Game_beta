@@ -274,7 +274,7 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
     t.angryUntil = sim.time + 120;
   }
   if (v.ai?.guest !== undefined && killer?.team === 'player') sim.guestSlain(v.id); // a guest killed at the gate: the deeds and what follows (encounters.ts)
-  if (v.id === t.leaderId) { t.leaderDead = true; sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`); }
+  if (v.id === t.leaderId) { sim.warLeaderDown(v.team); t.leaderDead = true; sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`); }
   sim.onKill?.();
 }
 

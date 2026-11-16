@@ -3,7 +3,7 @@
  * which fruits ripen, how a tip is scored, and the checker of the data. `stepStory` moves a `StoryState` one step and says what happened; story.ts does that to the game, tools/simStory.mjs to a game of words.
  */
 import { COND_NAMES, SCRIPTS, condTerms, evalCond, seedRoll, type CondCtx, type Deed, type Effect, type Script, type StoryCond } from './encounterdata';
-import { STORY, STORY_SCENES, type Fruit, type Knot, type Leaf, type Legacy, type StoryMode, type Thread, type TreeDef, type WorldEffect } from './storyscenes';
+import { STORY, STORY_SCENES, WAR_EVENTS, type Chapter, type Fruit, type Knot, type Leaf, type Legacy, type StoryMode, type Thread, type TreeDef, type WorldEffect } from './storyscenes';
 
 /** What the tree remembers of a game (saved). The marks are not here: they come from the deeds. */
 export interface StoryState {
@@ -218,7 +218,7 @@ export function stepStory(st: StoryState, w: StoryWorld): StoryOut[] {
   for (const th of STORY.threads) {
     if (th.tree !== tree.id) continue;
     th.chapters.forEach((ch, i) => {
-      if (!ch.scene || (w.seen[ch.id]?.times ?? 0) > 0) return;
+      if (!ch.scene || ch.on || (w.seen[ch.id]?.times ?? 0) > 0) return; // (a chapter of a war comes in the war: story.warEvent)
       if (st.sent[ch.id] !== undefined && w.day - st.sent[ch.id] < CFG.resendDays) return;
       const prev = i > 0 ? th.chapters[i - 1] : undefined, prevSeen = prev ? w.seen[prev.script ?? prev.id] : undefined;
       if ((prev && !(prevSeen && prevSeen.times > 0)) || !evalCond(ch.when, c)) return;
@@ -273,6 +273,24 @@ export function stepStory(st: StoryState, w: StoryWorld): StoryOut[] {
   return out;
 }
 
+
+/** The chapter a war event opens now: the first chapter of the medieval branches that is played in this event, not seen, whose branch has played every stage before it. Null when none. */
+export function warChapter(seen: StoryWorld['seen'], ev: string, c: CondCtx): Chapter | null {
+  for (const th of STORY.threads) {
+    if (th.tree !== 'medieval') continue;
+    for (let i = 0; i < th.chapters.length; i++) {
+      const ch = th.chapters[i];
+      if ((seen[ch.script ?? ch.id]?.times ?? 0) > 0) continue;
+      if (ch.on !== ev || !ch.scene) break; // the branch waits at this stage
+      const prev = i > 0 ? th.chapters[i - 1] : undefined;
+      if (prev && !((seen[prev.script ?? prev.id]?.times ?? 0) > 0)) break;
+      if (!evalCond(ch.when, c)) break;
+      return ch;
+    }
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------- the checker
 const effectsOf = (s: Script): Effect[] => Object.values(s.nodes).flatMap((n) => [...(n.effects ?? []), ...(n.choices ?? []).flatMap((c) => c.effects ?? [])]);
 
@@ -320,6 +338,8 @@ export function validateStory(): { errors: string[]; warnings: string[] } {
     if (!STORY.knots.some((k) => k.fedBy.includes(t.id))) warn(`${t.id}: feeds no knot`);
     for (const c of t.chapters) {
       cond(c.id, c.when);
+      if (c.on && !WAR_EVENTS.includes(c.on)) err(`${c.id}: unknown war event "${c.on}"`);
+      if (c.on && !c.scene) err(`${c.id}: a chapter of a war needs a scene`);
       if (!!c.script === !!c.scene) { err(`${c.id}: needs either a script or a scene`); continue; }
       if (!c.script) continue;
       const s = scripts.get(c.script);

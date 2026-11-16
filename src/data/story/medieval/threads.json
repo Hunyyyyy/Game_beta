@@ -234,40 +234,36 @@
      "name": "Chọn mục tiêu",
      "scene": {
       "say": [
-       "Quân đã về. Lính hỏi nhau: lần tới ta đánh ai?",
-       "Lời của làng sẽ thành hướng đi của giáo."
+       "Quân đã tập hợp trước cổng, giáo dựng thành rừng.",
+       "Lính hỏi nhau: ta đi đánh vì điều gì?"
       ],
       "cast": "general",
       "options": [
        {
-        "text": "Làng yếu ngay bên cạnh.",
+        "text": "Vì làng kia yếu, và ngay sát bên ta.",
         "reply": "Gần, dễ, và ai cũng hiểu thông điệp.",
         "deed": "c_VA1_1"
        },
        {
-        "text": "Làng giàu ở xa.",
+        "text": "Vì kho của họ đầy.",
         "reply": "Đường dài, kho lớn. Cả vùng thấy quân làng đi qua.",
         "deed": "c_VA1_2"
        },
        {
-        "text": "Kẻ thù cũ còn nợ ta.",
+        "text": "Vì họ còn nợ ta từ xưa.",
         "reply": "Món nợ cũ được nhắc lại trước hàng quân.",
         "deed": "c_VA1_3"
        }
       ]
      },
-     "when": "deed.war_fought>=1",
-     "days": [
-      1,
-      2
-     ]
+     "on": "war_start"
     },
     {
      "id": "chapter:V.A-2",
      "name": "Cách đánh",
      "scene": {
       "say": [
-       "Các đội trưởng cãi nhau về cách đánh.",
+       "Một nửa quân địch đã ngã. Các đội trưởng cãi nhau về bước tiếp theo.",
        "Làng muốn thắng kiểu nào?"
       ],
       "cast": "general",
@@ -289,17 +285,14 @@
        }
       ]
      },
-     "days": [
-      2,
-      4
-     ]
+     "on": "half_way"
     },
     {
      "id": "chapter:V.A-3",
      "name": "Tù binh và chiến lợi phẩm",
      "scene": {
       "say": [
-       "Sau trận, một hàng người bị trói ngồi ngoài bãi.",
+       "Thủ lĩnh của họ đã gục. Một hàng người bị trói ngồi ngoài bãi.",
        "Làm gì với họ?"
       ],
       "cast": "general",
@@ -338,11 +331,7 @@
        }
       ]
      },
-     "when": "deed.war_fought>=2",
-     "days": [
-      1,
-      2
-     ]
+     "on": "leader_down"
     }
    ]
   },
@@ -405,7 +394,7 @@
      "name": "Sứ giả xin hòa",
      "scene": {
       "say": [
-       "Làng tôi xin hòa. Đủ máu rồi.",
+       "Làng tôi sắp thất thủ. Xin hòa. Đủ máu rồi.",
        "Điều kiện thì làng bạn nói."
       ],
       "cast": "envoy",
@@ -442,17 +431,14 @@
        }
       ]
      },
-     "days": [
-      3,
-      5
-     ]
+     "on": "near_fall"
     },
     {
      "id": "chapter:V.B-3",
      "name": "Cánh cổng bỏ ngỏ",
      "scene": {
       "say": [
-       "Đêm trăng non, cổng phía đông sẽ không cài then.",
+       "Quân ta đã hao nhiều. Tôi ở trong thành: cổng phía đông đêm nay sẽ không cài then.",
        "Tôi chỉ cần một chỗ ở khi mọi chuyện xong."
       ],
       "cast": "mole",
@@ -479,10 +465,7 @@
        }
       ]
      },
-     "days": [
-      3,
-      5
-     ]
+     "on": "army_low"
     }
    ]
   },

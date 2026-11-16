@@ -433,6 +433,7 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
   warsupply.loadPacks(sim, plan); warlog.begin(sim, plan);
   plan.status = 'running'; plan.stage = 'assemble'; plan.startedAt = sim.time; plan.signal = false; plan.result = ''; plan.endedAt = 0;
   sim.say(`Triển khai quân đánh ${sim.tribes.find((t) => t.id === plan.tribe)?.def.name ?? ''} bắt đầu.`);
+  if (plan.tribe) sim.warBegan(plan.tribe);
   return null;
 }
 

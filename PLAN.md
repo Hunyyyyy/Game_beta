@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 5 done; leftovers in three batches (A done) before Phase 6**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 5 done; leftovers batches A and B done; the rest listed in "Still open" before Phase 6**.
 
 ## Survey facts (what the code has today)
 
@@ -281,3 +281,24 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 Also: easy mode gives one free blueprint of choice when the middle tip is scored (`legacy.planTokens`, spent at the Chợ); the assassination quest's odds read `spec.assassin>=1` (+25%) and `mark.lo>=4` (-15%) through `roll.bonus`; save v51 (`legacy` record). Checked headless: every number, two researches, vote, ban, soldiers leaving, token, v50 -> v51.
 
 Still open after batch A: the stone tips as mechanics (arrivals x1.5, paying tribute, sworn enemy, marriage ally), the daughter village as a new NPC village, "terror" tribute by fear.
+
+## Batch B (done): side quests on the map, trunk V in the war
+
+| Point | Note |
+|---|---|
+| Stage | `missions.ts` + `brainstage.ts`. Fields in `side_quests.json` (`steps[].field`, `config.map`): `clear_bandits` (camp of 3-5, +2 in the medieval age), `escort_salt` (the merchant walks a third of the circle round the village while a soldier is within 7 tiles; an ambush springs half way), `guard_envoy` (he camps outside; after 45 s a killer and a half band come). Won -> next step (`skipTo`) and a tag when our soldiers killed; lost -> the quest ends; `days` limit |
+| Fallback | no soldier / war / no tile in sight / `map.enabled false` -> the old talk with dice (the answer's `roll`, `bonus`); a save mid-stage reloads it (units are saved with the foes) and `stageSweep` removes orphans |
+| Outside the books | stage units: not in `villagers`, `tribe.unitIds`, population, rations, power, relation, alarm, raids, war mode (war mode does not tick them; `stageBlock` refuses a stage during a war); ids from 900000000 and `nextVid` restored; `teamsHostile`: stage vs player and ward only. Checked A/B against a control run: the only differences are the gate visitor of the offer talk (Phase 4 mechanism) |
+| UI | Nhiệm vụ window: "trên bản đồ: ..." and a button "Tới nơi" that centres the camera |
+| Trunk V | chapters have `on: war_start | half_way | leader_down | army_low | near_fall` (`story.warEvent`, `tickWarStory`, `encounters.openAtOnce`): the scene opens in the middle of the battle, the clock stands still while it is open (a dialogue stops `time`). V.A-1 at the start, V.A-2 enemy at half, V.A-3 their leader falls, V.B-2 village about to fall (<= 20%), V.B-3 our army at half; V.B-1 stays a gate scene in peace. A moment counts only when a scene opened; a stage waits for the one before it. Level-triggered: it comes back each second while true |
+| Tested | headless: every quest in both modes, ward walking, ambush, save mid-stage, A/B hash; the five war moments fed to a running war: all five scenes open, in order, clock still; simStory knows the war moments (200 seeds: no dead end, same Ngọn spread). NOT tested: a real battle against a village that holds soldiers (the villages are data until the army is near) |
+| Not done | no dev button for the war scenes (play a war); the stage is not drawn with a marker on the minimap |
+
+## Still open before Phase 6
+
+| Item | Why |
+|---|---|
+| N8 daughter village, N9 marriage ally, "terror" tribute by fear | each is a new kind of village or diplomacy state: they touch `tribes.ts` spawning and the diplomacy rules |
+| Walls: click-picking a unit on a wall, gate and fence footprint growth, walls under fire dropping soldiers | touches the picking code and `growRect` |
+| Firearm bullet look and bang sound, viewer unit list | art and sound work |
+| Balance of costs, rewards, curve | needs `npm run economy` (CLAUDE.md: only when asked) |

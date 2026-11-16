@@ -10,8 +10,8 @@ import type { Sim, Villager } from './sim';
 const FX = SPEC.effects;
 export type FxKey = 'betrayMul' | 'tributeMul' | 'wardSlots' | 'squadsAdd' | 'marchMul' | 'researchSlots' | 'gearCostMul' | 'allyMul' | 'warnDays' | 'hireCostMul' | 'relationLossMul' | 'relationGainMul';
 /** What is saved: the season the allies were last called and the day they go home, the day until which no war may be begun (Ngai rỗng), the vote of the council on a war, the blueprints still to be had for nothing. */
-export interface LegacyState { aidStamp: number; aidUntil: number; warBanUntil: number; vote: { tribe: string; day: number } | null; planTokens: number; tokenGiven: boolean }
-export const initialLegacy = (): LegacyState => ({ aidStamp: -1, aidUntil: 0, warBanUntil: 0, vote: null, planTokens: 0, tokenGiven: false });
+export interface LegacyState { aidStamp: number; aidUntil: number; warBanUntil: number; vote: { tribe: string; day: number } | null; planTokens: number; tokenGiven: boolean; /** The war now: the village, how many soldiers each side began with, the moments told, the one waiting to be told (story.ts). Null in peace and in every save. */ war: { tribe: string; foe0: number; our0: number; fired: string[]; pending: string | null; leaderDown?: boolean } | null }
+export const initialLegacy = (): LegacyState => ({ aidStamp: -1, aidUntil: 0, warBanUntil: 0, vote: null, planTokens: 0, tokenGiven: false, war: null });
 
 const stands = (sim: Sim, kind: string): boolean => sim.buildings.some((b) => (b.kind as string) === kind && b.done);
 const power = (sim: Sim, id: string): boolean => sim.isUnlocked(`perk:${id}`) && !sim.dev.unlockAll; // the dev switch opens what can be built and trained, not the powers

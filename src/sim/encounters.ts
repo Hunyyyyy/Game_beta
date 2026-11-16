@@ -746,3 +746,21 @@ function stayWithUs(sim: Sim, v: Visitor): void {
   sim.say(v.join === 'all' ? `${n} người tị nạn ở lại làng.` : `${sim.get(v.unitId)?.name ?? 'Người lạ'} ở lại làm dân của làng.`);
   st.visitors = st.visitors.filter((x) => x.id !== v.id);
 }
+
+/** A talk that opens at once, in the middle of a war (story.warEvent): the visitor stands by the fire, already waiting, and the dialogue opens. The battle stands still while it is answered (time does not run in a dialogue). Returns an error or null. */
+export function openAtOnce(sim: Sim, scriptId: string, tribeId: string): string | null {
+  const s = scriptOf(scriptId), t = tribeOf(sim, tribeId);
+  if (!s || !t || sim.encounters.active) return 'Không mở được cuộc gặp';
+  const st = sim.encounters, fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 3 : sim.world.start.y;
+  const at = sim.nearestFree(Math.floor(fx), Math.floor(fy), new Set());
+  if (!at) return 'Không có chỗ cho người tới';
+  const id = st.nextId++, seed = Math.floor(sim.frnd() * 2147483647);
+  const f = sim.makeVillager(at[0], at[1], sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
+  f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
+  const who = characterOf(s.cast);
+  if (who) { const suit = suitOf(who, sim.era); f.look = { ...who.look }; f.name = `${who.name} ${f.name}`; f.outfit = suit.armor ?? undefined; }
+  f.ai = { role: 'civ', camp: t.camp, wander: 0, goal: null, raid: 0, guest: id };
+  sim.addFoe(f);
+  st.visitors.push({ id, scriptId, tribe: t.id, unitId: f.id, truth: 'honest', seed, state: 'waiting', mx: at[0] + 0.5, my: at[1] + 0.5, hx: at[0] + 0.5, hy: at[1] + 0.5, arrivedAt: sim.time, expiresAt: sim.time + 1e6, stuck: 0, notes: [], used: [], members: [], spots: [], join: '', agents: [], escort: [], placed: false, provoked: false, watch: [fx, fy] });
+  return openEncounter(sim, id);
+}

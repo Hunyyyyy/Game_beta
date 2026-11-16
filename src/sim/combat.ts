@@ -142,7 +142,7 @@ export const MEET = tribesJson.meet as { friendlyFrom: number; feuds: string[][]
 export const HOSTILE_BELOW = RELATION.labels[1][0] as number;
 
 /** Team of a unit: the player, a tribe, or wild animals. */
-export type Team = 'player' | TribeId | 'wild';
+export type Team = 'player' | TribeId | 'wild' | 'stage' | 'ward'; // `stage` / `ward`: the foes and the friends of a side quest on the map (missions.ts): of no village
 
 /** Name of a relation score: "Thù địch" ... "Thu phục". */
 export function relationLabel(score: number): string {

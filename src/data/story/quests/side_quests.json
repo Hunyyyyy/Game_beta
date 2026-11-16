@@ -1,168 +1,73 @@
 {
-  "_note": "Side quests (doc/story_tree.md 'Nhiệm vụ phụ', src/sim/sidequests.ts): apart from the story tree, reward only, no deed, no flag. A quest is 2 or 3 steps; each step is a small talk at the gate (a visitor script made by sidequestdata.ts, id sq:<quest>:<step>, with ':m' in the medieval age). Step 0 is the offer: any option but the added refusal (config.decline) takes the quest. An option: text (the button), reply (what the visitor answers), tag (kept: the reward adds reward.by[tag]), cost (paid when chosen; times config.costMulMedieval in the medieval age), cond (shown only when it holds, e.g. soldiers>=2), roll { p, fail (the answer when it goes wrong), ends (the quest is lost) or tag (kept in place of the option's tag), bonus [{ cond, add }] (added to p while the condition holds: an assassin of our own `spec.assassin>=1`, the mark Lộ `mark.lo>=4`) }. cast: the character (data/characters) who comes for a step (default: giver). days: game days to finish it after it is taken. reward: base goods plus by[tag] goods, all times config.rewardByFire[Nhà chung level]; rel: relation with the giver's village; blueprint: true, or a tag that must be held: one specialist not yet open is opened (if none is left, config.blueprintInstead goods). config: enabled (false: only the dev switch sends them; a flag of the story tree listed in from_flags.json makes its quest likelier), max at once (offers count), offerGap days between offers, stepDays between steps, cooldownDays before the same quest again, offerWait days an unanswered offer is kept.",
-  "config": {
-    "enabled": true, "max": 3, "offerGap": [2, 4], "stepDays": 1, "cooldownDays": 10, "offerWait": 2, "priority": 6, "maxDelay": 2,
-    "rewardByFire": [1, 1, 1.5, 2, 5, 7, 9, 12, 15, 19, 24], "costMulMedieval": 5,
-    "decline": "Không nhận việc này.", "declineReply": "Vậy thôi. Tôi sẽ hỏi nơi khác.", "blueprintInstead": { "coin": 6 }
-  },
+  "_note": "Side quests (doc/story_tree.md 'Nhiệm vụ phụ', src/sim/sidequests.ts): apart from the story tree, reward only, no deed, no flag. A quest is 2 or 3 steps; each step is a small talk at the gate (a visitor script made by sidequestdata.ts, id sq:<quest>:<step>, with ':m' in the medieval age). Step 0 is the offer: any option but the added refusal (config.decline) takes the quest. An option: text (the button), reply (what the visitor answers), tag (kept: the reward adds reward.by[tag]), cost (paid when chosen; times config.costMulMedieval in the medieval age), cond (shown only when it holds, e.g. soldiers>=2), roll { p, fail (the answer when it goes wrong), ends (the quest is lost) or tag (kept in place of the option's tag), bonus [{ cond, add }] (added to p while the condition holds: an assassin of our own `spec.assassin>=1`, the mark Lộ `mark.lo>=4`) }. cast: the character (data/characters) who comes for a step (default: giver). days: game days to finish it after it is taken. reward: base goods plus by[tag] goods, all times config.rewardByFire[Nhà chung level]; rel: relation with the giver's village; blueprint: true, or a tag that must be held: one specialist not yet open is opened (if none is left, config.blueprintInstead goods). config: enabled (false: only the dev switch sends them; a flag of the story tree listed in from_flags.json makes its quest likelier), max at once (offers count), offerGap days between offers, stepDays between steps, cooldownDays before the same quest again, offerWait days an unanswered offer is kept. A step with `field` is played on the map when it can be (missions.ts; else its talk and dice): kind bandits | escort | guard, go (what the visitor says), say (Nhật ký), count of foes, soldiers needed, days, skipTo (the step after a win), tagWin (kept when a foe fell), win / lose lines. config.map: the switch and the numbers of the stage.",
+  "config": {"enabled": true, "max": 3, "offerGap": [2, 4], "stepDays": 1, "cooldownDays": 10, "offerWait": 2, "priority": 6, "maxDelay": 2, "rewardByFire": [1, 1, 1.5, 2, 5, 7, 9, 12, 15, 19, 24], "costMulMedieval": 5, "decline": "Không nhận việc này.", "declineReply": "Vậy thôi. Tôi sẽ hỏi nơi khác.", "blueprintInstead": {"coin": 6}, "map": {"enabled": true, "dist": 20, "minDist": 9, "lead": 7, "escortArc": 1.9, "ambushAt": 6, "killerDelay": 45, "moreMedieval": 2, "weapons": {"stone": ["club", "spear"], "ancient": ["bronze_sword", "short_spear"]}}},
   "quests": [
-    {
-      "id": "escort_salt", "name": "Hộ tống thương lái muối", "kind": "Hộ tống", "giver": "merchant", "fire": [1, 10], "days": 4,
-      "steps": [
-        { "say": ["Tôi chở muối qua đèo, mà đèo dạo này không yên.", "Cho tôi mượn người dẫn đường, tới nơi tôi chia phần."], "options": [
-          { "text": "Đi đường tắt qua đèo.", "reply": "Nhanh đấy. Mong là thú dữ hôm đó ngủ muộn.", "tag": "short" },
-          { "text": "Đi đường vòng dưới thung.", "reply": "Chậm mà chắc. Tôi thích người cẩn thận.", "tag": "long" } ] },
-        { "cast": "assassin", "say": ["Giữa đường có mấy kẻ chặn lại.", "Muối để lại một nửa thì đi. Không thì khỏi đi."], "options": [
-          { "text": "Đánh đuổi chúng.", "cond": "soldiers>=2", "reply": "Chúng bỏ chạy, để lại cả túi da.", "tag": "fight", "roll": { "p": 0.75, "fail": "Chúng đông hơn tưởng. Người của bạn rút được, nhưng muối mất nửa.", "tag": "robbed" } },
-          { "text": "Trả tiền qua đường.", "cost": { "coin": 1 }, "reply": "Biết điều. Đi đi.", "tag": "paid" } ] },
-        { "say": ["Tới nơi rồi. Muối còn, người còn.", "Đây là phần của làng bạn, như đã hứa."], "options": [
-          { "text": "Nhận phần.", "reply": "Lần sau qua đèo tôi lại ghé." } ] }
+    {"id": "escort_salt", "name": "Hộ tống thương lái muối", "kind": "Hộ tống", "giver": "merchant", "fire": [1, 10], "days": 4, "steps": [
+        {"say": ["Tôi chở muối qua đèo, mà đèo dạo này không yên.", "Cho tôi mượn người dẫn đường, tới nơi tôi chia phần."], "options": [{"text": "Đi đường tắt qua đèo.", "reply": "Nhanh đấy. Mong là thú dữ hôm đó ngủ muộn.", "tag": "short"}, {"text": "Đi đường vòng dưới thung.", "reply": "Chậm mà chắc. Tôi thích người cẩn thận.", "tag": "long"}], "field": {"kind": "escort", "go": "Tôi chờ ở rìa làng. Cho lính ra đón, họ đi tới đâu tôi theo tới đó.", "say": "thương lái chờ lính ra đón rồi mới đi; đưa ông ta tới nơi", "count": [2, 3], "soldiers": 2, "days": 2, "skipTo": 2, "tagWin": "fight", "win": "Thương lái đã qua đèo an toàn.", "lose": "Thương lái không qua được đèo."}},
+        {"cast": "assassin", "say": ["Giữa đường có mấy kẻ chặn lại.", "Muối để lại một nửa thì đi. Không thì khỏi đi."], "options": [{"text": "Đánh đuổi chúng.", "cond": "soldiers>=2", "reply": "Chúng bỏ chạy, để lại cả túi da.", "tag": "fight", "roll": {"p": 0.75, "fail": "Chúng đông hơn tưởng. Người của bạn rút được, nhưng muối mất nửa.", "tag": "robbed"}}, {"text": "Trả tiền qua đường.", "cost": {"coin": 1}, "reply": "Biết điều. Đi đi.", "tag": "paid"}]},
+        {"say": ["Tới nơi rồi. Muối còn, người còn.", "Đây là phần của làng bạn, như đã hứa."], "options": [{"text": "Nhận phần.", "reply": "Lần sau qua đèo tôi lại ghé."}]}
       ],
-      "reward": { "base": { "coin": 3 }, "by": { "short": { "coin": 1 }, "long": { "food": 10 }, "fight": { "hide": 8 }, "robbed": { "coin": -1 } }, "rel": 3 }
-    },
-    {
-      "id": "guard_envoy", "name": "Giữ an toàn cho sứ giả", "kind": "Bảo vệ", "giver": "envoy", "fire": [2, 10], "days": 4,
-      "steps": [
-        { "say": ["Tôi mang lời của làng {tribe}, và có kẻ không muốn lời ấy tới nơi.", "Cho tôi ở lại hai hôm, tôi sẽ không quên."], "options": [
-          { "text": "Ở cạnh lính gác của làng.", "cond": "soldiers>=2", "reply": "Có giáo đứng cạnh, tôi ngủ được rồi.", "tag": "guard" },
-          { "text": "Giấu trong một nhà dân.", "reply": "Kín đáo. Tôi sẽ không ra khỏi cửa.", "tag": "hide" } ] },
-        { "cast": "assassin", "say": ["Tôi tìm một người quen đi lạc qua đây.", "Dáng cao, áo xanh. Làng có thấy không?"], "options": [
-          { "text": "Đuổi hắn đi.", "cond": "soldiers>=1", "reply": "Hắn nhìn mấy ngọn giáo, rồi quay lưng.", "tag": "chased" },
-          { "text": "Nói dối là không thấy ai.", "reply": "Hắn gật đầu, đi tiếp về phía núi.", "tag": "lied", "roll": { "p": 0.65, "fail": "Hắn cười nhạt. Đêm đó sứ giả phải trốn đi trước khi trời sáng.", "ends": true } } ] },
-        { "say": ["Hai hôm đã qua, tôi phải đi tiếp.", "Làng {tribe} gửi chút quà cảm ơn."], "options": [
-          { "text": "Chúc đi đường bình an.", "reply": "Bình an cho cả làng bạn." } ] }
+      "reward": {"base": {"coin": 3}, "by": {"short": {"coin": 1}, "long": {"food": 10}, "fight": {"hide": 8}, "robbed": {"coin": -1}}, "rel": 3} },
+    {"id": "guard_envoy", "name": "Giữ an toàn cho sứ giả", "kind": "Bảo vệ", "giver": "envoy", "fire": [2, 10], "days": 4, "steps": [
+        {"say": ["Tôi mang lời của làng {tribe}, và có kẻ không muốn lời ấy tới nơi.", "Cho tôi ở lại hai hôm, tôi sẽ không quên."], "options": [{"text": "Ở cạnh lính gác của làng.", "cond": "soldiers>=2", "reply": "Có giáo đứng cạnh, tôi ngủ được rồi.", "tag": "guard"}, {"text": "Giấu trong một nhà dân.", "reply": "Kín đáo. Tôi sẽ không ra khỏi cửa.", "tag": "hide"}], "field": {"kind": "guard", "go": "Tôi dựng lều ngoài rìa làng. Xin cho lính ở gần tôi vài hôm.", "say": "sứ giả dựng lều ngoài rìa làng; giữ lính ở gần", "count": [2, 2], "soldiers": 2, "days": 2, "skipTo": 2, "tagWin": "chased", "win": "Sứ giả vẫn bình an.", "lose": "Sứ giả đã bị hại."}},
+        {"cast": "assassin", "say": ["Tôi tìm một người quen đi lạc qua đây.", "Dáng cao, áo xanh. Làng có thấy không?"], "options": [{"text": "Đuổi hắn đi.", "cond": "soldiers>=1", "reply": "Hắn nhìn mấy ngọn giáo, rồi quay lưng.", "tag": "chased"}, {"text": "Nói dối là không thấy ai.", "reply": "Hắn gật đầu, đi tiếp về phía núi.", "tag": "lied", "roll": {"p": 0.65, "fail": "Hắn cười nhạt. Đêm đó sứ giả phải trốn đi trước khi trời sáng.", "ends": true}}]},
+        {"say": ["Hai hôm đã qua, tôi phải đi tiếp.", "Làng {tribe} gửi chút quà cảm ơn."], "options": [{"text": "Chúc đi đường bình an.", "reply": "Bình an cho cả làng bạn."}]}
       ],
-      "reward": { "base": { "food": 15, "coin": 2 }, "by": { "guard": { "coin": 1 }, "chased": { "hide": 6 } }, "rel": 5 }
-    },
-    {
-      "id": "quiet_knife", "name": "Lưỡi dao lặng lẽ", "kind": "Ám sát", "giver": "assassin", "fire": [3, 10], "days": 4,
-      "steps": [
-        { "say": ["Có một tên cầm đầu toán cướp. Ai đó muốn hắn biến mất.", "Vỏ sò nhiều. Không ai cần biết làng bạn có dính vào."], "options": [
-          { "text": "Cử người của làng đi làm.", "cond": "soldiers>=3", "reply": "Tự tay làm thì phần cũng lớn hơn.", "tag": "own" },
-          { "text": "Chỉ đường, để hắn tự ra tay.", "cost": { "coin": 1 }, "reply": "Một người dẫn đường là đủ. Phần còn lại để tôi.", "tag": "guide" } ] },
-        { "say": ["Đêm nay hắn ngủ trong trại, quanh hắn có sáu người.", "Vào ngay, hay chờ hắn ra suối một mình?"], "options": [
-          { "text": "Lẻn vào ngay đêm nay.", "reply": "Xong trước khi gà gáy. Không ai kịp kêu.", "tag": "fast", "roll": { "p": 0.6, "bonus": [{ "cond": "spec.assassin>=1", "add": 0.25 }, { "cond": "mark.lo>=4", "add": -0.15 }], "fail": "Một con chó sủa. Cả trại thức dậy, việc hỏng, ai nấy tự chạy.", "ends": true } },
-          { "text": "Chờ hắn ra suối.", "reply": "Ba hôm chờ. Rồi hắn ra suối, và không về.", "tag": "slow", "roll": { "p": 0.9, "bonus": [{ "cond": "mark.lo>=4", "add": -0.15 }], "fail": "Hắn không ra suối nữa. Có kẻ đã báo trước. Việc hỏng.", "ends": true } } ] },
-        { "say": ["Việc đã xong. Không ai nhắc tên làng bạn.", "Phần của bạn đây."], "options": [
-          { "text": "Nhận vỏ sò.", "reply": "Ta chưa từng gặp nhau." } ] }
+      "reward": {"base": {"food": 15, "coin": 2}, "by": {"guard": {"coin": 1}, "chased": {"hide": 6}}, "rel": 5} },
+    {"id": "quiet_knife", "name": "Lưỡi dao lặng lẽ", "kind": "Ám sát", "giver": "assassin", "fire": [3, 10], "days": 4, "steps": [
+        {"say": ["Có một tên cầm đầu toán cướp. Ai đó muốn hắn biến mất.", "Vỏ sò nhiều. Không ai cần biết làng bạn có dính vào."], "options": [{"text": "Cử người của làng đi làm.", "cond": "soldiers>=3", "reply": "Tự tay làm thì phần cũng lớn hơn.", "tag": "own"}, {"text": "Chỉ đường, để hắn tự ra tay.", "cost": {"coin": 1}, "reply": "Một người dẫn đường là đủ. Phần còn lại để tôi.", "tag": "guide"}]},
+        {"say": ["Đêm nay hắn ngủ trong trại, quanh hắn có sáu người.", "Vào ngay, hay chờ hắn ra suối một mình?"], "options": [{"text": "Lẻn vào ngay đêm nay.", "reply": "Xong trước khi gà gáy. Không ai kịp kêu.", "tag": "fast", "roll": {"p": 0.6, "bonus": [{"cond": "spec.assassin>=1", "add": 0.25}, {"cond": "mark.lo>=4", "add": -0.15}], "fail": "Một con chó sủa. Cả trại thức dậy, việc hỏng, ai nấy tự chạy.", "ends": true}}, {"text": "Chờ hắn ra suối.", "reply": "Ba hôm chờ. Rồi hắn ra suối, và không về.", "tag": "slow", "roll": {"p": 0.9, "bonus": [{"cond": "mark.lo>=4", "add": -0.15}], "fail": "Hắn không ra suối nữa. Có kẻ đã báo trước. Việc hỏng.", "ends": true}}]},
+        {"say": ["Việc đã xong. Không ai nhắc tên làng bạn.", "Phần của bạn đây."], "options": [{"text": "Nhận vỏ sò.", "reply": "Ta chưa từng gặp nhau."}]}
       ],
-      "reward": { "base": { "coin": 5 }, "by": { "own": { "coin": 3 }, "fast": { "coin": 2 } } }
-    },
-    {
-      "id": "bring_home", "name": "Đưa người về", "kind": "Cứu con tin", "giver": "envoy", "fire": [2, 10], "days": 4,
-      "steps": [
-        { "say": ["Toán cướp giữ hai người làng {tribe}. Làng tôi không đủ người để đòi.", "Giúp chúng tôi đưa họ về."], "options": [
-          { "text": "Đem quân tới đòi người.", "cond": "soldiers>=3", "reply": "Có giáo sau lưng thì lời nói nặng hơn hẳn.", "tag": "force" },
-          { "text": "Góp lương thực để chuộc.", "cost": { "food": 12 }, "reply": "Chuộc thì không ai đổ máu. Cảm ơn làng bạn.", "tag": "ransom" } ] },
-        { "cast": "assassin", "say": ["Hai người thì hai giá.", "Muốn dắt cả hai về thì thêm chút nữa."], "options": [
-          { "text": "Không thêm gì hết. Thả người.", "cond": "soldiers>=3", "reply": "Hắn nhìn hàng giáo, nhổ nước bọt, rồi cởi trói.", "tag": "firm", "roll": { "p": 0.7, "fail": "Chúng kéo con tin vào rừng trước khi ai kịp làm gì. Mất dấu.", "ends": true } },
-          { "text": "Thêm một ít vỏ sò.", "cost": { "coin": 1 }, "reply": "Thế mới là nói chuyện. Dắt đi.", "tag": "extra" } ] },
-        { "say": ["Họ về tới nhà rồi, gầy nhưng còn sống.", "Làng {tribe} không có nhiều, nhưng xin nhận cho."], "options": [
-          { "text": "Nhận quà của làng.", "reply": "Cửa làng tôi luôn mở với làng bạn." } ] }
+      "reward": {"base": {"coin": 5}, "by": {"own": {"coin": 3}, "fast": {"coin": 2}}} },
+    {"id": "bring_home", "name": "Đưa người về", "kind": "Cứu con tin", "giver": "envoy", "fire": [2, 10], "days": 4, "steps": [
+        {"say": ["Toán cướp giữ hai người làng {tribe}. Làng tôi không đủ người để đòi.", "Giúp chúng tôi đưa họ về."], "options": [{"text": "Đem quân tới đòi người.", "cond": "soldiers>=3", "reply": "Có giáo sau lưng thì lời nói nặng hơn hẳn.", "tag": "force"}, {"text": "Góp lương thực để chuộc.", "cost": {"food": 12}, "reply": "Chuộc thì không ai đổ máu. Cảm ơn làng bạn.", "tag": "ransom"}]},
+        {"cast": "assassin", "say": ["Hai người thì hai giá.", "Muốn dắt cả hai về thì thêm chút nữa."], "options": [{"text": "Không thêm gì hết. Thả người.", "cond": "soldiers>=3", "reply": "Hắn nhìn hàng giáo, nhổ nước bọt, rồi cởi trói.", "tag": "firm", "roll": {"p": 0.7, "fail": "Chúng kéo con tin vào rừng trước khi ai kịp làm gì. Mất dấu.", "ends": true}}, {"text": "Thêm một ít vỏ sò.", "cost": {"coin": 1}, "reply": "Thế mới là nói chuyện. Dắt đi.", "tag": "extra"}]},
+        {"say": ["Họ về tới nhà rồi, gầy nhưng còn sống.", "Làng {tribe} không có nhiều, nhưng xin nhận cho."], "options": [{"text": "Nhận quà của làng.", "reply": "Cửa làng tôi luôn mở với làng bạn."}]}
       ],
-      "reward": { "base": { "food": 20 }, "by": { "force": { "hide": 6 }, "firm": { "coin": 2 } }, "rel": 8 }
-    },
-    {
-      "id": "clear_bandits", "name": "Dẹp toán cướp đường", "kind": "Dẹp cướp", "giver": "elder", "fire": [2, 10], "days": 3, "cond": "soldiers>=2",
-      "steps": [
-        { "say": ["Một toán cướp chặn đường ra ruộng của làng {tribe}.", "Làng tôi già yếu cả. Làng bạn có lính."], "options": [
-          { "text": "Đánh thẳng vào ban ngày.", "cond": "soldiers>=4", "reply": "Chúng không ngờ có người dám tới giữa trưa. Tan ngay.", "tag": "strike" },
-          { "text": "Phục kích lúc chúng về trại.", "cond": "soldiers>=2", "reply": "Ít người thì phải khéo. Chúc may mắn.", "tag": "ambush", "roll": { "p": 0.75, "fail": "Chúng về bằng lối khác. Mai phục cả đêm, không gặp ai.", "ends": true } } ] },
-        { "say": ["Toán cướp tan rồi, còn ba đứa bị bắt.", "Làng bạn bắt được, làng bạn quyết."], "options": [
-          { "text": "Tha cho chúng đi.", "reply": "Người hiền. Mong chúng nhớ ơn.", "tag": "mercy" },
-          { "text": "Giao cho làng {tribe} xử.", "reply": "Chúng sẽ đắp lại con đường chúng đã chặn.", "tag": "justice" } ] }
+      "reward": {"base": {"food": 20}, "by": {"force": {"hide": 6}, "firm": {"coin": 2}}, "rel": 8} },
+    {"id": "clear_bandits", "name": "Dẹp toán cướp đường", "kind": "Dẹp cướp", "giver": "elder", "fire": [2, 10], "days": 3, "cond": "soldiers>=2", "steps": [
+        {"say": ["Một toán cướp chặn đường ra ruộng của làng {tribe}.", "Làng tôi già yếu cả. Làng bạn có lính."], "options": [{"text": "Đánh thẳng vào ban ngày.", "cond": "soldiers>=4", "reply": "Chúng không ngờ có người dám tới giữa trưa. Tan ngay.", "tag": "strike"}, {"text": "Phục kích lúc chúng về trại.", "cond": "soldiers>=2", "reply": "Ít người thì phải khéo. Chúc may mắn.", "tag": "ambush", "roll": {"p": 0.75, "fail": "Chúng về bằng lối khác. Mai phục cả đêm, không gặp ai.", "ends": true}}], "field": {"kind": "bandits", "go": "Chúng đóng trại không xa làng bạn. Đem lính tới dẹp, xong tôi sẽ quay lại.", "say": "toán cướp đóng trại, đem lính tới dẹp", "count": [3, 5], "soldiers": 2, "days": 2, "win": "Toán cướp đã bị dẹp tan.", "lose": "Toán cướp đã nhổ trại đi nơi khác trước khi lính làng tới."}},
+        {"say": ["Toán cướp tan rồi, còn ba đứa bị bắt.", "Làng bạn bắt được, làng bạn quyết."], "options": [{"text": "Tha cho chúng đi.", "reply": "Người hiền. Mong chúng nhớ ơn.", "tag": "mercy"}, {"text": "Giao cho làng {tribe} xử.", "reply": "Chúng sẽ đắp lại con đường chúng đã chặn.", "tag": "justice"}]}
       ],
-      "reward": { "base": { "wood": 20, "stone": 12 }, "by": { "strike": { "hide": 8 }, "mercy": { "food": 8 }, "justice": { "coin": 2 } }, "rel": 5 }
-    },
-    {
-      "id": "secret_letter", "name": "Lá thư không tên", "kind": "Trao mật thư", "giver": "sleuth", "fire": [3, 10], "days": 4,
-      "steps": [
-        { "say": ["Lá thư này phải tới tay một người ở chợ phiên, không qua tay ai khác.", "Người làng bạn đi chợ thì không ai để ý."], "options": [
-          { "text": "Đi theo đường lớn.", "reply": "Đông người, dễ lẫn. Được.", "tag": "road" },
-          { "text": "Đi lối rừng.", "reply": "Vắng người, khó theo dõi. Cũng được.", "tag": "wood" } ] },
-        { "cast": "mole", "say": ["Này, người làng bên. Trong bọc có gì thế?", "Dạo này có người đưa thư lén. Cho tôi xem một chút."], "options": [
-          { "text": "Đưa ra một bọc hạt giống.", "reply": "Hạt giống à. Thôi đi đi.", "tag": "trick", "roll": { "p": 0.65, "fail": "Cô ta lật cả bọc lên. Thư bị đọc trước khi tới nơi.", "tag": "read" } },
-          { "text": "Dúi cho ít vỏ sò.", "cost": { "coin": 1 }, "reply": "Tôi chưa thấy ai qua đây cả.", "tag": "bribe" } ] },
-        { "say": ["Thư tới nơi rồi.", "Tôi trả bằng thứ tôi có: tin tức, và ít vỏ sò."], "options": [
-          { "text": "Nhận công.", "reply": "Nếu ai hỏi, bạn chỉ đi chợ thôi." } ] }
+      "reward": {"base": {"wood": 20, "stone": 12}, "by": {"strike": {"hide": 8}, "mercy": {"food": 8}, "justice": {"coin": 2}}, "rel": 5} },
+    {"id": "secret_letter", "name": "Lá thư không tên", "kind": "Trao mật thư", "giver": "sleuth", "fire": [3, 10], "days": 4, "steps": [
+        {"say": ["Lá thư này phải tới tay một người ở chợ phiên, không qua tay ai khác.", "Người làng bạn đi chợ thì không ai để ý."], "options": [{"text": "Đi theo đường lớn.", "reply": "Đông người, dễ lẫn. Được.", "tag": "road"}, {"text": "Đi lối rừng.", "reply": "Vắng người, khó theo dõi. Cũng được.", "tag": "wood"}]},
+        {"cast": "mole", "say": ["Này, người làng bên. Trong bọc có gì thế?", "Dạo này có người đưa thư lén. Cho tôi xem một chút."], "options": [{"text": "Đưa ra một bọc hạt giống.", "reply": "Hạt giống à. Thôi đi đi.", "tag": "trick", "roll": {"p": 0.65, "fail": "Cô ta lật cả bọc lên. Thư bị đọc trước khi tới nơi.", "tag": "read"}}, {"text": "Dúi cho ít vỏ sò.", "cost": {"coin": 1}, "reply": "Tôi chưa thấy ai qua đây cả.", "tag": "bribe"}]},
+        {"say": ["Thư tới nơi rồi.", "Tôi trả bằng thứ tôi có: tin tức, và ít vỏ sò."], "options": [{"text": "Nhận công.", "reply": "Nếu ai hỏi, bạn chỉ đi chợ thôi."}]}
       ],
-      "reward": { "base": { "coin": 4 }, "by": { "trick": { "coin": 2 }, "read": { "coin": -2 }, "wood": { "hide": 5 } }, "rel": 2 }
-    },
-    {
-      "id": "two_houses", "name": "Hai nhà một con suối", "kind": "Hòa giải", "giver": "elder", "fire": [1, 10], "days": 3,
-      "steps": [
-        { "say": ["Hai nhà ở làng {tribe} giành nhau một con suối, sắp cầm gậy tới nơi.", "Người ngoài nói thì họ mới chịu nghe. Bạn giúp một lời."], "options": [
-          { "text": "Nghe hết cả hai nhà đã.", "reply": "Mất cả buổi, nhưng không ai nói là mình bị bỏ qua.", "tag": "listen" },
-          { "text": "Phán luôn cho nhanh.", "reply": "Nhanh thật. Mong là cả hai cùng chịu.", "tag": "quick" } ] },
-        { "say": ["Giờ thì họ chờ lời của bạn.", "Suối thì chỉ có một."], "options": [
-          { "text": "Chia suối theo ngày: mỗi nhà một ngày.", "reply": "Không ai vui hẳn, nhưng không ai cầm gậy nữa.", "tag": "share" },
-          { "text": "Nhà đông người được dùng trước.", "reply": "Một nhà cười, một nhà im. Tạm yên.", "tag": "side" } ] }
+      "reward": {"base": {"coin": 4}, "by": {"trick": {"coin": 2}, "read": {"coin": -2}, "wood": {"hide": 5}}, "rel": 2} },
+    {"id": "two_houses", "name": "Hai nhà một con suối", "kind": "Hòa giải", "giver": "elder", "fire": [1, 10], "days": 3, "steps": [
+        {"say": ["Hai nhà ở làng {tribe} giành nhau một con suối, sắp cầm gậy tới nơi.", "Người ngoài nói thì họ mới chịu nghe. Bạn giúp một lời."], "options": [{"text": "Nghe hết cả hai nhà đã.", "reply": "Mất cả buổi, nhưng không ai nói là mình bị bỏ qua.", "tag": "listen"}, {"text": "Phán luôn cho nhanh.", "reply": "Nhanh thật. Mong là cả hai cùng chịu.", "tag": "quick"}]},
+        {"say": ["Giờ thì họ chờ lời của bạn.", "Suối thì chỉ có một."], "options": [{"text": "Chia suối theo ngày: mỗi nhà một ngày.", "reply": "Không ai vui hẳn, nhưng không ai cầm gậy nữa.", "tag": "share"}, {"text": "Nhà đông người được dùng trước.", "reply": "Một nhà cười, một nhà im. Tạm yên.", "tag": "side"}]}
       ],
-      "reward": { "base": { "food": 12, "coin": 1 }, "by": { "listen": { "coin": 1 }, "share": { "wood": 10 }, "side": { "stone": 10 } }, "rel": 4 }
-    },
-    {
-      "id": "lost_relic", "name": "Cái đục của ông thợ", "kind": "Tìm vật cũ", "giver": "old_master", "fire": [2, 10], "days": 4,
-      "steps": [
-        { "say": ["Cái đục thầy tôi để lại, tôi đánh rơi ở bến sông năm ngoái.", "Tìm giúp tôi. Tôi già rồi, chỉ còn trả được bằng nghề."], "options": [
-          { "text": "Cử người đi dò dọc bến sông.", "reply": "Hỏi mấy người đánh cá ấy. Họ nhặt đủ thứ.", "tag": "search" },
-          { "text": "Hỏi mua lại ở các thương lái.", "cost": { "coin": 1 }, "reply": "Đồ cũ thì tay buôn nào cũng từng cầm qua.", "tag": "buy" } ] },
-        { "cast": "monk", "say": ["Cái đục này tôi nhặt được ở bến sông, dùng để khắc bát.", "Nếu có người cần nó hơn tôi thì cứ nói."], "options": [
-          { "text": "Đổi cho ông ít lương thực.", "cost": { "food": 8 }, "reply": "Bát đầy thì tay cũng nhẹ. Cầm lấy.", "tag": "trade" },
-          { "text": "Kể chuyện ông thợ già và xin lại.", "reply": "Của thầy để lại cho trò. Tôi giữ làm gì.", "tag": "ask", "roll": { "p": 0.6, "fail": "Ông lắc đầu, đòi một bữa cơm trước đã. Mất thêm nửa ngày.", "tag": "late" } } ] },
-        { "say": ["Đúng nó rồi. Vết mẻ này là tôi làm hồi mười hai tuổi.", "Tôi vẽ lại cho làng bạn một thứ thầy tôi từng dạy."], "options": [
-          { "text": "Nhận bản vẽ.", "reply": "Giữ cho kỹ. Nghề không ở trong tay, mà ở trong đầu." } ] }
+      "reward": {"base": {"food": 12, "coin": 1}, "by": {"listen": {"coin": 1}, "share": {"wood": 10}, "side": {"stone": 10}}, "rel": 4} },
+    {"id": "lost_relic", "name": "Cái đục của ông thợ", "kind": "Tìm vật cũ", "giver": "old_master", "fire": [2, 10], "days": 4, "steps": [
+        {"say": ["Cái đục thầy tôi để lại, tôi đánh rơi ở bến sông năm ngoái.", "Tìm giúp tôi. Tôi già rồi, chỉ còn trả được bằng nghề."], "options": [{"text": "Cử người đi dò dọc bến sông.", "reply": "Hỏi mấy người đánh cá ấy. Họ nhặt đủ thứ.", "tag": "search"}, {"text": "Hỏi mua lại ở các thương lái.", "cost": {"coin": 1}, "reply": "Đồ cũ thì tay buôn nào cũng từng cầm qua.", "tag": "buy"}]},
+        {"cast": "monk", "say": ["Cái đục này tôi nhặt được ở bến sông, dùng để khắc bát.", "Nếu có người cần nó hơn tôi thì cứ nói."], "options": [{"text": "Đổi cho ông ít lương thực.", "cost": {"food": 8}, "reply": "Bát đầy thì tay cũng nhẹ. Cầm lấy.", "tag": "trade"}, {"text": "Kể chuyện ông thợ già và xin lại.", "reply": "Của thầy để lại cho trò. Tôi giữ làm gì.", "tag": "ask", "roll": {"p": 0.6, "fail": "Ông lắc đầu, đòi một bữa cơm trước đã. Mất thêm nửa ngày.", "tag": "late"}}]},
+        {"say": ["Đúng nó rồi. Vết mẻ này là tôi làm hồi mười hai tuổi.", "Tôi vẽ lại cho làng bạn một thứ thầy tôi từng dạy."], "options": [{"text": "Nhận bản vẽ.", "reply": "Giữ cho kỹ. Nghề không ở trong tay, mà ở trong đầu."}]}
       ],
-      "reward": { "base": { "wood": 15 }, "by": { "ask": { "coin": 1 }, "search": { "stone": 8 } }, "rel": 3, "blueprint": true }
-    },
-    {
-      "id": "buy_plan", "name": "Bản vẽ của người buôn", "kind": "Mua bản vẽ", "giver": "merchant", "fire": [4, 10], "days": 4,
-      "steps": [
-        { "say": ["Tôi biết một người có bản vẽ lạ, thứ mà quanh đây chưa ai làm được.", "Đặt cọc trước, lần sau tôi mang tới."], "options": [
-          { "text": "Đặt cọc bằng tiền.", "cost": { "coin": 3 }, "reply": "Tiền trao thì cháo múc. Chờ tôi vài hôm.", "tag": "deposit" },
-          { "text": "Đặt cọc bằng da thú.", "cost": { "hide": 12 }, "reply": "Da tốt đấy. Coi như xong phần cọc.", "tag": "goods" } ] },
-        { "say": ["Bản vẽ đây. Nhưng người bán đòi thêm, tôi không ăn chặn đâu.", "Thêm chút nữa là nó của làng bạn."], "options": [
-          { "text": "Trả đủ.", "cost": { "coin": 2 }, "reply": "Sòng phẳng. Của làng bạn đây.", "tag": "full" },
-          { "text": "Mặc cả: cọc đã đủ rồi.", "reply": "Thôi được, tôi chịu thiệt lần này.", "tag": "haggle", "roll": { "p": 0.55, "fail": "Hắn cuộn bản vẽ lại. Không thêm thì thôi, cọc tôi giữ.", "ends": true } } ] }
+      "reward": {"base": {"wood": 15}, "by": {"ask": {"coin": 1}, "search": {"stone": 8}}, "rel": 3, "blueprint": true} },
+    {"id": "buy_plan", "name": "Bản vẽ của người buôn", "kind": "Mua bản vẽ", "giver": "merchant", "fire": [4, 10], "days": 4, "steps": [
+        {"say": ["Tôi biết một người có bản vẽ lạ, thứ mà quanh đây chưa ai làm được.", "Đặt cọc trước, lần sau tôi mang tới."], "options": [{"text": "Đặt cọc bằng tiền.", "cost": {"coin": 3}, "reply": "Tiền trao thì cháo múc. Chờ tôi vài hôm.", "tag": "deposit"}, {"text": "Đặt cọc bằng da thú.", "cost": {"hide": 12}, "reply": "Da tốt đấy. Coi như xong phần cọc.", "tag": "goods"}]},
+        {"say": ["Bản vẽ đây. Nhưng người bán đòi thêm, tôi không ăn chặn đâu.", "Thêm chút nữa là nó của làng bạn."], "options": [{"text": "Trả đủ.", "cost": {"coin": 2}, "reply": "Sòng phẳng. Của làng bạn đây.", "tag": "full"}, {"text": "Mặc cả: cọc đã đủ rồi.", "reply": "Thôi được, tôi chịu thiệt lần này.", "tag": "haggle", "roll": {"p": 0.55, "fail": "Hắn cuộn bản vẽ lại. Không thêm thì thôi, cọc tôi giữ.", "ends": true}}]}
       ],
-      "reward": { "base": {}, "by": {}, "rel": 1, "blueprint": true }
-    },
-    {
-      "id": "monk_shelter", "name": "Mái che cho nhà sư", "kind": "Bảo vệ", "giver": "monk", "fire": [1, 10], "days": 3,
-      "steps": [
-        { "say": ["Tôi đi đã lâu, chân sưng cả rồi.", "Cho tôi một góc khô hai đêm. Tôi không có gì ngoài vài lời."], "options": [
-          { "text": "Cho ở và cho ăn.", "cost": { "food": 5 }, "reply": "Cơm làng bạn ấm. Tôi sẽ nhớ.", "tag": "feed" },
-          { "text": "Cho một góc cạnh bếp lửa.", "reply": "Một góc khô là đủ rồi.", "tag": "corner" } ] },
-        { "say": ["Tôi đi đây. Hai đêm qua tôi nghe dân làng bạn nói chuyện.", "Có người đau lưng, có đứa trẻ ho. Để lại ít lá thuốc hay kể cho lũ trẻ một chuyện?"], "options": [
-          { "text": "Xin ít lá thuốc.", "reply": "Sắc với nước ấm, uống ba hôm.", "tag": "herb" },
-          { "text": "Xin một câu chuyện cho lũ trẻ.", "reply": "Lũ trẻ ngồi im cả buổi. Người lớn cũng ghé nghe.", "tag": "tale" } ] }
+      "reward": {"base": {}, "by": {}, "rel": 1, "blueprint": true} },
+    {"id": "monk_shelter", "name": "Mái che cho nhà sư", "kind": "Bảo vệ", "giver": "monk", "fire": [1, 10], "days": 3, "steps": [
+        {"say": ["Tôi đi đã lâu, chân sưng cả rồi.", "Cho tôi một góc khô hai đêm. Tôi không có gì ngoài vài lời."], "options": [{"text": "Cho ở và cho ăn.", "cost": {"food": 5}, "reply": "Cơm làng bạn ấm. Tôi sẽ nhớ.", "tag": "feed"}, {"text": "Cho một góc cạnh bếp lửa.", "reply": "Một góc khô là đủ rồi.", "tag": "corner"}]},
+        {"say": ["Tôi đi đây. Hai đêm qua tôi nghe dân làng bạn nói chuyện.", "Có người đau lưng, có đứa trẻ ho. Để lại ít lá thuốc hay kể cho lũ trẻ một chuyện?"], "options": [{"text": "Xin ít lá thuốc.", "reply": "Sắc với nước ấm, uống ba hôm.", "tag": "herb"}, {"text": "Xin một câu chuyện cho lũ trẻ.", "reply": "Lũ trẻ ngồi im cả buổi. Người lớn cũng ghé nghe.", "tag": "tale"}]}
       ],
-      "reward": { "base": { "food": 6 }, "by": { "feed": { "coin": 1, "food": 6 }, "herb": { "food": 10 }, "tale": { "coin": 1 } } }
-    },
-    {
-      "id": "coal_errand", "name": "Than cho lò bên kia", "kind": "Giúp việc", "giver": "apprentice", "fire": [2, 10], "days": 3,
-      "steps": [
-        { "say": ["Lò của thầy cháu hết than, mà mai phải giao rìu.", "Làng mình cho cháu xin ít gỗ đốt than được không?"], "options": [
-          { "text": "Cho gỗ.", "cost": { "wood": 15 }, "reply": "Cháu vác được hết! Thầy cháu sẽ mừng lắm.", "tag": "wood" },
-          { "text": "Chỉ cho cách hầm than ít tốn gỗ.", "reply": "Ủ kín, cho cháy ngầm... Cháu nhớ rồi!", "tag": "teach" } ] },
-        { "cast": "smith", "say": ["Con bé về kể hết rồi. Rìu giao kịp, nhờ làng bạn.", "Tôi không nợ ai lâu. Muốn ít đồ đá mài sẵn, hay để tôi sửa giúp dụng cụ?"], "options": [
-          { "text": "Lấy đá mài sẵn.", "reply": "Đá tốt, tôi chọn từng viên.", "tag": "stone" },
-          { "text": "Nhờ sửa dụng cụ, lấy công bằng da.", "reply": "Để đó cho tôi. Da thuộc này coi như tiền công thừa.", "tag": "hide" } ] }
+      "reward": {"base": {"food": 6}, "by": {"feed": {"coin": 1, "food": 6}, "herb": {"food": 10}, "tale": {"coin": 1}}} },
+    {"id": "coal_errand", "name": "Than cho lò bên kia", "kind": "Giúp việc", "giver": "apprentice", "fire": [2, 10], "days": 3, "steps": [
+        {"say": ["Lò của thầy cháu hết than, mà mai phải giao rìu.", "Làng mình cho cháu xin ít gỗ đốt than được không?"], "options": [{"text": "Cho gỗ.", "cost": {"wood": 15}, "reply": "Cháu vác được hết! Thầy cháu sẽ mừng lắm.", "tag": "wood"}, {"text": "Chỉ cho cách hầm than ít tốn gỗ.", "reply": "Ủ kín, cho cháy ngầm... Cháu nhớ rồi!", "tag": "teach"}]},
+        {"cast": "smith", "say": ["Con bé về kể hết rồi. Rìu giao kịp, nhờ làng bạn.", "Tôi không nợ ai lâu. Muốn ít đồ đá mài sẵn, hay để tôi sửa giúp dụng cụ?"], "options": [{"text": "Lấy đá mài sẵn.", "reply": "Đá tốt, tôi chọn từng viên.", "tag": "stone"}, {"text": "Nhờ sửa dụng cụ, lấy công bằng da.", "reply": "Để đó cho tôi. Da thuộc này coi như tiền công thừa.", "tag": "hide"}]}
       ],
-      "reward": { "base": { "coin": 1 }, "by": { "wood": { "coin": 1 }, "teach": { "food": 6 }, "stone": { "stone": 18 }, "hide": { "hide": 10 } }, "rel": 4 }
-    },
-    {
-      "id": "joint_drill", "name": "Buổi tập chung", "kind": "Giúp việc", "giver": "general", "fire": [3, 10], "days": 4, "cond": "soldiers>=3",
-      "steps": [
-        { "say": ["Lính làng {tribe} còn non, chưa từng đứng trước một hàng giáo thật.", "Cho tôi mượn lính làng bạn tập một buổi."], "options": [
-          { "text": "Cho mượn lính làm quân xanh.", "cond": "soldiers>=3", "reply": "Tôi sẽ trả họ về đủ, không thiếu một người.", "tag": "lend" },
-          { "text": "Tập chung, hai làng một hàng.", "cond": "soldiers>=3", "reply": "Còn hay hơn. Đứng cạnh nhau một lần thì sau này dễ đứng cạnh nhau.", "tag": "joint" } ] },
-        { "say": ["Giữa buổi tập có hai đứa nóng máu, đánh thật.", "Dừng buổi tập, hay để chúng nó xong rồi phạt cả hai?"], "options": [
-          { "text": "Dừng ngay.", "reply": "Phải. Không ai bị thương là được.", "tag": "stop" },
-          { "text": "Để xong rồi phạt.", "reply": "Hai đứa sưng mặt, nhưng cả hàng học được một bài.", "tag": "finish", "roll": { "p": 0.7, "fail": "Một đứa gãy tay. Buổi tập tan, hai bên nhìn nhau khó chịu.", "ends": true } } ] },
-        { "say": ["Lính tôi đứng hàng đã ra dáng hơn.", "Làng {tribe} gửi chút lễ cho những người đã tới tập."], "options": [
-          { "text": "Nhận lễ.", "reply": "Hẹn mùa sau tập nữa." } ] }
+      "reward": {"base": {"coin": 1}, "by": {"wood": {"coin": 1}, "teach": {"food": 6}, "stone": {"stone": 18}, "hide": {"hide": 10}}, "rel": 4} },
+    {"id": "joint_drill", "name": "Buổi tập chung", "kind": "Giúp việc", "giver": "general", "fire": [3, 10], "days": 4, "cond": "soldiers>=3", "steps": [
+        {"say": ["Lính làng {tribe} còn non, chưa từng đứng trước một hàng giáo thật.", "Cho tôi mượn lính làng bạn tập một buổi."], "options": [{"text": "Cho mượn lính làm quân xanh.", "cond": "soldiers>=3", "reply": "Tôi sẽ trả họ về đủ, không thiếu một người.", "tag": "lend"}, {"text": "Tập chung, hai làng một hàng.", "cond": "soldiers>=3", "reply": "Còn hay hơn. Đứng cạnh nhau một lần thì sau này dễ đứng cạnh nhau.", "tag": "joint"}]},
+        {"say": ["Giữa buổi tập có hai đứa nóng máu, đánh thật.", "Dừng buổi tập, hay để chúng nó xong rồi phạt cả hai?"], "options": [{"text": "Dừng ngay.", "reply": "Phải. Không ai bị thương là được.", "tag": "stop"}, {"text": "Để xong rồi phạt.", "reply": "Hai đứa sưng mặt, nhưng cả hàng học được một bài.", "tag": "finish", "roll": {"p": 0.7, "fail": "Một đứa gãy tay. Buổi tập tan, hai bên nhìn nhau khó chịu.", "ends": true}}]},
+        {"say": ["Lính tôi đứng hàng đã ra dáng hơn.", "Làng {tribe} gửi chút lễ cho những người đã tới tập."], "options": [{"text": "Nhận lễ.", "reply": "Hẹn mùa sau tập nữa."}]}
       ],
-      "reward": { "base": { "food": 18, "hide": 6 }, "by": { "joint": { "coin": 2 }, "finish": { "coin": 2 }, "lend": { "wood": 12 } }, "rel": 6 }
-    }
+      "reward": {"base": {"food": 18, "hide": 6}, "by": {"joint": {"coin": 2}, "finish": {"coin": 2}, "lend": {"wood": 12}}, "rel": 6} }
   ]
 }

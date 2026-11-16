@@ -30,7 +30,10 @@ export interface SceneOption { text: string; say?: string; reply: string; deed?:
 /** A small talk of the tree: a visitor says `say`, the player picks one option. `tribes`: the villages that may send him (absent: any free one). */
 export interface Scene { say: string[]; options: SceneOption[]; tribes?: string[]; /** The named character (data/characters) who comes with it. */ cast?: string }
 /** A stage of a branch: an old visitor script (`script`, it comes by itself) or a scene the tree sends when `when` holds, `days` after the stage before. `options` is a summary of the choices of an old script for the simulator. */
-export interface Chapter { id: string; name: string; script?: string; scene?: Scene; when?: string; days?: [number, number]; options?: Array<{ label: string; deeds: string[] }> }
+/** A moment of a war the tree listens to (story.warEvent): the army sets out, half of the enemy has fallen, their leader falls, half of ours has fallen, their village is about to fall. */
+export type WarEvent = 'war_start' | 'half_way' | 'leader_down' | 'army_low' | 'near_fall';
+export const WAR_EVENTS: readonly WarEvent[] = ['war_start', 'half_way', 'leader_down', 'army_low', 'near_fall'];
+export interface Chapter { id: string; name: string; script?: string; scene?: Scene; when?: string; days?: [number, number]; /** Not sent to the gate in peace: the scene opens in the middle of the war, at that moment (the battle stands still while it is answered). */ on?: WarEvent; options?: Array<{ label: string; deeds: string[] }> }
 export interface Thread { id: string; name: string; trunk: string; tree: string; chapters: Chapter[] }
 /** A leaf a knot may draw: `base` weight, `affinity` weight per point of a mark, `tilt` multipliers when a condition holds. */
 export interface KnotLeaf { leaf: string; base: number; affinity?: Record<string, number>; tilt?: Array<{ if: string; mul: number }> }

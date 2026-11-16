@@ -1,5 +1,6 @@
 /** The two windows of the left edge: the quests and the notices. Each is a GameDialog over the map. */
 import { buildingName } from '../sim/buildings';
+import { TILE } from '../sim/constants';
 import type { BuildingKind } from '../sim/buildings';
 import type { Notice } from '../sim/model';
 import type { Sim } from '../sim/sim';
@@ -53,7 +54,7 @@ export class Journal {
     this.views = views; this.notes = notes;
     const cur = views.find((v) => v.open);
     if (this.open === 'quests') {
-      const key = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('') + (cur ? `#${cur.progress}` : '#all') + `L${this.c.sim.legacyView().filter((x) => x.open).length}${this.c.sim.era}` + this.c.sim.sideQuests().map((s) => `|${s.id}${s.step}${s.daysLeft}${s.atGate ? 'g' : ''}`).join('');
+      const key = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('') + (cur ? `#${cur.progress}` : '#all') + `L${this.c.sim.legacyView().filter((x) => x.open).length}${this.c.sim.era}` + this.c.sim.sideQuests().map((s) => `|${s.id}${s.step}${s.daysLeft}${s.atGate ? 'g' : ''}${s.at ? 'm' : ''}`).join('');
       if (key !== this.questKey) { this.questKey = key; this.drawQuests(views, cur); }
       if (cur) this.questSeen = cur.quest.id;
     }
@@ -94,8 +95,8 @@ export class Journal {
     const drop = (id: string) => { const e = sim.dropSideQuest(id); if (e) toast(e); this.questKey = ''; this.update(this.views, this.notes); };
     return [h('h3', { class: 'dsub', text: 'Việc nhận thêm (không bắt buộc, chỉ có thưởng)' }), ...side.map((s) => dlg.tile(
       { state: s.daysLeft < 0 ? 'next' : 'now', pic: '✉', name: s.name, chip: dlg.chip(s.daysLeft < 0 ? 'đang mời' : s.daysLeft === 0 ? 'hạn hôm nay' : `còn ${s.daysLeft} ngày`) },
-      [dlg.text(`${s.kind} · ${s.giver} · bước ${s.step + 1}/${s.steps}${s.atGate ? ' · có người đang chờ ở cổng' : s.daysLeft < 0 ? ' · người nhờ đang trên đường tới cổng' : ' · người tiếp theo sẽ tới cổng'}`)],
-      s.daysLeft < 0 ? null : dlg.button('Bỏ việc', () => drop(s.id), { small: true, tone: 'bad', title: 'Bỏ việc này: không bị phạt, chỉ mất phần thưởng' })))];
+      [dlg.text(`${s.kind} · ${s.giver} · bước ${s.step + 1}/${s.steps}${s.todo ? ` · trên bản đồ: ${s.todo}` : s.atGate ? ' · có người đang chờ ở cổng' : s.daysLeft < 0 ? ' · người nhờ đang trên đường tới cổng' : ' · người tiếp theo sẽ tới cổng'}`)],
+      s.daysLeft < 0 ? null : h('div', { class: 'dacts' }, s.at ? dlg.button('Tới nơi', () => { this.close(); this.c.ctl.centerOn((s.at![0] + 0.5) * TILE, (s.at![1] + 0.5) * TILE); }, { small: true, title: 'Đưa màn hình tới chỗ việc này đang diễn ra' }) : null, dlg.button('Bỏ việc', () => drop(s.id), { small: true, tone: 'bad', title: 'Bỏ việc này: không bị phạt, chỉ mất phần thưởng' }))))];
   }
 
   /** Di sản: the specialists and powers the village holds, by name; the others only as shadows (how each opens is never told). Shown from the medieval age, or once one is open. */

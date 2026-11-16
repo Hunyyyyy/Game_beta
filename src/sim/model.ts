@@ -62,6 +62,8 @@ export interface FoeAI {
   life?: { kind: 'gather' | 'hunt' | 'patrol' | 'scout'; idx?: number; job?: string; state?: 'go' | 'work'; units?: number; id?: number; stops?: Array<[number, number]>; i?: number; t?: number };
   /** Seconds a raider has been unable to get at what he is after (a fence in the way). */
   stuck?: number;
+  /** A unit of a side quest on the map (missions.ts, brainstage.ts): its quest, what it is, how near a soldier of ours must be for a ward to walk on (`lead`), where a ward goes, whom a killer is after. */
+  stage?: { run: string; kind: 'bandit' | 'killer' | 'ward'; lead: number; goal?: { x: number; y: number }; mark?: number };
   /** A hidden killer (specialists.ts): `target` the villager he is after, `hidden` unseen by our soldiers, `fledAt` when he began to run home. */
   assassin?: { target: number; state: 'stalk' | 'flee'; hidden: boolean; revealedUntil: number; repath: number; born: number; pathAt?: number; fledAt?: number };
   /** A target he could not get to (he only paced before it): left alone until this time. */

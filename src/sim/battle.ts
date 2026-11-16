@@ -47,6 +47,8 @@ export const isFighter = (v: Villager) => v.job === 'fight' || v.job === 'hunt' 
 
 export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
   if (a === b || a === 'wild' || b === 'wild') return false;
+  if (a === 'stage' || b === 'stage') return a === 'player' || b === 'player' || a === 'ward' || b === 'ward'; // the foes of a side quest fight us and the one we keep, nobody else
+  if (a === 'ward' || b === 'ward') return false;
   if (a === 'player') return sim.tribeWilling(b);
   if (b === 'player') return sim.tribeWilling(a);
   return sim.tribesFeud(a, b); // two villages fight only when they are at feud

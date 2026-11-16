@@ -8,22 +8,23 @@ import { evalCond, seedRoll, type Cost } from './encounterdata';
 import { STORY } from './storyscenes';
 import { characterOf } from './characters';
 import { unlockName } from './specialdata';
-import { SIDE, sideQuest, sideScriptId, sideWeight, type SideQuest, type SideRun } from './sidequestdata';
+import { SIDE, sideQuest, sideScriptId, sideWeight, type SideOption, type SideQuest, type SideRun } from './sidequestdata';
 
 const CFG = SIDE.config;
 /** Offers come by themselves when the data has them on, or the dev switch does. */
 const on = (sim: Sim): boolean => CFG.enabled || sim.dev.side;
 const prefix = (r: SideRun): string => `sq:${r.id}:${r.step}`;
-const isStep = (script: string, r: SideRun): boolean => script === prefix(r) || script === `${prefix(r)}:m`;
+const isStep = (script: string, r: SideRun): boolean => script === prefix(r) || script.startsWith(`${prefix(r)}:`); // (`:m` the medieval twin, `:f` the map variant)
 /** The talk of the awaited step is on its way or at the gate. */
 const present = (sim: Sim, r: SideRun): boolean => sim.encounters.queue.some((q) => isStep(q.script, r)) || sim.encounters.visitors.some((v) => isStep(v.scriptId, r));
 const gap = (sim: Sim): number => CFG.offerGap[0] + Math.floor(seedRoll(sim.seed, 'sq:gap', sim.day) * (CFG.offerGap[1] - CFG.offerGap[0] + 1));
-const end = (sim: Sim, r: SideRun): void => { sim.side.runs = sim.side.runs.filter((x) => x !== r); sim.side.last[r.id] = sim.day; };
+const end = (sim: Sim, r: SideRun): void => { if (r.stage) sim.stageClear(r); sim.side.runs = sim.side.runs.filter((x) => x !== r); sim.side.last[r.id] = sim.day; };
 
 /** Send the talk of the step a quest awaits (from the giver's village while it stands). */
 function send(sim: Sim, r: SideRun): void {
   const tribe = r.tribe && sim.tribes.some((t) => t.id === r.tribe && t.state === 'free') ? r.tribe : undefined;
-  sim.queueEncounter(sideScriptId(r.id, r.step, sim.era), r.fast || r.step === 0 ? 0 : CFG.stepDays, r.fast ? 9 : CFG.priority, CFG.maxDelay, tribe);
+  const field = sideQuest(r.id)?.steps[r.step]?.field, onMap = !!field && !sim.stageBlock(field); // played on the map when it can be: else its talk
+  sim.queueEncounter(sideScriptId(r.id, r.step, sim.era, onMap), r.fast || r.step === 0 ? 0 : CFG.stepDays, r.fast ? 9 : CFG.priority, CFG.maxDelay, tribe);
   r.sentDay = sim.day;
 }
 
@@ -38,7 +39,9 @@ function eligible(sim: Sim, q: SideQuest): boolean {
 export function tickSideQuests(sim: Sim, dt: number): void {
   if (Math.floor(sim.time) === Math.floor(sim.time - dt)) return;
   const st = sim.side;
+  sim.stageSweep();
   for (const r of [...st.runs]) {
+    if (r.stage) { stageStep(sim, r); continue; } // the step is being played on the map
     if (present(sim, r)) continue;
     if (!r.taken) { end(sim, r); continue; } // an offer nobody answered
     if (sim.day > r.due) { end(sim, r); sim.say(`Việc "${sideQuest(r.id)?.name ?? r.id}" đã quá hạn: người nhờ đã tìm cách khác. Không ai trách làng bạn.`); continue; }
@@ -89,29 +92,57 @@ function pay(sim: Sim, r: SideRun, q: SideQuest): void {
   end(sim, r);
 }
 
+/** The stage of a run, looked at once a second: won (the quest goes on, with what our soldiers did), lost (the quest is over), or still going. */
+function stageStep(sim: Sim, r: SideRun): void {
+  const q = sideQuest(r.id), s = r.stage!, field = q?.steps[s.step]?.field, o = q?.steps[s.step]?.options[s.opt];
+  if (!q || !field || !o) { sim.stageClear(r); return; }
+  const res = sim.stageCheck(r, field);
+  if (res === 'run') return;
+  const fought = sim.stageKills(r) > 0;
+  sim.stageClear(r);
+  if (res === 'lost') { end(sim, r); sim.say(`${field.lose} Việc "${q.name}" không thành. Không ai trách làng bạn.`); return; }
+  sim.say(field.win);
+  settle(sim, r, q, s.step, o, true, fought ? field.tagWin : undefined, field.skipTo);
+}
+
+/** After an answer (or a stage): the quest is lost, or its tag is kept and the next step comes (the last one pays). */
+function settle(sim: Sim, r: SideRun, q: SideQuest, step: number, o: SideOption, ok: boolean, extraTag?: string, skipTo?: number): void {
+  if (!ok && o.roll?.ends) { end(sim, r); sim.say(`Việc "${q.name}" không thành. Không ai trách làng bạn.`); return; }
+  const tag = ok ? o.tag : o.roll?.tag;
+  if (tag) r.tags.push(tag);
+  if (extraTag && !r.tags.includes(extraTag)) r.tags.push(extraTag);
+  if (step >= q.steps.length - 1) { pay(sim, r, q); return; }
+  r.step = skipTo ?? step + 1;
+  send(sim, r);
+}
+
 /** An answer of a quest talk (effect `quest` of the visitor scripts): `code` is sidequestdata.sideCode, `tribe` the village of the one who came. */
 export function sideChoice(sim: Sim, code: string, tribe?: string): void {
-  const [id, stepS, optS, okS] = code.split(':'), step = Number(stepS), opt = Number(optS), ok = okS === 'y';
+  const [id, stepS, optS, okS, mapS] = code.split(':'), step = Number(stepS), opt = Number(optS), ok = okS === 'y';
   const q = sideQuest(id), r = sim.side.runs.find((x) => x.id === id && x.step === step);
   if (!q || !r) return; // the quest is gone (dropped, or past its day): the talk is only words
   if (opt < 0) { end(sim, r); return; } // refused
   const o = q.steps[step]?.options[opt];
   if (!o) return;
-  if (!ok && o.roll?.ends) { end(sim, r); sim.say(`Việc "${q.name}" không thành. Không ai trách làng bạn.`); return; }
-  const tag = ok ? o.tag : o.roll?.tag;
-  if (tag) r.tags.push(tag);
   if (step === 0) { r.taken = true; r.day = sim.day; r.due = sim.day + q.days; r.tribe = tribe; sim.say(`Đã nhận việc: ${q.name} (hạn ${q.days} ngày). Xem ở Nhiệm vụ.`); }
-  if (step >= q.steps.length - 1) { pay(sim, r, q); return; }
-  r.step++;
-  send(sim, r);
+  const field = q.steps[step].field;
+  if (mapS === 'f' && field) { // the map variant of the talk: the stage decides; when no place can be found for it, the dice of the answer do
+    r.due = Math.max(r.due, sim.day + field.days + 1);
+    if (sim.stageStart(r, field, step, opt)) return;
+    const won = !o.roll || seedRoll(sim.seed, `sq:dice:${id}:${step}`, sim.day) < o.roll.p;
+    sim.say(won ? field.win : o.roll!.fail);
+    settle(sim, r, q, step, o, won);
+    return;
+  }
+  settle(sim, r, q, step, o, ok);
 }
 
-export interface SideQuestView { id: string; name: string; kind: string; giver: string; step: number; steps: number; /** Game days left (0: today is the last); -1 while it is only offered. */ daysLeft: number; /** Someone waits at the gate about it. */ atGate: boolean }
+export interface SideQuestView { /** Where the step is being played on the map (tile), and what is to be done there. */ at?: [number, number]; todo?: string; id: string; name: string; kind: string; giver: string; step: number; steps: number; /** Game days left (0: today is the last); -1 while it is only offered. */ daysLeft: number; /** Someone waits at the gate about it. */ atGate: boolean }
 /** The quests offered or under way, for the Nhiệm vụ window. */
 export function sideQuestViews(sim: Sim): SideQuestView[] {
   return sim.side.runs.flatMap((r) => {
     const q = sideQuest(r.id);
-    return q ? [{ id: q.id, name: q.name, kind: q.kind, giver: characterOf(q.giver)?.name ?? '', step: r.step, steps: q.steps.length, daysLeft: r.taken ? Math.max(0, r.due - sim.day) : -1, atGate: sim.encounters.visitors.some((v) => isStep(v.scriptId, r) && v.state === 'waiting') }] : [];
+    return q ? [{ id: q.id, name: q.name, kind: q.kind, giver: characterOf(q.giver)?.name ?? '', step: r.step, steps: q.steps.length, daysLeft: r.taken ? Math.max(0, r.due - sim.day) : -1, atGate: sim.encounters.visitors.some((v) => isStep(v.scriptId, r) && v.state === 'waiting'), ...(r.stage ? { at: (r.stage.ward !== undefined && sim.get(r.stage.ward) ? [Math.floor(sim.get(r.stage.ward)!.x), Math.floor(sim.get(r.stage.ward)!.y)] : r.stage.at) as [number, number], todo: q.steps[r.stage.step]?.field?.say } : {}) }] : [];
   });
 }
 

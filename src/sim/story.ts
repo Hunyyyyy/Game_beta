@@ -5,10 +5,11 @@
 import type { Sim } from './sim';
 import type { Res } from './resources';
 import type { StoryCond } from './encounterdata';
-import { STORY, type StoryMode, type WorldEffect } from './storyscenes';
+import { STORY, type StoryMode, type WarEvent, type WorldEffect } from './storyscenes';
 import { unlockAbout, unlockName } from './specialdata';
-import { condOf, stepStory, storyMod, type StoryOut, type StoryWorld } from './storydata';
+import { condOf, stepStory, storyMod, warChapter, type StoryOut, type StoryWorld } from './storydata';
 import { seedRoll } from './encounterdata';
+import { openAtOnce } from './encounters';
 
 /** The tree runs when index.json has it on, or the dev switch wakes it. */
 export const storyOn = (sim: Sim): boolean => STORY.enabled || sim.dev.story;
@@ -109,3 +110,40 @@ export function warBlock(sim: Sim, tribe: string | null): string | null {
   if (sim.day < st.vote.day) return 'Hội đồng trưởng lão đang bỏ phiếu: ngày mai mới xuất quân được';
   return null;
 }
+
+// ---------------------------------------------------------------- the war (trunk V: Sắt và máu)
+/** The attack plan under way against a village (not a skirmish), if any. */
+const runningPlan = (sim: Sim) => sim.plans.find((p) => p.kind === 'attack' && p.status === 'running' && !p.skirmish);
+const ourAlive = (sim: Sim, plan: NonNullable<ReturnType<typeof runningPlan>>): number => plan.missions.reduce((n, m) => n + (sim.squadById(m.squad) ? sim.squadUnits(sim.squadById(m.squad)!).filter((v) => v.health > 0).length : 0), 0);
+const foesAlive = (sim: Sim, tribe: string): number => sim.foes.filter((f) => f.team === tribe && f.health > 0 && f.ai && f.ai.role !== 'civ' && f.ai.guest === undefined).length;
+
+/** A moment of the war (called from the war: startPlan, killFoe, and once a second by tickWarStory): the story may open a scene of trunk V, in the middle of the battle. One at a time; each moment once a war. */
+export function warEvent(sim: Sim, ev: WarEvent): void {
+  if (!storyOn(sim) || sim.era !== 'ancient' || sim.encounters.active) return;
+  const w = sim.legacy.war;
+  if (!w || w.fired.includes(ev)) return;
+  const ch = warChapter(sim.encounters.seen, ev, sim.encounterCond());
+  if (ch && !openAtOnce(sim, ch.id, w.tribe)) w.fired.push(ev); // a moment counts only when a scene opened: while the stage before it is not played, the moment waits (and comes back each second while it lasts)
+}
+/** The war begins: the numbers of both sides are taken. */
+export function warBegan(sim: Sim, tribe: string): void {
+  const plan = runningPlan(sim);
+  sim.legacy.war = { tribe, foe0: Math.max(1, foesAlive(sim, tribe)), our0: Math.max(1, plan ? plan.missions.reduce((n, m) => n + m.initial, 0) : 1), fired: [], pending: null };
+  sim.legacy.war.pending = 'war_start';
+}
+/** Called every tick of a war: the opening scene when it is due, and once a second the counts of the two armies. */
+export function tickWarStory(sim: Sim, dt: number): void {
+  const w = sim.legacy.war, plan = runningPlan(sim);
+  if (!w || !plan) return;
+  if (w.pending) { const ev = w.pending as WarEvent; w.pending = null; warEvent(sim, ev); return; }
+  if (w.leaderDown) warEvent(sim, 'leader_down');
+  if (Math.floor(sim.time) === Math.floor(sim.time - dt)) return;
+  const foes = foesAlive(sim, w.tribe), our = ourAlive(sim, plan);
+  if (foes <= w.foe0 * 0.5) warEvent(sim, 'half_way');
+  if (our > 0 && our <= w.our0 * 0.5) warEvent(sim, 'army_low');
+  if (foes <= Math.max(1, w.foe0 * 0.2)) warEvent(sim, 'near_fall');
+}
+/** The leader of the village at war has fallen. */
+export function warLeaderDown(sim: Sim, tribe: string): void { if (sim.legacy.war?.tribe === tribe) sim.legacy.war.leaderDown = true; }
+/** The war is over: the counts are dropped. */
+export function warOver(sim: Sim): void { sim.legacy.war = null; }

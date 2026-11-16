@@ -25,6 +25,8 @@ import * as encounters from './encounters';
 import * as story from './story';
 import * as sidequests from './sidequests';
 import * as legacyfx from './legacyfx';
+import * as missions from './missions';
+import type { SideRun, StageField } from './sidequestdata';
 import { initialSide, type SideState } from './sidequestdata';
 import * as specialists from './specialists';
 import * as walltop from './walltop';
@@ -479,6 +481,13 @@ export class Sim {
   queueEncounter(script: string, days: number, priority?: number, maxDelay?: number, tribe?: string): void { return encounters.queueScript(this, script, days, priority, maxDelay, tribe); }
   /** → sidequests.sideChoice */
   sideQuestChoice(code: string, tribe?: string): void { return sidequests.sideChoice(this, code, tribe); }
+  /** → missions: a step of a side quest played on the map (stageBlock: why it cannot be, stageStart, stageCheck, stageKills, stageClear, stageSweep) */
+  stageBlock(field: StageField): string | null { return missions.stageBlock(this, field); }
+  stageStart(run: SideRun, field: StageField, step: number, opt: number): boolean { return missions.stageStart(this, run, field, step, opt); }
+  stageCheck(run: SideRun, field: StageField): 'run' | 'won' | 'lost' { return missions.stageCheck(this, run, field); }
+  stageKills(run: SideRun): number { return missions.stageKills(this, run); }
+  stageClear(run: SideRun): void { return missions.stageClear(this, run); }
+  stageSweep(): void { return missions.stageSweep(this); }
   /** → sidequests.sideQuestViews */
   sideQuests(): sidequests.SideQuestView[] { return sidequests.sideQuestViews(this); }
   /** → sidequests.dropSideQuest */
@@ -527,6 +536,11 @@ export class Sim {
   warBlock(tribe: string | null): string | null { return story.warBlock(this, tribe); }
   /** → tribes.rebelTributary: the tributary that likes us least turns on us (a leaf of the story) */
   rebelTributary(): string | null { return rebelTributary(this); }
+  /** → story.warEvent / warBegan / warLeaderDown / warOver / tickWarStory: trunk V of the story tree plays in the war */
+  warBegan(tribe: string): void { return story.warBegan(this, tribe); }
+  warLeaderDown(tribe: string): void { return story.warLeaderDown(this, tribe); }
+  warOver(): void { return story.warOver(this); }
+  tickWarStory(dt: number): void { return story.tickWarStory(this, dt); }
   /** → story.legacyView */
   legacyView(): story.LegacyItem[] { return story.legacyView(this); }
   /** → story.mod */
@@ -982,7 +996,7 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { this.addDeed('war_fought'); warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); this.skirmishCleanup(); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
+    if (this.warSince >= 0) { this.addDeed('war_fought'); this.warOver(); warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); this.skirmishCleanup(); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); processing.tickProcessing(this, dt); ranch.tickRanch(this, dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);

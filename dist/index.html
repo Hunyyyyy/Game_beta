@@ -14557,7 +14557,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       out.push({ kind, x, y, w: d.w, h: d.h, level: Math.max(1, Math.min(maxLevel(kind, era), capOf(kind))) });
       return true;
     };
-    const spot = (kind, spots) => {
+    const spot2 = (kind, spots) => {
       for (let k = 0; k < spots.length; k++) if (put3(kind, spots[k][0], spots[k][1])) {
         spots.splice(k, 1);
         return true;
@@ -14582,10 +14582,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (let r = 1; r <= coreRings; r++) inside.push(...ring(fire, r));
     for (let r = firstOutside; r <= firstOutside + 3; r++) outside.push(...ring(fire, r).sort((p, q) => Math.abs(p[1] - fy) - Math.abs(q[1] - fy)));
     for (const kind of CORE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
-      if (!(spot(kind, inside) || spot(kind, outside))) break;
+      if (!(spot2(kind, inside) || spot2(kind, outside))) break;
     }
     for (const kind of OUTSIDE.filter(open)) for (let n = limitAt(kind, fireLevel2); n > 0; n--) {
-      if (!spot(kind, outside)) break;
+      if (!spot2(kind, outside)) break;
     }
     return out;
   }
@@ -26216,9 +26216,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       return pnoise(tt / D2 * P2 + off, P2, seed2);
     };
   }
-  function looped(t, D2, count, seed2, make2, draw2) {
+  function looped(t, D2, count, seed2, make3, draw2) {
     for (let i = 0; i < count; i++) {
-      const r = rng(seed2, i), born = r.next() * D2, q = make2(r, i);
+      const r = rng(seed2, i), born = r.next() * D2, q = make3(r, i);
       for (let age = wrap(t - born, D2); age < q.life; age += D2) draw2(q, age, i);
     }
   }
@@ -190003,8 +190003,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       for (let n = 0; n < herds; n++) {
         for (let tries = 0; tries < 8; tries++) {
           const x = x0 + Math.floor(rnd() * CHUNK), y = y0 + Math.floor(rnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
-          const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z;
-          if (d < 16 && def.habitat !== "water" || far < def.zones[0] || far > def.zones[1] || !habitable(sim2, def, x, y)) continue;
+          const z = zoneOf(d), far3 = z === 4 && def.zones[1] === 3 ? 3 : z;
+          if (d < 16 && def.habitat !== "water" || far3 < def.zones[0] || far3 > def.zones[1] || !habitable(sim2, def, x, y)) continue;
           const size = def.herd[0] + Math.floor(rnd() * (def.herd[1] - def.herd[0] + 1));
           for (let i = 0; i < size; i++) {
             const ax = x + (rnd() - 0.5) * 4, ay = y + (rnd() - 0.5) * 4;
@@ -190367,13 +190367,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (!chunks.length) return;
     const s = sim2.world.start, N = sim2.world.size;
     for (const sp of SPECIES) {
-      const def = ANIMALS[sp], alive2 = sim2.animals.filter((a) => a.species === sp && a.state !== "dead" && !a.raid).length, missing2 = countOf(sim2, def) - alive2;
+      const def = ANIMALS[sp], alive3 = sim2.animals.filter((a) => a.species === sp && a.state !== "dead" && !a.raid).length, missing2 = countOf(sim2, def) - alive3;
       if (missing2 < def.herd[0] || sim2.frnd() > BEHAVIOUR.restockChance) continue;
       const size = Math.min(missing2, def.herd[0] + Math.floor(sim2.frnd() * (def.herd[1] - def.herd[0] + 1)));
       for (let tries = 0; tries < 24; tries++) {
         const [cx, cy] = chunks[Math.floor(sim2.frnd() * chunks.length)], x = cx * CHUNK + Math.floor(sim2.frnd() * CHUNK), y = cy * CHUNK + Math.floor(sim2.frnd() * CHUNK), d = Math.hypot(x - s.x, y - s.y);
-        const z = zoneOf(d), far = z === 4 && def.zones[1] === 3 ? 3 : z;
-        if (d < 16 && def.habitat !== "water" || far < def.zones[0] || far > def.zones[1] || !habitable(sim2, def, x, y)) continue;
+        const z = zoneOf(d), far3 = z === 4 && def.zones[1] === 3 ? 3 : z;
+        if (d < 16 && def.habitat !== "water" || far3 < def.zones[0] || far3 > def.zones[1] || !habitable(sim2, def, x, y)) continue;
         if (sim2.fog.state[y * N + x] === 2 || sim2.inView(x, y)) continue;
         const herd = 2e5 + sim2.nextAid;
         for (let i = 0; i < size; i++) {
@@ -190760,6 +190760,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var isFighter = (v) => v.job === "fight" || v.job === "hunt" || v.job === "supply" || v.fight.mode !== "none";
   function teamsHostile(sim2, a, b) {
     if (a === b || a === "wild" || b === "wild") return false;
+    if (a === "stage" || b === "stage") return a === "player" || b === "player" || a === "ward" || b === "ward";
+    if (a === "ward" || b === "ward") return false;
     if (a === "player") return sim2.tribeWilling(b);
     if (b === "player") return sim2.tribeWilling(a);
     return sim2.tribesFeud(a, b);
@@ -191233,11 +191235,11 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     return men.length;
   }
   function postAt(sim2, t, x, y, taken) {
-    const spot = sim2.nearestFree(Math.floor(x), Math.floor(y), taken);
-    if (!spot) return null;
-    taken.add(spot[1] * sim2.world.size + spot[0]);
-    const dx = spot[0] + 0.5 - t.camp.x, dy = spot[1] + 0.5 - t.camp.y;
-    return { x: spot[0], y: spot[1], face: Math.abs(dx) > Math.abs(dy) ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back" };
+    const spot2 = sim2.nearestFree(Math.floor(x), Math.floor(y), taken);
+    if (!spot2) return null;
+    taken.add(spot2[1] * sim2.world.size + spot2[0]);
+    const dx = spot2[0] + 0.5 - t.camp.x, dy = spot2[1] + 0.5 - t.camp.y;
+    return { x: spot2[0], y: spot2[1], face: Math.abs(dx) > Math.abs(dy) ? dx > 0 ? "right" : "left" : dy > 0 ? "front" : "back" };
   }
   function postsOf(sim2, t, n) {
     const out = [], taken = /* @__PURE__ */ new Set(), add = (x, y) => {
@@ -191699,10 +191701,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const melee = t.def.weapons.filter((w) => !WEAPONS[w]?.ranged), taken = /* @__PURE__ */ new Set();
     if (t.crowd) t.crowd.guards = Math.max(0, t.crowd.guards - n);
     for (let i = 0; i < n; i++) {
-      const spot = sim2.nearestFree(Math.floor(gx) + i % 3 - 1, Math.floor(gy) + Math.floor(i / 3) - 1, taken);
-      if (!spot) continue;
-      taken.add(spot[1] * sim2.world.size + spot[0]);
-      const f = sim2.makeVillager(spot[0], spot[1], "m", t.id, sim2.frnd);
+      const spot2 = sim2.nearestFree(Math.floor(gx) + i % 3 - 1, Math.floor(gy) + Math.floor(i / 3) - 1, taken);
+      if (!spot2) continue;
+      taken.add(spot2[1] * sim2.world.size + spot2[0]);
+      const f = sim2.makeVillager(spot2[0], spot2[1], "m", t.id, sim2.frnd);
       f.look.hide = t.def.look.hide;
       f.look.pants = t.def.look.pants;
       f.weapon = i % 3 === 2 ? t.def.weapons[i % t.def.weapons.length] : melee[i % Math.max(1, melee.length)] ?? f.weapon;
@@ -191741,6 +191743,53 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const f of sim2.foes.filter((x) => x.ai?.harass !== void 0)) remove(sim2, f, sim2.tribes.find((x) => x.id === f.team));
     sim2.warFocus = null;
     sim2.warHarassAt = -1;
+  }
+
+  // src/sim/brainstage.ts
+  var SIGHT = 9;
+  var LEASH = 14;
+  var far = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  function tickStage(sim2, f, dt) {
+    tickCommon(sim2, f, dt);
+    const ai = f.ai, st = ai?.stage;
+    if (!ai || !st) return;
+    if (st.kind === "ward") {
+      if (st.goal) {
+        const led = sim2.villagers.some((v) => v.job === "fight" && v.health > 0 && v.inside === null && far(v, f) <= st.lead);
+        if (!led) {
+          f.path = [];
+          f.phase = "idle";
+          return;
+        }
+        if (!f.path.length && far(f, st.goal) > 1.5) {
+          const d = far(f, st.goal), k = Math.min(1, 10 / d), tx = f.x + (st.goal.x - f.x) * k, ty = f.y + (st.goal.y - f.y) * k;
+          const at = d <= 10 ? [Math.floor(st.goal.x), Math.floor(st.goal.y)] : sim2.nearestFree(Math.floor(tx), Math.floor(ty), /* @__PURE__ */ new Set());
+          if (at) f.path = sim2.pathTo(f, at[0], at[1], 6e3, true);
+        }
+      }
+      f.phase = f.path.length ? "move" : "idle";
+      return;
+    }
+    f.fight.scan -= dt;
+    if (f.fight.scan <= 0) {
+      f.fight.scan = 0.4;
+      const mark = st.mark !== void 0 ? sim2.get(st.mark) : void 0;
+      const seen = threatsOf(sim2, f, SIGHT).filter((x) => x.fighter || x.t.kind === "unit" && sim2.get(x.t.id)?.team === "ward");
+      if (st.kind === "killer" && mark && mark.health > 0 && !(f.fight.target && seen.some((x) => x.d < 2.5))) f.fight.target = { kind: "unit", id: mark.id };
+      else if (!resolve(sim2, f.fight.target) && seen.length) f.fight.target = seen[0].t;
+    }
+    const e = resolve(sim2, f.fight.target);
+    if (e && (st.kind === "killer" || far(f, ai.camp) < LEASH)) {
+      engage(sim2, f, e, dt);
+      return;
+    }
+    f.fight.target = null;
+    if (f.phase === "fight") {
+      f.phase = "idle";
+      f.path = [];
+    }
+    if (!f.path.length && far(f, ai.camp) > 3) f.path = sim2.pathTo(f, Math.floor(ai.camp.x), Math.floor(ai.camp.y), 3e3);
+    f.phase = f.path.length ? "move" : "idle";
   }
 
   // src/data/events.json
@@ -192257,6 +192306,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     if (v.ai?.guest !== void 0 && killer?.team === "player") sim2.guestSlain(v.id);
     if (v.id === t.leaderId) {
+      sim2.warLeaderDown(v.team);
       t.leaderDead = true;
       sim2.say(`Th\u1EE7 l\u0129nh ${t.def.name} \u0111\xE3 g\u1EE5c ng\xE3.`);
     }
@@ -192432,8 +192482,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       ["foot", "archer", "cavalry"].forEach((arm, i) => {
         for (let k = 0; k < arms2[i]; k++) {
           const ang = sim2.frnd() * Math.PI * 2, r = 3 + sim2.frnd() * 3;
-          const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(ang) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(ang) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-          const v = sim2.makeVillager(spot[0], spot[1], "m", "player", sim2.frnd);
+          const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(ang) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(ang) * r), spot2 = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+          const v = sim2.makeVillager(spot2[0], spot2[1], "m", "player", sim2.frnd);
           v.job = "fight";
           v.arm = arm;
           v.post = -1;
@@ -192464,8 +192514,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const fire = sim2.campfire(), fx2 = fire?.x ?? sim2.world.start.x, fy = fire?.y ?? sim2.world.start.y;
     for (const v of [...sim2.villagers]) {
       if (!v.ally?.leaving) continue;
-      const far = Math.hypot(v.x - fx2, v.y - fy) > 30, watched = !!sim2.view && sim2.inView(v.x, v.y);
-      if (far && !watched || sim2.time - v.ally.since > 240) {
+      const far3 = Math.hypot(v.x - fx2, v.y - fy) > 30, watched = !!sim2.view && sim2.inView(v.x, v.y);
+      if (far3 && !watched || sim2.time - v.ally.since > 240) {
         sim2.discharge([v.id]);
         sim2.vanish(v);
         continue;
@@ -192651,8 +192701,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     t.raid = { id, phase: "march", t: 0, max: night === void 0 ? 900 : 99999, size: weapons.length, night };
     weapons.forEach((weapon, i) => {
       const ang = i / weapons.length * Math.PI * 2, gx = Math.floor(fx2 + dx / len * dist3 + Math.cos(ang) * 2), gy = Math.floor(fy + dy / len * dist3 + Math.sin(ang) * 2);
-      const spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-      const f = sim2.makeVillager(spot[0], spot[1], "m", t.id, sim2.frnd);
+      const spot2 = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+      const f = sim2.makeVillager(spot2[0], spot2[1], "m", t.id, sim2.frnd);
       f.look.hide = t.def.look.hide;
       f.look.pants = t.def.look.pants;
       f.weapon = weapon;
@@ -192759,9 +192809,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     for (const e of sim2.events) {
       if (e.live) {
         const tribe = e.tribe ? tribeOf(sim2, e.tribe) : void 0;
-        const alive2 = e.kind === "beasts" ? sim2.animals.filter((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== "dead").length : sim2.foes.filter((f) => f.ai?.raid === e.raidId && f.health > 0).length;
-        const over = e.kind === "beasts" ? alive2 === 0 : !tribe?.raid;
-        if (!over) e.left = alive2;
+        const alive3 = e.kind === "beasts" ? sim2.animals.filter((a) => a.herd === e.herd && a.raid && a.hp > 0 && a.state !== "dead").length : sim2.foes.filter((f) => f.ai?.raid === e.raidId && f.health > 0).length;
+        const over = e.kind === "beasts" ? alive3 === 0 : !tribe?.raid;
+        if (!over) e.left = alive3;
         else {
           e.live = false;
           const beaten = e.kind === "beasts" ? sim2.animals.some((a) => a.herd === e.herd && a.state === "dead") : (e.left ?? 1) === 0;
@@ -192842,7 +192892,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   }
 
   // src/sim/brainfoe.ts
-  var { aggro: AGGRO, leash: LEASH } = FOE;
+  var { aggro: AGGRO, leash: LEASH2 } = FOE;
   function wander(sim2, f, radius) {
     const ai = f.ai;
     for (let i = 0; i < 6; i++) {
@@ -192867,6 +192917,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   function tickFoe(sim2, f, dt) {
     tickCommon(sim2, f, dt);
     const t = tribeOf(sim2, f.team), ai = f.ai;
+    if (ai?.stage) {
+      tickStage(sim2, f, dt);
+      sim2.moveUnit(f, dt);
+      sim2.animate(f, dt);
+      return;
+    }
     if (ai?.assassin) {
       sim2.tickAssassin(f, dt);
       sim2.moveUnit(f, dt);
@@ -192927,7 +192983,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     if (free && f.fight.target) {
       const e = resolve(sim2, f.fight.target);
-      if (e && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) < Math.max(LEASH, reach + 2)) {
+      if (e && Math.hypot(f.x - ai.camp.x, f.y - ai.camp.y) < Math.max(LEASH2, reach + 2)) {
         engage(sim2, f, e, dt);
         return;
       }
@@ -193644,10 +193700,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       if (v.inside !== null) continue;
       const tx = Math.floor(v.x), ty = Math.floor(v.y);
       if (tx < r.x || tx >= r.x + r.w || ty < r.y || ty >= r.y + r.h) continue;
-      const spot = sim2.nearestFree(tx, ty, /* @__PURE__ */ new Set());
-      if (spot) {
-        v.x = spot[0] + 0.5;
-        v.y = spot[1] + 0.5;
+      const spot2 = sim2.nearestFree(tx, ty, /* @__PURE__ */ new Set());
+      if (spot2) {
+        v.x = spot2[0] + 0.5;
+        v.y = spot2[1] + 0.5;
         v.path = [];
         v.slide = null;
       }
@@ -194164,10 +194220,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     if (v.shift === "both" || v.post >= 0 || v.inside !== null || sim2.pathLeft <= 0) return;
     const fire = sim2.campfire();
     if (!fire) return;
-    const spot = sim2.nearestFree(Math.floor(fire.x + 1 + v.id * 7 % 7 - 3), Math.floor(fire.y + 3 + v.id % 2), /* @__PURE__ */ new Set());
-    if (!spot || Math.hypot(spot[0] + 0.5 - v.x, spot[1] + 0.5 - v.y) <= 2) return;
+    const spot2 = sim2.nearestFree(Math.floor(fire.x + 1 + v.id * 7 % 7 - 3), Math.floor(fire.y + 3 + v.id % 2), /* @__PURE__ */ new Set());
+    if (!spot2 || Math.hypot(spot2[0] + 0.5 - v.x, spot2[1] + 0.5 - v.y) <= 2) return;
     sim2.pathLeft--;
-    v.path = sim2.pathTo(v, spot[0], spot[1], 4e3);
+    v.path = sim2.pathTo(v, spot2[0], spot2[1], 4e3);
     v.phase = v.path.length ? "move" : "idle";
   }
   function doWork(sim2, v, dt) {
@@ -194378,13 +194434,13 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const n = (trapped.get(v) ?? 0) + 1;
     trapped.set(v, n);
     if (n < 3 || !stores.length) return;
-    const b = stores[0], d = BUILDINGS[b.kind], spot = sim2.ringTiles(v, b.x, b.y, d.w, d.h)[0];
+    const b = stores[0], d = BUILDINGS[b.kind], spot2 = sim2.ringTiles(v, b.x, b.y, d.w, d.h)[0];
     trapped.delete(v);
-    if (!spot) return;
-    const way = sim2.pathTo(v, spot[0], spot[1], 6e3), last2 = way[way.length - 1];
-    if (last2 && last2[0] === spot[0] && last2[1] === spot[1] || Math.floor(v.x) === spot[0] && Math.floor(v.y) === spot[1]) return;
-    v.x = spot[0] + 0.5;
-    v.y = spot[1] + 0.5;
+    if (!spot2) return;
+    const way = sim2.pathTo(v, spot2[0], spot2[1], 6e3), last2 = way[way.length - 1];
+    if (last2 && last2[0] === spot2[0] && last2[1] === spot2[1] || Math.floor(v.x) === spot2[0] && Math.floor(v.y) === spot2[1]) return;
+    v.x = spot2[0] + 0.5;
+    v.y = spot2[1] + 0.5;
     v.path = [];
     v.slide = null;
     v.bad.clear();
@@ -194535,7 +194591,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const t = tribeOf(sim2, tribe);
     return t ? headcount(sim2, t).guards : 0;
   };
-  var SIGHT = 14;
+  var SIGHT2 = 14;
   var HOME = 7;
   var SMOKE = 45;
   var SMOKE_BLUR = 9;
@@ -194567,7 +194623,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     for (const t of sim2.tribes) {
       if (t.state === "destroyed" || sim2.sightings.some((s) => s.tribe === t.id)) continue;
-      const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT);
+      const finder = sim2.villagers.find((v) => v.health > 0 && v.inside === null && Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < SIGHT2);
       if (finder) sim2.sightings.push({ tribe: t.id, by: finder.id, at: sim2.time, reported: false });
     }
     for (const t of sim2.tribes) {
@@ -194672,17 +194728,17 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const spotX = t.camp.x + dx / len * reach, spotY = t.camp.y + dy / len * reach;
     return sim2.nearestFree(Math.floor(spotX + Math.cos(i * 2.4) * 2), Math.floor(spotY + Math.sin(i * 2.4) * 2), /* @__PURE__ */ new Set()) ?? [Math.floor(spotX), Math.floor(spotY)];
   }
-  function keepGoing(sim2, m, t, alive2) {
+  function keepGoing(sim2, m, t, alive3) {
     const fire = sim2.campfire();
-    alive2.forEach((v, i) => {
+    alive3.forEach((v, i) => {
       if (v.path.length || v.slide || v.phase === "move" || v.phase === "sleep" || v.phase === "goHome" || v.phase === "flee" || v.inside !== null) return;
       if (m.phase === "back") {
         if (fire && Math.hypot(v.x - fire.x, v.y - fire.y) >= 7) walkScout(sim2, v, Math.floor(fire.x + 1), Math.floor(fire.y + 3));
         return;
       }
       if (Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22) return;
-      const spot = watchSpot(sim2, t, i);
-      walkScout(sim2, v, spot[0], spot[1]);
+      const spot2 = watchSpot(sim2, t, i);
+      walkScout(sim2, v, spot2[0], spot2[1]);
     });
   }
   function startScout(sim2, ids, tribe) {
@@ -194698,8 +194754,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       v.recall = false;
       sim2.resetTask(v);
       sim2.clearCombat(v);
-      const spot = watchSpot(sim2, t, i);
-      sim2.orderMove([v.id], spot[0], spot[1]);
+      const spot2 = watchSpot(sim2, t, i);
+      sim2.orderMove([v.id], spot2[0], spot2[1]);
     });
     const going = sim2.scouts.find((m) => m.tribe === tribe);
     if (going) {
@@ -194769,10 +194825,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     tickSightings(sim2, dt);
     for (let i = sim2.scouts.length - 1; i >= 0; i--) {
       const m = sim2.scouts[i], t = tribeOf(sim2, m.tribe);
-      const alive2 = m.ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.health > 0);
-      m.ids = alive2.map((v) => v.id);
-      if (!alive2.length || !t) {
-        sim2.say(alive2.length ? "Trinh s\xE1t b\u1ECB h\u1EE7y." : "M\u1EA5t h\u1EBFt trinh s\xE1t: b\u1EA3n \u0111\u1ED3 ch\u01B0a v\u1EC1, c\u1EED ng\u01B0\u1EDDi kh\xE1c \u0111i v\u1EBD ti\u1EBFp.");
+      const alive3 = m.ids.map((id) => sim2.byId.get(id)).filter((v) => !!v && v.team === "player" && v.health > 0);
+      m.ids = alive3.map((v) => v.id);
+      if (!alive3.length || !t) {
+        sim2.say(alive3.length ? "Trinh s\xE1t b\u1ECB h\u1EE7y." : "M\u1EA5t h\u1EBFt trinh s\xE1t: b\u1EA3n \u0111\u1ED3 ch\u01B0a v\u1EC1, c\u1EED ng\u01B0\u1EDDi kh\xE1c \u0111i v\u1EBD ti\u1EBFp.");
         sim2.scouts.splice(i, 1);
         continue;
       }
@@ -194782,7 +194838,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       m.nudge = (m.nudge ?? 0) - dt;
       if (m.nudge <= 0) {
         m.nudge = 5;
-        keepGoing(sim2, m, t, alive2);
+        keepGoing(sim2, m, t, alive3);
       }
       if (m.phase === "go" && m.t > 900 && !m.recall) {
         m.recall = true;
@@ -194791,7 +194847,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
       const fire = sim2.campfire();
       if (m.phase !== "back") {
-        const arrived = alive2.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
+        const arrived = alive3.filter((v) => Math.hypot(v.x - t.camp.x, v.y - t.camp.y) < 22 && !v.path.length);
         for (const v of arrived) if (!m.rolled.includes(v.id)) {
           m.rolled.push(v.id);
           const risk = deathParts(sim2, m, v);
@@ -194802,7 +194858,7 @@ ${risk.lines.join("\n")}`);
           }
         }
         const here = arrived.filter((v) => v.health > 0 && sim2.byId.has(v.id));
-        m.survivors = alive2.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
+        m.survivors = alive3.filter((v) => v.health > 0 && sim2.byId.has(v.id)).length;
         if (m.phase === "go" && here.length) {
           m.phase = "watch";
           m.t = 0;
@@ -194817,21 +194873,21 @@ ${risk.lines.join("\n")}`);
           }
         }
       } else {
-        const home = !fire || alive2.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
+        const home = !fire || alive3.every((v) => Math.hypot(v.x - fire.x, v.y - fire.y) < 7);
         if (home || m.t > 600) {
           const key = `${m.tribe}:${m.level}`;
           if ((m.progress ?? 0) >= 1) {
-            const skills = alive2.map(scoutSkill), chance = drawChance(skills, m.need), full = sim2.frnd() < chance;
+            const skills = alive3.map(scoutSkill), chance = drawChance(skills, m.need), full = sim2.frnd() < chance;
             const gaps = full ? 0 : Math.max(1, Math.ceil(m.need - skills.reduce((a, b) => a + b, 0)));
             const old = sim2.maps.findIndex((x) => x.tribe === m.tribe && x.level === m.level);
             const map2 = { tribe: m.tribe, level: m.level, at: sim2.time, gaps, seen: m.seen };
             if (old >= 0) sim2.maps[old] = map2;
             else sim2.maps.push(map2);
             delete sim2.drafts[key];
-            sim2.say(`Trinh s\xE1t v\u1EC1 (${alive2.length}/${m.sent ?? alive2.length} ng\u01B0\u1EDDi): b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${full ? " \u0111\u1EA7y \u0111\u1EE7 chi ti\u1EBFt" : `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh, t\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 ch\u1EC9 ${Math.round(chance * 100)}%)`}.`);
+            sim2.say(`Trinh s\xE1t v\u1EC1 (${alive3.length}/${m.sent ?? alive3.length} ng\u01B0\u1EDDi): b\u1EA3n \u0111\u1ED3 c\u1EA5p ${m.level} c\u1EE7a ${t.def.name}${full ? " \u0111\u1EA7y \u0111\u1EE7 chi ti\u1EBFt" : `, nh\u01B0ng c\xF2n h\u1EDF (thi\u1EBFu ${gaps} m\u1EA3nh, t\u1EC9 l\u1EC7 v\u1EBD \u0111\u1EE7 ch\u1EC9 ${Math.round(chance * 100)}%)`}.`);
           } else {
             sim2.drafts[key] = Math.max(sim2.drafts[key] ?? 0, m.progress ?? 0);
-            sim2.say(`Trinh s\xE1t v\u1EC1 (${alive2.length}/${m.sent ?? alive2.length} ng\u01B0\u1EDDi): m\u1EDBi v\u1EBD ${Math.round((m.progress ?? 0) * 100)}% b\u1EA3n \u0111\u1ED3 ${t.def.name}; c\u1EED ng\u01B0\u1EDDi \u0111i v\u1EBD ti\u1EBFp.`);
+            sim2.say(`Trinh s\xE1t v\u1EC1 (${alive3.length}/${m.sent ?? alive3.length} ng\u01B0\u1EDDi): m\u1EDBi v\u1EBD ${Math.round((m.progress ?? 0) * 100)}% b\u1EA3n \u0111\u1ED3 ${t.def.name}; c\u1EED ng\u01B0\u1EDDi \u0111i v\u1EBD ti\u1EBFp.`);
           }
           sim2.scouts.splice(i, 1);
         }
@@ -200676,40 +200732,36 @@ ${risk.lines.join("\n")}`);
             name: "Ch\u1ECDn m\u1EE5c ti\xEAu",
             scene: {
               say: [
-                "Qu\xE2n \u0111\xE3 v\u1EC1. L\xEDnh h\u1ECFi nhau: l\u1EA7n t\u1EDBi ta \u0111\xE1nh ai?",
-                "L\u1EDDi c\u1EE7a l\xE0ng s\u1EBD th\xE0nh h\u01B0\u1EDBng \u0111i c\u1EE7a gi\xE1o."
+                "Qu\xE2n \u0111\xE3 t\u1EADp h\u1EE3p tr\u01B0\u1EDBc c\u1ED5ng, gi\xE1o d\u1EF1ng th\xE0nh r\u1EEBng.",
+                "L\xEDnh h\u1ECFi nhau: ta \u0111i \u0111\xE1nh v\xEC \u0111i\u1EC1u g\xEC?"
               ],
               cast: "general",
               options: [
                 {
-                  text: "L\xE0ng y\u1EBFu ngay b\xEAn c\u1EA1nh.",
+                  text: "V\xEC l\xE0ng kia y\u1EBFu, v\xE0 ngay s\xE1t b\xEAn ta.",
                   reply: "G\u1EA7n, d\u1EC5, v\xE0 ai c\u0169ng hi\u1EC3u th\xF4ng \u0111i\u1EC7p.",
                   deed: "c_VA1_1"
                 },
                 {
-                  text: "L\xE0ng gi\xE0u \u1EDF xa.",
+                  text: "V\xEC kho c\u1EE7a h\u1ECD \u0111\u1EA7y.",
                   reply: "\u0110\u01B0\u1EDDng d\xE0i, kho l\u1EDBn. C\u1EA3 v\xF9ng th\u1EA5y qu\xE2n l\xE0ng \u0111i qua.",
                   deed: "c_VA1_2"
                 },
                 {
-                  text: "K\u1EBB th\xF9 c\u0169 c\xF2n n\u1EE3 ta.",
+                  text: "V\xEC h\u1ECD c\xF2n n\u1EE3 ta t\u1EEB x\u01B0a.",
                   reply: "M\xF3n n\u1EE3 c\u0169 \u0111\u01B0\u1EE3c nh\u1EAFc l\u1EA1i tr\u01B0\u1EDBc h\xE0ng qu\xE2n.",
                   deed: "c_VA1_3"
                 }
               ]
             },
-            when: "deed.war_fought>=1",
-            days: [
-              1,
-              2
-            ]
+            on: "war_start"
           },
           {
             id: "chapter:V.A-2",
             name: "C\xE1ch \u0111\xE1nh",
             scene: {
               say: [
-                "C\xE1c \u0111\u1ED9i tr\u01B0\u1EDFng c\xE3i nhau v\u1EC1 c\xE1ch \u0111\xE1nh.",
+                "M\u1ED9t n\u1EEDa qu\xE2n \u0111\u1ECBch \u0111\xE3 ng\xE3. C\xE1c \u0111\u1ED9i tr\u01B0\u1EDFng c\xE3i nhau v\u1EC1 b\u01B0\u1EDBc ti\u1EBFp theo.",
                 "L\xE0ng mu\u1ED1n th\u1EAFng ki\u1EC3u n\xE0o?"
               ],
               cast: "general",
@@ -200731,17 +200783,14 @@ ${risk.lines.join("\n")}`);
                 }
               ]
             },
-            days: [
-              2,
-              4
-            ]
+            on: "half_way"
           },
           {
             id: "chapter:V.A-3",
             name: "T\xF9 binh v\xE0 chi\u1EBFn l\u1EE3i ph\u1EA9m",
             scene: {
               say: [
-                "Sau tr\u1EADn, m\u1ED9t h\xE0ng ng\u01B0\u1EDDi b\u1ECB tr\xF3i ng\u1ED3i ngo\xE0i b\xE3i.",
+                "Th\u1EE7 l\u0129nh c\u1EE7a h\u1ECD \u0111\xE3 g\u1EE5c. M\u1ED9t h\xE0ng ng\u01B0\u1EDDi b\u1ECB tr\xF3i ng\u1ED3i ngo\xE0i b\xE3i.",
                 "L\xE0m g\xEC v\u1EDBi h\u1ECD?"
               ],
               cast: "general",
@@ -200780,11 +200829,7 @@ ${risk.lines.join("\n")}`);
                 }
               ]
             },
-            when: "deed.war_fought>=2",
-            days: [
-              1,
-              2
-            ]
+            on: "leader_down"
           }
         ]
       },
@@ -200847,7 +200892,7 @@ ${risk.lines.join("\n")}`);
             name: "S\u1EE9 gi\u1EA3 xin h\xF2a",
             scene: {
               say: [
-                "L\xE0ng t\xF4i xin h\xF2a. \u0110\u1EE7 m\xE1u r\u1ED3i.",
+                "L\xE0ng t\xF4i s\u1EAFp th\u1EA5t th\u1EE7. Xin h\xF2a. \u0110\u1EE7 m\xE1u r\u1ED3i.",
                 "\u0110i\u1EC1u ki\u1EC7n th\xEC l\xE0ng b\u1EA1n n\xF3i."
               ],
               cast: "envoy",
@@ -200884,17 +200929,14 @@ ${risk.lines.join("\n")}`);
                 }
               ]
             },
-            days: [
-              3,
-              5
-            ]
+            on: "near_fall"
           },
           {
             id: "chapter:V.B-3",
             name: "C\xE1nh c\u1ED5ng b\u1ECF ng\u1ECF",
             scene: {
               say: [
-                "\u0110\xEAm tr\u0103ng non, c\u1ED5ng ph\xEDa \u0111\xF4ng s\u1EBD kh\xF4ng c\xE0i then.",
+                "Qu\xE2n ta \u0111\xE3 hao nhi\u1EC1u. T\xF4i \u1EDF trong th\xE0nh: c\u1ED5ng ph\xEDa \u0111\xF4ng \u0111\xEAm nay s\u1EBD kh\xF4ng c\xE0i then.",
                 "T\xF4i ch\u1EC9 c\u1EA7n m\u1ED9t ch\u1ED7 \u1EDF khi m\u1ECDi chuy\u1EC7n xong."
               ],
               cast: "mole",
@@ -200921,10 +200963,7 @@ ${risk.lines.join("\n")}`);
                 }
               ]
             },
-            days: [
-              3,
-              5
-            ]
+            on: "army_low"
           }
         ]
       },
@@ -203800,22 +203839,8 @@ ${risk.lines.join("\n")}`);
 
   // src/data/story/quests/side_quests.json
   var side_quests_default = {
-    _note: "Side quests (doc/story_tree.md 'Nhi\u1EC7m v\u1EE5 ph\u1EE5', src/sim/sidequests.ts): apart from the story tree, reward only, no deed, no flag. A quest is 2 or 3 steps; each step is a small talk at the gate (a visitor script made by sidequestdata.ts, id sq:<quest>:<step>, with ':m' in the medieval age). Step 0 is the offer: any option but the added refusal (config.decline) takes the quest. An option: text (the button), reply (what the visitor answers), tag (kept: the reward adds reward.by[tag]), cost (paid when chosen; times config.costMulMedieval in the medieval age), cond (shown only when it holds, e.g. soldiers>=2), roll { p, fail (the answer when it goes wrong), ends (the quest is lost) or tag (kept in place of the option's tag), bonus [{ cond, add }] (added to p while the condition holds: an assassin of our own `spec.assassin>=1`, the mark L\u1ED9 `mark.lo>=4`) }. cast: the character (data/characters) who comes for a step (default: giver). days: game days to finish it after it is taken. reward: base goods plus by[tag] goods, all times config.rewardByFire[Nh\xE0 chung level]; rel: relation with the giver's village; blueprint: true, or a tag that must be held: one specialist not yet open is opened (if none is left, config.blueprintInstead goods). config: enabled (false: only the dev switch sends them; a flag of the story tree listed in from_flags.json makes its quest likelier), max at once (offers count), offerGap days between offers, stepDays between steps, cooldownDays before the same quest again, offerWait days an unanswered offer is kept.",
-    config: {
-      enabled: true,
-      max: 3,
-      offerGap: [2, 4],
-      stepDays: 1,
-      cooldownDays: 10,
-      offerWait: 2,
-      priority: 6,
-      maxDelay: 2,
-      rewardByFire: [1, 1, 1.5, 2, 5, 7, 9, 12, 15, 19, 24],
-      costMulMedieval: 5,
-      decline: "Kh\xF4ng nh\u1EADn vi\u1EC7c n\xE0y.",
-      declineReply: "V\u1EADy th\xF4i. T\xF4i s\u1EBD h\u1ECFi n\u01A1i kh\xE1c.",
-      blueprintInstead: { coin: 6 }
-    },
+    _note: "Side quests (doc/story_tree.md 'Nhi\u1EC7m v\u1EE5 ph\u1EE5', src/sim/sidequests.ts): apart from the story tree, reward only, no deed, no flag. A quest is 2 or 3 steps; each step is a small talk at the gate (a visitor script made by sidequestdata.ts, id sq:<quest>:<step>, with ':m' in the medieval age). Step 0 is the offer: any option but the added refusal (config.decline) takes the quest. An option: text (the button), reply (what the visitor answers), tag (kept: the reward adds reward.by[tag]), cost (paid when chosen; times config.costMulMedieval in the medieval age), cond (shown only when it holds, e.g. soldiers>=2), roll { p, fail (the answer when it goes wrong), ends (the quest is lost) or tag (kept in place of the option's tag), bonus [{ cond, add }] (added to p while the condition holds: an assassin of our own `spec.assassin>=1`, the mark L\u1ED9 `mark.lo>=4`) }. cast: the character (data/characters) who comes for a step (default: giver). days: game days to finish it after it is taken. reward: base goods plus by[tag] goods, all times config.rewardByFire[Nh\xE0 chung level]; rel: relation with the giver's village; blueprint: true, or a tag that must be held: one specialist not yet open is opened (if none is left, config.blueprintInstead goods). config: enabled (false: only the dev switch sends them; a flag of the story tree listed in from_flags.json makes its quest likelier), max at once (offers count), offerGap days between offers, stepDays between steps, cooldownDays before the same quest again, offerWait days an unanswered offer is kept. A step with `field` is played on the map when it can be (missions.ts; else its talk and dice): kind bandits | escort | guard, go (what the visitor says), say (Nh\u1EADt k\xFD), count of foes, soldiers needed, days, skipTo (the step after a win), tagWin (kept when a foe fell), win / lose lines. config.map: the switch and the numbers of the stage.",
+    config: { enabled: true, max: 3, offerGap: [2, 4], stepDays: 1, cooldownDays: 10, offerWait: 2, priority: 6, maxDelay: 2, rewardByFire: [1, 1, 1.5, 2, 5, 7, 9, 12, 15, 19, 24], costMulMedieval: 5, decline: "Kh\xF4ng nh\u1EADn vi\u1EC7c n\xE0y.", declineReply: "V\u1EADy th\xF4i. T\xF4i s\u1EBD h\u1ECFi n\u01A1i kh\xE1c.", blueprintInstead: { coin: 6 }, map: { enabled: true, dist: 20, minDist: 9, lead: 7, escortArc: 1.9, ambushAt: 6, killerDelay: 45, moreMedieval: 2, weapons: { stone: ["club", "spear"], ancient: ["bronze_sword", "short_spear"] } } },
     quests: [
       {
         id: "escort_salt",
@@ -203825,17 +203850,9 @@ ${risk.lines.join("\n")}`);
         fire: [1, 10],
         days: 4,
         steps: [
-          { say: ["T\xF4i ch\u1EDF mu\u1ED1i qua \u0111\xE8o, m\xE0 \u0111\xE8o d\u1EA1o n\xE0y kh\xF4ng y\xEAn.", "Cho t\xF4i m\u01B0\u1EE3n ng\u01B0\u1EDDi d\u1EABn \u0111\u01B0\u1EDDng, t\u1EDBi n\u01A1i t\xF4i chia ph\u1EA7n."], options: [
-            { text: "\u0110i \u0111\u01B0\u1EDDng t\u1EAFt qua \u0111\xE8o.", reply: "Nhanh \u0111\u1EA5y. Mong l\xE0 th\xFA d\u1EEF h\xF4m \u0111\xF3 ng\u1EE7 mu\u1ED9n.", tag: "short" },
-            { text: "\u0110i \u0111\u01B0\u1EDDng v\xF2ng d\u01B0\u1EDBi thung.", reply: "Ch\u1EADm m\xE0 ch\u1EAFc. T\xF4i th\xEDch ng\u01B0\u1EDDi c\u1EA9n th\u1EADn.", tag: "long" }
-          ] },
-          { cast: "assassin", say: ["Gi\u1EEFa \u0111\u01B0\u1EDDng c\xF3 m\u1EA5y k\u1EBB ch\u1EB7n l\u1EA1i.", "Mu\u1ED1i \u0111\u1EC3 l\u1EA1i m\u1ED9t n\u1EEDa th\xEC \u0111i. Kh\xF4ng th\xEC kh\u1ECFi \u0111i."], options: [
-            { text: "\u0110\xE1nh \u0111u\u1ED5i ch\xFAng.", cond: "soldiers>=2", reply: "Ch\xFAng b\u1ECF ch\u1EA1y, \u0111\u1EC3 l\u1EA1i c\u1EA3 t\xFAi da.", tag: "fight", roll: { p: 0.75, fail: "Ch\xFAng \u0111\xF4ng h\u01A1n t\u01B0\u1EDFng. Ng\u01B0\u1EDDi c\u1EE7a b\u1EA1n r\xFAt \u0111\u01B0\u1EE3c, nh\u01B0ng mu\u1ED1i m\u1EA5t n\u1EEDa.", tag: "robbed" } },
-            { text: "Tr\u1EA3 ti\u1EC1n qua \u0111\u01B0\u1EDDng.", cost: { coin: 1 }, reply: "Bi\u1EBFt \u0111i\u1EC1u. \u0110i \u0111i.", tag: "paid" }
-          ] },
-          { say: ["T\u1EDBi n\u01A1i r\u1ED3i. Mu\u1ED1i c\xF2n, ng\u01B0\u1EDDi c\xF2n.", "\u0110\xE2y l\xE0 ph\u1EA7n c\u1EE7a l\xE0ng b\u1EA1n, nh\u01B0 \u0111\xE3 h\u1EE9a."], options: [
-            { text: "Nh\u1EADn ph\u1EA7n.", reply: "L\u1EA7n sau qua \u0111\xE8o t\xF4i l\u1EA1i gh\xE9." }
-          ] }
+          { say: ["T\xF4i ch\u1EDF mu\u1ED1i qua \u0111\xE8o, m\xE0 \u0111\xE8o d\u1EA1o n\xE0y kh\xF4ng y\xEAn.", "Cho t\xF4i m\u01B0\u1EE3n ng\u01B0\u1EDDi d\u1EABn \u0111\u01B0\u1EDDng, t\u1EDBi n\u01A1i t\xF4i chia ph\u1EA7n."], options: [{ text: "\u0110i \u0111\u01B0\u1EDDng t\u1EAFt qua \u0111\xE8o.", reply: "Nhanh \u0111\u1EA5y. Mong l\xE0 th\xFA d\u1EEF h\xF4m \u0111\xF3 ng\u1EE7 mu\u1ED9n.", tag: "short" }, { text: "\u0110i \u0111\u01B0\u1EDDng v\xF2ng d\u01B0\u1EDBi thung.", reply: "Ch\u1EADm m\xE0 ch\u1EAFc. T\xF4i th\xEDch ng\u01B0\u1EDDi c\u1EA9n th\u1EADn.", tag: "long" }], field: { kind: "escort", go: "T\xF4i ch\u1EDD \u1EDF r\xECa l\xE0ng. Cho l\xEDnh ra \u0111\xF3n, h\u1ECD \u0111i t\u1EDBi \u0111\xE2u t\xF4i theo t\u1EDBi \u0111\xF3.", say: "th\u01B0\u01A1ng l\xE1i ch\u1EDD l\xEDnh ra \u0111\xF3n r\u1ED3i m\u1EDBi \u0111i; \u0111\u01B0a \xF4ng ta t\u1EDBi n\u01A1i", count: [2, 3], soldiers: 2, days: 2, skipTo: 2, tagWin: "fight", win: "Th\u01B0\u01A1ng l\xE1i \u0111\xE3 qua \u0111\xE8o an to\xE0n.", lose: "Th\u01B0\u01A1ng l\xE1i kh\xF4ng qua \u0111\u01B0\u1EE3c \u0111\xE8o." } },
+          { cast: "assassin", say: ["Gi\u1EEFa \u0111\u01B0\u1EDDng c\xF3 m\u1EA5y k\u1EBB ch\u1EB7n l\u1EA1i.", "Mu\u1ED1i \u0111\u1EC3 l\u1EA1i m\u1ED9t n\u1EEDa th\xEC \u0111i. Kh\xF4ng th\xEC kh\u1ECFi \u0111i."], options: [{ text: "\u0110\xE1nh \u0111u\u1ED5i ch\xFAng.", cond: "soldiers>=2", reply: "Ch\xFAng b\u1ECF ch\u1EA1y, \u0111\u1EC3 l\u1EA1i c\u1EA3 t\xFAi da.", tag: "fight", roll: { p: 0.75, fail: "Ch\xFAng \u0111\xF4ng h\u01A1n t\u01B0\u1EDFng. Ng\u01B0\u1EDDi c\u1EE7a b\u1EA1n r\xFAt \u0111\u01B0\u1EE3c, nh\u01B0ng mu\u1ED1i m\u1EA5t n\u1EEDa.", tag: "robbed" } }, { text: "Tr\u1EA3 ti\u1EC1n qua \u0111\u01B0\u1EDDng.", cost: { coin: 1 }, reply: "Bi\u1EBFt \u0111i\u1EC1u. \u0110i \u0111i.", tag: "paid" }] },
+          { say: ["T\u1EDBi n\u01A1i r\u1ED3i. Mu\u1ED1i c\xF2n, ng\u01B0\u1EDDi c\xF2n.", "\u0110\xE2y l\xE0 ph\u1EA7n c\u1EE7a l\xE0ng b\u1EA1n, nh\u01B0 \u0111\xE3 h\u1EE9a."], options: [{ text: "Nh\u1EADn ph\u1EA7n.", reply: "L\u1EA7n sau qua \u0111\xE8o t\xF4i l\u1EA1i gh\xE9." }] }
         ],
         reward: { base: { coin: 3 }, by: { short: { coin: 1 }, long: { food: 10 }, fight: { hide: 8 }, robbed: { coin: -1 } }, rel: 3 }
       },
@@ -203847,17 +203864,9 @@ ${risk.lines.join("\n")}`);
         fire: [2, 10],
         days: 4,
         steps: [
-          { say: ["T\xF4i mang l\u1EDDi c\u1EE7a l\xE0ng {tribe}, v\xE0 c\xF3 k\u1EBB kh\xF4ng mu\u1ED1n l\u1EDDi \u1EA5y t\u1EDBi n\u01A1i.", "Cho t\xF4i \u1EDF l\u1EA1i hai h\xF4m, t\xF4i s\u1EBD kh\xF4ng qu\xEAn."], options: [
-            { text: "\u1EDE c\u1EA1nh l\xEDnh g\xE1c c\u1EE7a l\xE0ng.", cond: "soldiers>=2", reply: "C\xF3 gi\xE1o \u0111\u1EE9ng c\u1EA1nh, t\xF4i ng\u1EE7 \u0111\u01B0\u1EE3c r\u1ED3i.", tag: "guard" },
-            { text: "Gi\u1EA5u trong m\u1ED9t nh\xE0 d\xE2n.", reply: "K\xEDn \u0111\xE1o. T\xF4i s\u1EBD kh\xF4ng ra kh\u1ECFi c\u1EEDa.", tag: "hide" }
-          ] },
-          { cast: "assassin", say: ["T\xF4i t\xECm m\u1ED9t ng\u01B0\u1EDDi quen \u0111i l\u1EA1c qua \u0111\xE2y.", "D\xE1ng cao, \xE1o xanh. L\xE0ng c\xF3 th\u1EA5y kh\xF4ng?"], options: [
-            { text: "\u0110u\u1ED5i h\u1EAFn \u0111i.", cond: "soldiers>=1", reply: "H\u1EAFn nh\xECn m\u1EA5y ng\u1ECDn gi\xE1o, r\u1ED3i quay l\u01B0ng.", tag: "chased" },
-            { text: "N\xF3i d\u1ED1i l\xE0 kh\xF4ng th\u1EA5y ai.", reply: "H\u1EAFn g\u1EADt \u0111\u1EA7u, \u0111i ti\u1EBFp v\u1EC1 ph\xEDa n\xFAi.", tag: "lied", roll: { p: 0.65, fail: "H\u1EAFn c\u01B0\u1EDDi nh\u1EA1t. \u0110\xEAm \u0111\xF3 s\u1EE9 gi\u1EA3 ph\u1EA3i tr\u1ED1n \u0111i tr\u01B0\u1EDBc khi tr\u1EDDi s\xE1ng.", ends: true } }
-          ] },
-          { say: ["Hai h\xF4m \u0111\xE3 qua, t\xF4i ph\u1EA3i \u0111i ti\u1EBFp.", "L\xE0ng {tribe} g\u1EEDi ch\xFAt qu\xE0 c\u1EA3m \u01A1n."], options: [
-            { text: "Ch\xFAc \u0111i \u0111\u01B0\u1EDDng b\xECnh an.", reply: "B\xECnh an cho c\u1EA3 l\xE0ng b\u1EA1n." }
-          ] }
+          { say: ["T\xF4i mang l\u1EDDi c\u1EE7a l\xE0ng {tribe}, v\xE0 c\xF3 k\u1EBB kh\xF4ng mu\u1ED1n l\u1EDDi \u1EA5y t\u1EDBi n\u01A1i.", "Cho t\xF4i \u1EDF l\u1EA1i hai h\xF4m, t\xF4i s\u1EBD kh\xF4ng qu\xEAn."], options: [{ text: "\u1EDE c\u1EA1nh l\xEDnh g\xE1c c\u1EE7a l\xE0ng.", cond: "soldiers>=2", reply: "C\xF3 gi\xE1o \u0111\u1EE9ng c\u1EA1nh, t\xF4i ng\u1EE7 \u0111\u01B0\u1EE3c r\u1ED3i.", tag: "guard" }, { text: "Gi\u1EA5u trong m\u1ED9t nh\xE0 d\xE2n.", reply: "K\xEDn \u0111\xE1o. T\xF4i s\u1EBD kh\xF4ng ra kh\u1ECFi c\u1EEDa.", tag: "hide" }], field: { kind: "guard", go: "T\xF4i d\u1EF1ng l\u1EC1u ngo\xE0i r\xECa l\xE0ng. Xin cho l\xEDnh \u1EDF g\u1EA7n t\xF4i v\xE0i h\xF4m.", say: "s\u1EE9 gi\u1EA3 d\u1EF1ng l\u1EC1u ngo\xE0i r\xECa l\xE0ng; gi\u1EEF l\xEDnh \u1EDF g\u1EA7n", count: [2, 2], soldiers: 2, days: 2, skipTo: 2, tagWin: "chased", win: "S\u1EE9 gi\u1EA3 v\u1EABn b\xECnh an.", lose: "S\u1EE9 gi\u1EA3 \u0111\xE3 b\u1ECB h\u1EA1i." } },
+          { cast: "assassin", say: ["T\xF4i t\xECm m\u1ED9t ng\u01B0\u1EDDi quen \u0111i l\u1EA1c qua \u0111\xE2y.", "D\xE1ng cao, \xE1o xanh. L\xE0ng c\xF3 th\u1EA5y kh\xF4ng?"], options: [{ text: "\u0110u\u1ED5i h\u1EAFn \u0111i.", cond: "soldiers>=1", reply: "H\u1EAFn nh\xECn m\u1EA5y ng\u1ECDn gi\xE1o, r\u1ED3i quay l\u01B0ng.", tag: "chased" }, { text: "N\xF3i d\u1ED1i l\xE0 kh\xF4ng th\u1EA5y ai.", reply: "H\u1EAFn g\u1EADt \u0111\u1EA7u, \u0111i ti\u1EBFp v\u1EC1 ph\xEDa n\xFAi.", tag: "lied", roll: { p: 0.65, fail: "H\u1EAFn c\u01B0\u1EDDi nh\u1EA1t. \u0110\xEAm \u0111\xF3 s\u1EE9 gi\u1EA3 ph\u1EA3i tr\u1ED1n \u0111i tr\u01B0\u1EDBc khi tr\u1EDDi s\xE1ng.", ends: true } }] },
+          { say: ["Hai h\xF4m \u0111\xE3 qua, t\xF4i ph\u1EA3i \u0111i ti\u1EBFp.", "L\xE0ng {tribe} g\u1EEDi ch\xFAt qu\xE0 c\u1EA3m \u01A1n."], options: [{ text: "Ch\xFAc \u0111i \u0111\u01B0\u1EDDng b\xECnh an.", reply: "B\xECnh an cho c\u1EA3 l\xE0ng b\u1EA1n." }] }
         ],
         reward: { base: { food: 15, coin: 2 }, by: { guard: { coin: 1 }, chased: { hide: 6 } }, rel: 5 }
       },
@@ -203869,17 +203878,9 @@ ${risk.lines.join("\n")}`);
         fire: [3, 10],
         days: 4,
         steps: [
-          { say: ["C\xF3 m\u1ED9t t\xEAn c\u1EA7m \u0111\u1EA7u to\xE1n c\u01B0\u1EDBp. Ai \u0111\xF3 mu\u1ED1n h\u1EAFn bi\u1EBFn m\u1EA5t.", "V\u1ECF s\xF2 nhi\u1EC1u. Kh\xF4ng ai c\u1EA7n bi\u1EBFt l\xE0ng b\u1EA1n c\xF3 d\xEDnh v\xE0o."], options: [
-            { text: "C\u1EED ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111i l\xE0m.", cond: "soldiers>=3", reply: "T\u1EF1 tay l\xE0m th\xEC ph\u1EA7n c\u0169ng l\u1EDBn h\u01A1n.", tag: "own" },
-            { text: "Ch\u1EC9 \u0111\u01B0\u1EDDng, \u0111\u1EC3 h\u1EAFn t\u1EF1 ra tay.", cost: { coin: 1 }, reply: "M\u1ED9t ng\u01B0\u1EDDi d\u1EABn \u0111\u01B0\u1EDDng l\xE0 \u0111\u1EE7. Ph\u1EA7n c\xF2n l\u1EA1i \u0111\u1EC3 t\xF4i.", tag: "guide" }
-          ] },
-          { say: ["\u0110\xEAm nay h\u1EAFn ng\u1EE7 trong tr\u1EA1i, quanh h\u1EAFn c\xF3 s\xE1u ng\u01B0\u1EDDi.", "V\xE0o ngay, hay ch\u1EDD h\u1EAFn ra su\u1ED1i m\u1ED9t m\xECnh?"], options: [
-            { text: "L\u1EBBn v\xE0o ngay \u0111\xEAm nay.", reply: "Xong tr\u01B0\u1EDBc khi g\xE0 g\xE1y. Kh\xF4ng ai k\u1ECBp k\xEAu.", tag: "fast", roll: { p: 0.6, bonus: [{ cond: "spec.assassin>=1", add: 0.25 }, { cond: "mark.lo>=4", add: -0.15 }], fail: "M\u1ED9t con ch\xF3 s\u1EE7a. C\u1EA3 tr\u1EA1i th\u1EE9c d\u1EADy, vi\u1EC7c h\u1ECFng, ai n\u1EA5y t\u1EF1 ch\u1EA1y.", ends: true } },
-            { text: "Ch\u1EDD h\u1EAFn ra su\u1ED1i.", reply: "Ba h\xF4m ch\u1EDD. R\u1ED3i h\u1EAFn ra su\u1ED1i, v\xE0 kh\xF4ng v\u1EC1.", tag: "slow", roll: { p: 0.9, bonus: [{ cond: "mark.lo>=4", add: -0.15 }], fail: "H\u1EAFn kh\xF4ng ra su\u1ED1i n\u1EEFa. C\xF3 k\u1EBB \u0111\xE3 b\xE1o tr\u01B0\u1EDBc. Vi\u1EC7c h\u1ECFng.", ends: true } }
-          ] },
-          { say: ["Vi\u1EC7c \u0111\xE3 xong. Kh\xF4ng ai nh\u1EAFc t\xEAn l\xE0ng b\u1EA1n.", "Ph\u1EA7n c\u1EE7a b\u1EA1n \u0111\xE2y."], options: [
-            { text: "Nh\u1EADn v\u1ECF s\xF2.", reply: "Ta ch\u01B0a t\u1EEBng g\u1EB7p nhau." }
-          ] }
+          { say: ["C\xF3 m\u1ED9t t\xEAn c\u1EA7m \u0111\u1EA7u to\xE1n c\u01B0\u1EDBp. Ai \u0111\xF3 mu\u1ED1n h\u1EAFn bi\u1EBFn m\u1EA5t.", "V\u1ECF s\xF2 nhi\u1EC1u. Kh\xF4ng ai c\u1EA7n bi\u1EBFt l\xE0ng b\u1EA1n c\xF3 d\xEDnh v\xE0o."], options: [{ text: "C\u1EED ng\u01B0\u1EDDi c\u1EE7a l\xE0ng \u0111i l\xE0m.", cond: "soldiers>=3", reply: "T\u1EF1 tay l\xE0m th\xEC ph\u1EA7n c\u0169ng l\u1EDBn h\u01A1n.", tag: "own" }, { text: "Ch\u1EC9 \u0111\u01B0\u1EDDng, \u0111\u1EC3 h\u1EAFn t\u1EF1 ra tay.", cost: { coin: 1 }, reply: "M\u1ED9t ng\u01B0\u1EDDi d\u1EABn \u0111\u01B0\u1EDDng l\xE0 \u0111\u1EE7. Ph\u1EA7n c\xF2n l\u1EA1i \u0111\u1EC3 t\xF4i.", tag: "guide" }] },
+          { say: ["\u0110\xEAm nay h\u1EAFn ng\u1EE7 trong tr\u1EA1i, quanh h\u1EAFn c\xF3 s\xE1u ng\u01B0\u1EDDi.", "V\xE0o ngay, hay ch\u1EDD h\u1EAFn ra su\u1ED1i m\u1ED9t m\xECnh?"], options: [{ text: "L\u1EBBn v\xE0o ngay \u0111\xEAm nay.", reply: "Xong tr\u01B0\u1EDBc khi g\xE0 g\xE1y. Kh\xF4ng ai k\u1ECBp k\xEAu.", tag: "fast", roll: { p: 0.6, bonus: [{ cond: "spec.assassin>=1", add: 0.25 }, { cond: "mark.lo>=4", add: -0.15 }], fail: "M\u1ED9t con ch\xF3 s\u1EE7a. C\u1EA3 tr\u1EA1i th\u1EE9c d\u1EADy, vi\u1EC7c h\u1ECFng, ai n\u1EA5y t\u1EF1 ch\u1EA1y.", ends: true } }, { text: "Ch\u1EDD h\u1EAFn ra su\u1ED1i.", reply: "Ba h\xF4m ch\u1EDD. R\u1ED3i h\u1EAFn ra su\u1ED1i, v\xE0 kh\xF4ng v\u1EC1.", tag: "slow", roll: { p: 0.9, bonus: [{ cond: "mark.lo>=4", add: -0.15 }], fail: "H\u1EAFn kh\xF4ng ra su\u1ED1i n\u1EEFa. C\xF3 k\u1EBB \u0111\xE3 b\xE1o tr\u01B0\u1EDBc. Vi\u1EC7c h\u1ECFng.", ends: true } }] },
+          { say: ["Vi\u1EC7c \u0111\xE3 xong. Kh\xF4ng ai nh\u1EAFc t\xEAn l\xE0ng b\u1EA1n.", "Ph\u1EA7n c\u1EE7a b\u1EA1n \u0111\xE2y."], options: [{ text: "Nh\u1EADn v\u1ECF s\xF2.", reply: "Ta ch\u01B0a t\u1EEBng g\u1EB7p nhau." }] }
         ],
         reward: { base: { coin: 5 }, by: { own: { coin: 3 }, fast: { coin: 2 } } }
       },
@@ -203891,17 +203892,9 @@ ${risk.lines.join("\n")}`);
         fire: [2, 10],
         days: 4,
         steps: [
-          { say: ["To\xE1n c\u01B0\u1EDBp gi\u1EEF hai ng\u01B0\u1EDDi l\xE0ng {tribe}. L\xE0ng t\xF4i kh\xF4ng \u0111\u1EE7 ng\u01B0\u1EDDi \u0111\u1EC3 \u0111\xF2i.", "Gi\xFAp ch\xFAng t\xF4i \u0111\u01B0a h\u1ECD v\u1EC1."], options: [
-            { text: "\u0110em qu\xE2n t\u1EDBi \u0111\xF2i ng\u01B0\u1EDDi.", cond: "soldiers>=3", reply: "C\xF3 gi\xE1o sau l\u01B0ng th\xEC l\u1EDDi n\xF3i n\u1EB7ng h\u01A1n h\u1EB3n.", tag: "force" },
-            { text: "G\xF3p l\u01B0\u01A1ng th\u1EF1c \u0111\u1EC3 chu\u1ED9c.", cost: { food: 12 }, reply: "Chu\u1ED9c th\xEC kh\xF4ng ai \u0111\u1ED5 m\xE1u. C\u1EA3m \u01A1n l\xE0ng b\u1EA1n.", tag: "ransom" }
-          ] },
-          { cast: "assassin", say: ["Hai ng\u01B0\u1EDDi th\xEC hai gi\xE1.", "Mu\u1ED1n d\u1EAFt c\u1EA3 hai v\u1EC1 th\xEC th\xEAm ch\xFAt n\u1EEFa."], options: [
-            { text: "Kh\xF4ng th\xEAm g\xEC h\u1EBFt. Th\u1EA3 ng\u01B0\u1EDDi.", cond: "soldiers>=3", reply: "H\u1EAFn nh\xECn h\xE0ng gi\xE1o, nh\u1ED5 n\u01B0\u1EDBc b\u1ECDt, r\u1ED3i c\u1EDFi tr\xF3i.", tag: "firm", roll: { p: 0.7, fail: "Ch\xFAng k\xE9o con tin v\xE0o r\u1EEBng tr\u01B0\u1EDBc khi ai k\u1ECBp l\xE0m g\xEC. M\u1EA5t d\u1EA5u.", ends: true } },
-            { text: "Th\xEAm m\u1ED9t \xEDt v\u1ECF s\xF2.", cost: { coin: 1 }, reply: "Th\u1EBF m\u1EDBi l\xE0 n\xF3i chuy\u1EC7n. D\u1EAFt \u0111i.", tag: "extra" }
-          ] },
-          { say: ["H\u1ECD v\u1EC1 t\u1EDBi nh\xE0 r\u1ED3i, g\u1EA7y nh\u01B0ng c\xF2n s\u1ED1ng.", "L\xE0ng {tribe} kh\xF4ng c\xF3 nhi\u1EC1u, nh\u01B0ng xin nh\u1EADn cho."], options: [
-            { text: "Nh\u1EADn qu\xE0 c\u1EE7a l\xE0ng.", reply: "C\u1EEDa l\xE0ng t\xF4i lu\xF4n m\u1EDF v\u1EDBi l\xE0ng b\u1EA1n." }
-          ] }
+          { say: ["To\xE1n c\u01B0\u1EDBp gi\u1EEF hai ng\u01B0\u1EDDi l\xE0ng {tribe}. L\xE0ng t\xF4i kh\xF4ng \u0111\u1EE7 ng\u01B0\u1EDDi \u0111\u1EC3 \u0111\xF2i.", "Gi\xFAp ch\xFAng t\xF4i \u0111\u01B0a h\u1ECD v\u1EC1."], options: [{ text: "\u0110em qu\xE2n t\u1EDBi \u0111\xF2i ng\u01B0\u1EDDi.", cond: "soldiers>=3", reply: "C\xF3 gi\xE1o sau l\u01B0ng th\xEC l\u1EDDi n\xF3i n\u1EB7ng h\u01A1n h\u1EB3n.", tag: "force" }, { text: "G\xF3p l\u01B0\u01A1ng th\u1EF1c \u0111\u1EC3 chu\u1ED9c.", cost: { food: 12 }, reply: "Chu\u1ED9c th\xEC kh\xF4ng ai \u0111\u1ED5 m\xE1u. C\u1EA3m \u01A1n l\xE0ng b\u1EA1n.", tag: "ransom" }] },
+          { cast: "assassin", say: ["Hai ng\u01B0\u1EDDi th\xEC hai gi\xE1.", "Mu\u1ED1n d\u1EAFt c\u1EA3 hai v\u1EC1 th\xEC th\xEAm ch\xFAt n\u1EEFa."], options: [{ text: "Kh\xF4ng th\xEAm g\xEC h\u1EBFt. Th\u1EA3 ng\u01B0\u1EDDi.", cond: "soldiers>=3", reply: "H\u1EAFn nh\xECn h\xE0ng gi\xE1o, nh\u1ED5 n\u01B0\u1EDBc b\u1ECDt, r\u1ED3i c\u1EDFi tr\xF3i.", tag: "firm", roll: { p: 0.7, fail: "Ch\xFAng k\xE9o con tin v\xE0o r\u1EEBng tr\u01B0\u1EDBc khi ai k\u1ECBp l\xE0m g\xEC. M\u1EA5t d\u1EA5u.", ends: true } }, { text: "Th\xEAm m\u1ED9t \xEDt v\u1ECF s\xF2.", cost: { coin: 1 }, reply: "Th\u1EBF m\u1EDBi l\xE0 n\xF3i chuy\u1EC7n. D\u1EAFt \u0111i.", tag: "extra" }] },
+          { say: ["H\u1ECD v\u1EC1 t\u1EDBi nh\xE0 r\u1ED3i, g\u1EA7y nh\u01B0ng c\xF2n s\u1ED1ng.", "L\xE0ng {tribe} kh\xF4ng c\xF3 nhi\u1EC1u, nh\u01B0ng xin nh\u1EADn cho."], options: [{ text: "Nh\u1EADn qu\xE0 c\u1EE7a l\xE0ng.", reply: "C\u1EEDa l\xE0ng t\xF4i lu\xF4n m\u1EDF v\u1EDBi l\xE0ng b\u1EA1n." }] }
         ],
         reward: { base: { food: 20 }, by: { force: { hide: 6 }, firm: { coin: 2 } }, rel: 8 }
       },
@@ -203914,14 +203907,8 @@ ${risk.lines.join("\n")}`);
         days: 3,
         cond: "soldiers>=2",
         steps: [
-          { say: ["M\u1ED9t to\xE1n c\u01B0\u1EDBp ch\u1EB7n \u0111\u01B0\u1EDDng ra ru\u1ED9ng c\u1EE7a l\xE0ng {tribe}.", "L\xE0ng t\xF4i gi\xE0 y\u1EBFu c\u1EA3. L\xE0ng b\u1EA1n c\xF3 l\xEDnh."], options: [
-            { text: "\u0110\xE1nh th\u1EB3ng v\xE0o ban ng\xE0y.", cond: "soldiers>=4", reply: "Ch\xFAng kh\xF4ng ng\u1EDD c\xF3 ng\u01B0\u1EDDi d\xE1m t\u1EDBi gi\u1EEFa tr\u01B0a. Tan ngay.", tag: "strike" },
-            { text: "Ph\u1EE5c k\xEDch l\xFAc ch\xFAng v\u1EC1 tr\u1EA1i.", cond: "soldiers>=2", reply: "\xCDt ng\u01B0\u1EDDi th\xEC ph\u1EA3i kh\xE9o. Ch\xFAc may m\u1EAFn.", tag: "ambush", roll: { p: 0.75, fail: "Ch\xFAng v\u1EC1 b\u1EB1ng l\u1ED1i kh\xE1c. Mai ph\u1EE5c c\u1EA3 \u0111\xEAm, kh\xF4ng g\u1EB7p ai.", ends: true } }
-          ] },
-          { say: ["To\xE1n c\u01B0\u1EDBp tan r\u1ED3i, c\xF2n ba \u0111\u1EE9a b\u1ECB b\u1EAFt.", "L\xE0ng b\u1EA1n b\u1EAFt \u0111\u01B0\u1EE3c, l\xE0ng b\u1EA1n quy\u1EBFt."], options: [
-            { text: "Tha cho ch\xFAng \u0111i.", reply: "Ng\u01B0\u1EDDi hi\u1EC1n. Mong ch\xFAng nh\u1EDB \u01A1n.", tag: "mercy" },
-            { text: "Giao cho l\xE0ng {tribe} x\u1EED.", reply: "Ch\xFAng s\u1EBD \u0111\u1EAFp l\u1EA1i con \u0111\u01B0\u1EDDng ch\xFAng \u0111\xE3 ch\u1EB7n.", tag: "justice" }
-          ] }
+          { say: ["M\u1ED9t to\xE1n c\u01B0\u1EDBp ch\u1EB7n \u0111\u01B0\u1EDDng ra ru\u1ED9ng c\u1EE7a l\xE0ng {tribe}.", "L\xE0ng t\xF4i gi\xE0 y\u1EBFu c\u1EA3. L\xE0ng b\u1EA1n c\xF3 l\xEDnh."], options: [{ text: "\u0110\xE1nh th\u1EB3ng v\xE0o ban ng\xE0y.", cond: "soldiers>=4", reply: "Ch\xFAng kh\xF4ng ng\u1EDD c\xF3 ng\u01B0\u1EDDi d\xE1m t\u1EDBi gi\u1EEFa tr\u01B0a. Tan ngay.", tag: "strike" }, { text: "Ph\u1EE5c k\xEDch l\xFAc ch\xFAng v\u1EC1 tr\u1EA1i.", cond: "soldiers>=2", reply: "\xCDt ng\u01B0\u1EDDi th\xEC ph\u1EA3i kh\xE9o. Ch\xFAc may m\u1EAFn.", tag: "ambush", roll: { p: 0.75, fail: "Ch\xFAng v\u1EC1 b\u1EB1ng l\u1ED1i kh\xE1c. Mai ph\u1EE5c c\u1EA3 \u0111\xEAm, kh\xF4ng g\u1EB7p ai.", ends: true } }], field: { kind: "bandits", go: "Ch\xFAng \u0111\xF3ng tr\u1EA1i kh\xF4ng xa l\xE0ng b\u1EA1n. \u0110em l\xEDnh t\u1EDBi d\u1EB9p, xong t\xF4i s\u1EBD quay l\u1EA1i.", say: "to\xE1n c\u01B0\u1EDBp \u0111\xF3ng tr\u1EA1i, \u0111em l\xEDnh t\u1EDBi d\u1EB9p", count: [3, 5], soldiers: 2, days: 2, win: "To\xE1n c\u01B0\u1EDBp \u0111\xE3 b\u1ECB d\u1EB9p tan.", lose: "To\xE1n c\u01B0\u1EDBp \u0111\xE3 nh\u1ED5 tr\u1EA1i \u0111i n\u01A1i kh\xE1c tr\u01B0\u1EDBc khi l\xEDnh l\xE0ng t\u1EDBi." } },
+          { say: ["To\xE1n c\u01B0\u1EDBp tan r\u1ED3i, c\xF2n ba \u0111\u1EE9a b\u1ECB b\u1EAFt.", "L\xE0ng b\u1EA1n b\u1EAFt \u0111\u01B0\u1EE3c, l\xE0ng b\u1EA1n quy\u1EBFt."], options: [{ text: "Tha cho ch\xFAng \u0111i.", reply: "Ng\u01B0\u1EDDi hi\u1EC1n. Mong ch\xFAng nh\u1EDB \u01A1n.", tag: "mercy" }, { text: "Giao cho l\xE0ng {tribe} x\u1EED.", reply: "Ch\xFAng s\u1EBD \u0111\u1EAFp l\u1EA1i con \u0111\u01B0\u1EDDng ch\xFAng \u0111\xE3 ch\u1EB7n.", tag: "justice" }] }
         ],
         reward: { base: { wood: 20, stone: 12 }, by: { strike: { hide: 8 }, mercy: { food: 8 }, justice: { coin: 2 } }, rel: 5 }
       },
@@ -203933,17 +203920,9 @@ ${risk.lines.join("\n")}`);
         fire: [3, 10],
         days: 4,
         steps: [
-          { say: ["L\xE1 th\u01B0 n\xE0y ph\u1EA3i t\u1EDBi tay m\u1ED9t ng\u01B0\u1EDDi \u1EDF ch\u1EE3 phi\xEAn, kh\xF4ng qua tay ai kh\xE1c.", "Ng\u01B0\u1EDDi l\xE0ng b\u1EA1n \u0111i ch\u1EE3 th\xEC kh\xF4ng ai \u0111\u1EC3 \xFD."], options: [
-            { text: "\u0110i theo \u0111\u01B0\u1EDDng l\u1EDBn.", reply: "\u0110\xF4ng ng\u01B0\u1EDDi, d\u1EC5 l\u1EABn. \u0110\u01B0\u1EE3c.", tag: "road" },
-            { text: "\u0110i l\u1ED1i r\u1EEBng.", reply: "V\u1EAFng ng\u01B0\u1EDDi, kh\xF3 theo d\xF5i. C\u0169ng \u0111\u01B0\u1EE3c.", tag: "wood" }
-          ] },
-          { cast: "mole", say: ["N\xE0y, ng\u01B0\u1EDDi l\xE0ng b\xEAn. Trong b\u1ECDc c\xF3 g\xEC th\u1EBF?", "D\u1EA1o n\xE0y c\xF3 ng\u01B0\u1EDDi \u0111\u01B0a th\u01B0 l\xE9n. Cho t\xF4i xem m\u1ED9t ch\xFAt."], options: [
-            { text: "\u0110\u01B0a ra m\u1ED9t b\u1ECDc h\u1EA1t gi\u1ED1ng.", reply: "H\u1EA1t gi\u1ED1ng \xE0. Th\xF4i \u0111i \u0111i.", tag: "trick", roll: { p: 0.65, fail: "C\xF4 ta l\u1EADt c\u1EA3 b\u1ECDc l\xEAn. Th\u01B0 b\u1ECB \u0111\u1ECDc tr\u01B0\u1EDBc khi t\u1EDBi n\u01A1i.", tag: "read" } },
-            { text: "D\xFAi cho \xEDt v\u1ECF s\xF2.", cost: { coin: 1 }, reply: "T\xF4i ch\u01B0a th\u1EA5y ai qua \u0111\xE2y c\u1EA3.", tag: "bribe" }
-          ] },
-          { say: ["Th\u01B0 t\u1EDBi n\u01A1i r\u1ED3i.", "T\xF4i tr\u1EA3 b\u1EB1ng th\u1EE9 t\xF4i c\xF3: tin t\u1EE9c, v\xE0 \xEDt v\u1ECF s\xF2."], options: [
-            { text: "Nh\u1EADn c\xF4ng.", reply: "N\u1EBFu ai h\u1ECFi, b\u1EA1n ch\u1EC9 \u0111i ch\u1EE3 th\xF4i." }
-          ] }
+          { say: ["L\xE1 th\u01B0 n\xE0y ph\u1EA3i t\u1EDBi tay m\u1ED9t ng\u01B0\u1EDDi \u1EDF ch\u1EE3 phi\xEAn, kh\xF4ng qua tay ai kh\xE1c.", "Ng\u01B0\u1EDDi l\xE0ng b\u1EA1n \u0111i ch\u1EE3 th\xEC kh\xF4ng ai \u0111\u1EC3 \xFD."], options: [{ text: "\u0110i theo \u0111\u01B0\u1EDDng l\u1EDBn.", reply: "\u0110\xF4ng ng\u01B0\u1EDDi, d\u1EC5 l\u1EABn. \u0110\u01B0\u1EE3c.", tag: "road" }, { text: "\u0110i l\u1ED1i r\u1EEBng.", reply: "V\u1EAFng ng\u01B0\u1EDDi, kh\xF3 theo d\xF5i. C\u0169ng \u0111\u01B0\u1EE3c.", tag: "wood" }] },
+          { cast: "mole", say: ["N\xE0y, ng\u01B0\u1EDDi l\xE0ng b\xEAn. Trong b\u1ECDc c\xF3 g\xEC th\u1EBF?", "D\u1EA1o n\xE0y c\xF3 ng\u01B0\u1EDDi \u0111\u01B0a th\u01B0 l\xE9n. Cho t\xF4i xem m\u1ED9t ch\xFAt."], options: [{ text: "\u0110\u01B0a ra m\u1ED9t b\u1ECDc h\u1EA1t gi\u1ED1ng.", reply: "H\u1EA1t gi\u1ED1ng \xE0. Th\xF4i \u0111i \u0111i.", tag: "trick", roll: { p: 0.65, fail: "C\xF4 ta l\u1EADt c\u1EA3 b\u1ECDc l\xEAn. Th\u01B0 b\u1ECB \u0111\u1ECDc tr\u01B0\u1EDBc khi t\u1EDBi n\u01A1i.", tag: "read" } }, { text: "D\xFAi cho \xEDt v\u1ECF s\xF2.", cost: { coin: 1 }, reply: "T\xF4i ch\u01B0a th\u1EA5y ai qua \u0111\xE2y c\u1EA3.", tag: "bribe" }] },
+          { say: ["Th\u01B0 t\u1EDBi n\u01A1i r\u1ED3i.", "T\xF4i tr\u1EA3 b\u1EB1ng th\u1EE9 t\xF4i c\xF3: tin t\u1EE9c, v\xE0 \xEDt v\u1ECF s\xF2."], options: [{ text: "Nh\u1EADn c\xF4ng.", reply: "N\u1EBFu ai h\u1ECFi, b\u1EA1n ch\u1EC9 \u0111i ch\u1EE3 th\xF4i." }] }
         ],
         reward: { base: { coin: 4 }, by: { trick: { coin: 2 }, read: { coin: -2 }, wood: { hide: 5 } }, rel: 2 }
       },
@@ -203955,14 +203934,8 @@ ${risk.lines.join("\n")}`);
         fire: [1, 10],
         days: 3,
         steps: [
-          { say: ["Hai nh\xE0 \u1EDF l\xE0ng {tribe} gi\xE0nh nhau m\u1ED9t con su\u1ED1i, s\u1EAFp c\u1EA7m g\u1EADy t\u1EDBi n\u01A1i.", "Ng\u01B0\u1EDDi ngo\xE0i n\xF3i th\xEC h\u1ECD m\u1EDBi ch\u1ECBu nghe. B\u1EA1n gi\xFAp m\u1ED9t l\u1EDDi."], options: [
-            { text: "Nghe h\u1EBFt c\u1EA3 hai nh\xE0 \u0111\xE3.", reply: "M\u1EA5t c\u1EA3 bu\u1ED5i, nh\u01B0ng kh\xF4ng ai n\xF3i l\xE0 m\xECnh b\u1ECB b\u1ECF qua.", tag: "listen" },
-            { text: "Ph\xE1n lu\xF4n cho nhanh.", reply: "Nhanh th\u1EADt. Mong l\xE0 c\u1EA3 hai c\xF9ng ch\u1ECBu.", tag: "quick" }
-          ] },
-          { say: ["Gi\u1EDD th\xEC h\u1ECD ch\u1EDD l\u1EDDi c\u1EE7a b\u1EA1n.", "Su\u1ED1i th\xEC ch\u1EC9 c\xF3 m\u1ED9t."], options: [
-            { text: "Chia su\u1ED1i theo ng\xE0y: m\u1ED7i nh\xE0 m\u1ED9t ng\xE0y.", reply: "Kh\xF4ng ai vui h\u1EB3n, nh\u01B0ng kh\xF4ng ai c\u1EA7m g\u1EADy n\u1EEFa.", tag: "share" },
-            { text: "Nh\xE0 \u0111\xF4ng ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c d\xF9ng tr\u01B0\u1EDBc.", reply: "M\u1ED9t nh\xE0 c\u01B0\u1EDDi, m\u1ED9t nh\xE0 im. T\u1EA1m y\xEAn.", tag: "side" }
-          ] }
+          { say: ["Hai nh\xE0 \u1EDF l\xE0ng {tribe} gi\xE0nh nhau m\u1ED9t con su\u1ED1i, s\u1EAFp c\u1EA7m g\u1EADy t\u1EDBi n\u01A1i.", "Ng\u01B0\u1EDDi ngo\xE0i n\xF3i th\xEC h\u1ECD m\u1EDBi ch\u1ECBu nghe. B\u1EA1n gi\xFAp m\u1ED9t l\u1EDDi."], options: [{ text: "Nghe h\u1EBFt c\u1EA3 hai nh\xE0 \u0111\xE3.", reply: "M\u1EA5t c\u1EA3 bu\u1ED5i, nh\u01B0ng kh\xF4ng ai n\xF3i l\xE0 m\xECnh b\u1ECB b\u1ECF qua.", tag: "listen" }, { text: "Ph\xE1n lu\xF4n cho nhanh.", reply: "Nhanh th\u1EADt. Mong l\xE0 c\u1EA3 hai c\xF9ng ch\u1ECBu.", tag: "quick" }] },
+          { say: ["Gi\u1EDD th\xEC h\u1ECD ch\u1EDD l\u1EDDi c\u1EE7a b\u1EA1n.", "Su\u1ED1i th\xEC ch\u1EC9 c\xF3 m\u1ED9t."], options: [{ text: "Chia su\u1ED1i theo ng\xE0y: m\u1ED7i nh\xE0 m\u1ED9t ng\xE0y.", reply: "Kh\xF4ng ai vui h\u1EB3n, nh\u01B0ng kh\xF4ng ai c\u1EA7m g\u1EADy n\u1EEFa.", tag: "share" }, { text: "Nh\xE0 \u0111\xF4ng ng\u01B0\u1EDDi \u0111\u01B0\u1EE3c d\xF9ng tr\u01B0\u1EDBc.", reply: "M\u1ED9t nh\xE0 c\u01B0\u1EDDi, m\u1ED9t nh\xE0 im. T\u1EA1m y\xEAn.", tag: "side" }] }
         ],
         reward: { base: { food: 12, coin: 1 }, by: { listen: { coin: 1 }, share: { wood: 10 }, side: { stone: 10 } }, rel: 4 }
       },
@@ -203974,17 +203947,9 @@ ${risk.lines.join("\n")}`);
         fire: [2, 10],
         days: 4,
         steps: [
-          { say: ["C\xE1i \u0111\u1EE5c th\u1EA7y t\xF4i \u0111\u1EC3 l\u1EA1i, t\xF4i \u0111\xE1nh r\u01A1i \u1EDF b\u1EBFn s\xF4ng n\u0103m ngo\xE1i.", "T\xECm gi\xFAp t\xF4i. T\xF4i gi\xE0 r\u1ED3i, ch\u1EC9 c\xF2n tr\u1EA3 \u0111\u01B0\u1EE3c b\u1EB1ng ngh\u1EC1."], options: [
-            { text: "C\u1EED ng\u01B0\u1EDDi \u0111i d\xF2 d\u1ECDc b\u1EBFn s\xF4ng.", reply: "H\u1ECFi m\u1EA5y ng\u01B0\u1EDDi \u0111\xE1nh c\xE1 \u1EA5y. H\u1ECD nh\u1EB7t \u0111\u1EE7 th\u1EE9.", tag: "search" },
-            { text: "H\u1ECFi mua l\u1EA1i \u1EDF c\xE1c th\u01B0\u01A1ng l\xE1i.", cost: { coin: 1 }, reply: "\u0110\u1ED3 c\u0169 th\xEC tay bu\xF4n n\xE0o c\u0169ng t\u1EEBng c\u1EA7m qua.", tag: "buy" }
-          ] },
-          { cast: "monk", say: ["C\xE1i \u0111\u1EE5c n\xE0y t\xF4i nh\u1EB7t \u0111\u01B0\u1EE3c \u1EDF b\u1EBFn s\xF4ng, d\xF9ng \u0111\u1EC3 kh\u1EAFc b\xE1t.", "N\u1EBFu c\xF3 ng\u01B0\u1EDDi c\u1EA7n n\xF3 h\u01A1n t\xF4i th\xEC c\u1EE9 n\xF3i."], options: [
-            { text: "\u0110\u1ED5i cho \xF4ng \xEDt l\u01B0\u01A1ng th\u1EF1c.", cost: { food: 8 }, reply: "B\xE1t \u0111\u1EA7y th\xEC tay c\u0169ng nh\u1EB9. C\u1EA7m l\u1EA5y.", tag: "trade" },
-            { text: "K\u1EC3 chuy\u1EC7n \xF4ng th\u1EE3 gi\xE0 v\xE0 xin l\u1EA1i.", reply: "C\u1EE7a th\u1EA7y \u0111\u1EC3 l\u1EA1i cho tr\xF2. T\xF4i gi\u1EEF l\xE0m g\xEC.", tag: "ask", roll: { p: 0.6, fail: "\xD4ng l\u1EAFc \u0111\u1EA7u, \u0111\xF2i m\u1ED9t b\u1EEFa c\u01A1m tr\u01B0\u1EDBc \u0111\xE3. M\u1EA5t th\xEAm n\u1EEDa ng\xE0y.", tag: "late" } }
-          ] },
-          { say: ["\u0110\xFAng n\xF3 r\u1ED3i. V\u1EBFt m\u1EBB n\xE0y l\xE0 t\xF4i l\xE0m h\u1ED3i m\u01B0\u1EDDi hai tu\u1ED5i.", "T\xF4i v\u1EBD l\u1EA1i cho l\xE0ng b\u1EA1n m\u1ED9t th\u1EE9 th\u1EA7y t\xF4i t\u1EEBng d\u1EA1y."], options: [
-            { text: "Nh\u1EADn b\u1EA3n v\u1EBD.", reply: "Gi\u1EEF cho k\u1EF9. Ngh\u1EC1 kh\xF4ng \u1EDF trong tay, m\xE0 \u1EDF trong \u0111\u1EA7u." }
-          ] }
+          { say: ["C\xE1i \u0111\u1EE5c th\u1EA7y t\xF4i \u0111\u1EC3 l\u1EA1i, t\xF4i \u0111\xE1nh r\u01A1i \u1EDF b\u1EBFn s\xF4ng n\u0103m ngo\xE1i.", "T\xECm gi\xFAp t\xF4i. T\xF4i gi\xE0 r\u1ED3i, ch\u1EC9 c\xF2n tr\u1EA3 \u0111\u01B0\u1EE3c b\u1EB1ng ngh\u1EC1."], options: [{ text: "C\u1EED ng\u01B0\u1EDDi \u0111i d\xF2 d\u1ECDc b\u1EBFn s\xF4ng.", reply: "H\u1ECFi m\u1EA5y ng\u01B0\u1EDDi \u0111\xE1nh c\xE1 \u1EA5y. H\u1ECD nh\u1EB7t \u0111\u1EE7 th\u1EE9.", tag: "search" }, { text: "H\u1ECFi mua l\u1EA1i \u1EDF c\xE1c th\u01B0\u01A1ng l\xE1i.", cost: { coin: 1 }, reply: "\u0110\u1ED3 c\u0169 th\xEC tay bu\xF4n n\xE0o c\u0169ng t\u1EEBng c\u1EA7m qua.", tag: "buy" }] },
+          { cast: "monk", say: ["C\xE1i \u0111\u1EE5c n\xE0y t\xF4i nh\u1EB7t \u0111\u01B0\u1EE3c \u1EDF b\u1EBFn s\xF4ng, d\xF9ng \u0111\u1EC3 kh\u1EAFc b\xE1t.", "N\u1EBFu c\xF3 ng\u01B0\u1EDDi c\u1EA7n n\xF3 h\u01A1n t\xF4i th\xEC c\u1EE9 n\xF3i."], options: [{ text: "\u0110\u1ED5i cho \xF4ng \xEDt l\u01B0\u01A1ng th\u1EF1c.", cost: { food: 8 }, reply: "B\xE1t \u0111\u1EA7y th\xEC tay c\u0169ng nh\u1EB9. C\u1EA7m l\u1EA5y.", tag: "trade" }, { text: "K\u1EC3 chuy\u1EC7n \xF4ng th\u1EE3 gi\xE0 v\xE0 xin l\u1EA1i.", reply: "C\u1EE7a th\u1EA7y \u0111\u1EC3 l\u1EA1i cho tr\xF2. T\xF4i gi\u1EEF l\xE0m g\xEC.", tag: "ask", roll: { p: 0.6, fail: "\xD4ng l\u1EAFc \u0111\u1EA7u, \u0111\xF2i m\u1ED9t b\u1EEFa c\u01A1m tr\u01B0\u1EDBc \u0111\xE3. M\u1EA5t th\xEAm n\u1EEDa ng\xE0y.", tag: "late" } }] },
+          { say: ["\u0110\xFAng n\xF3 r\u1ED3i. V\u1EBFt m\u1EBB n\xE0y l\xE0 t\xF4i l\xE0m h\u1ED3i m\u01B0\u1EDDi hai tu\u1ED5i.", "T\xF4i v\u1EBD l\u1EA1i cho l\xE0ng b\u1EA1n m\u1ED9t th\u1EE9 th\u1EA7y t\xF4i t\u1EEBng d\u1EA1y."], options: [{ text: "Nh\u1EADn b\u1EA3n v\u1EBD.", reply: "Gi\u1EEF cho k\u1EF9. Ngh\u1EC1 kh\xF4ng \u1EDF trong tay, m\xE0 \u1EDF trong \u0111\u1EA7u." }] }
         ],
         reward: { base: { wood: 15 }, by: { ask: { coin: 1 }, search: { stone: 8 } }, rel: 3, blueprint: true }
       },
@@ -203996,14 +203961,8 @@ ${risk.lines.join("\n")}`);
         fire: [4, 10],
         days: 4,
         steps: [
-          { say: ["T\xF4i bi\u1EBFt m\u1ED9t ng\u01B0\u1EDDi c\xF3 b\u1EA3n v\u1EBD l\u1EA1, th\u1EE9 m\xE0 quanh \u0111\xE2y ch\u01B0a ai l\xE0m \u0111\u01B0\u1EE3c.", "\u0110\u1EB7t c\u1ECDc tr\u01B0\u1EDBc, l\u1EA7n sau t\xF4i mang t\u1EDBi."], options: [
-            { text: "\u0110\u1EB7t c\u1ECDc b\u1EB1ng ti\u1EC1n.", cost: { coin: 3 }, reply: "Ti\u1EC1n trao th\xEC ch\xE1o m\xFAc. Ch\u1EDD t\xF4i v\xE0i h\xF4m.", tag: "deposit" },
-            { text: "\u0110\u1EB7t c\u1ECDc b\u1EB1ng da th\xFA.", cost: { hide: 12 }, reply: "Da t\u1ED1t \u0111\u1EA5y. Coi nh\u01B0 xong ph\u1EA7n c\u1ECDc.", tag: "goods" }
-          ] },
-          { say: ["B\u1EA3n v\u1EBD \u0111\xE2y. Nh\u01B0ng ng\u01B0\u1EDDi b\xE1n \u0111\xF2i th\xEAm, t\xF4i kh\xF4ng \u0103n ch\u1EB7n \u0111\xE2u.", "Th\xEAm ch\xFAt n\u1EEFa l\xE0 n\xF3 c\u1EE7a l\xE0ng b\u1EA1n."], options: [
-            { text: "Tr\u1EA3 \u0111\u1EE7.", cost: { coin: 2 }, reply: "S\xF2ng ph\u1EB3ng. C\u1EE7a l\xE0ng b\u1EA1n \u0111\xE2y.", tag: "full" },
-            { text: "M\u1EB7c c\u1EA3: c\u1ECDc \u0111\xE3 \u0111\u1EE7 r\u1ED3i.", reply: "Th\xF4i \u0111\u01B0\u1EE3c, t\xF4i ch\u1ECBu thi\u1EC7t l\u1EA7n n\xE0y.", tag: "haggle", roll: { p: 0.55, fail: "H\u1EAFn cu\u1ED9n b\u1EA3n v\u1EBD l\u1EA1i. Kh\xF4ng th\xEAm th\xEC th\xF4i, c\u1ECDc t\xF4i gi\u1EEF.", ends: true } }
-          ] }
+          { say: ["T\xF4i bi\u1EBFt m\u1ED9t ng\u01B0\u1EDDi c\xF3 b\u1EA3n v\u1EBD l\u1EA1, th\u1EE9 m\xE0 quanh \u0111\xE2y ch\u01B0a ai l\xE0m \u0111\u01B0\u1EE3c.", "\u0110\u1EB7t c\u1ECDc tr\u01B0\u1EDBc, l\u1EA7n sau t\xF4i mang t\u1EDBi."], options: [{ text: "\u0110\u1EB7t c\u1ECDc b\u1EB1ng ti\u1EC1n.", cost: { coin: 3 }, reply: "Ti\u1EC1n trao th\xEC ch\xE1o m\xFAc. Ch\u1EDD t\xF4i v\xE0i h\xF4m.", tag: "deposit" }, { text: "\u0110\u1EB7t c\u1ECDc b\u1EB1ng da th\xFA.", cost: { hide: 12 }, reply: "Da t\u1ED1t \u0111\u1EA5y. Coi nh\u01B0 xong ph\u1EA7n c\u1ECDc.", tag: "goods" }] },
+          { say: ["B\u1EA3n v\u1EBD \u0111\xE2y. Nh\u01B0ng ng\u01B0\u1EDDi b\xE1n \u0111\xF2i th\xEAm, t\xF4i kh\xF4ng \u0103n ch\u1EB7n \u0111\xE2u.", "Th\xEAm ch\xFAt n\u1EEFa l\xE0 n\xF3 c\u1EE7a l\xE0ng b\u1EA1n."], options: [{ text: "Tr\u1EA3 \u0111\u1EE7.", cost: { coin: 2 }, reply: "S\xF2ng ph\u1EB3ng. C\u1EE7a l\xE0ng b\u1EA1n \u0111\xE2y.", tag: "full" }, { text: "M\u1EB7c c\u1EA3: c\u1ECDc \u0111\xE3 \u0111\u1EE7 r\u1ED3i.", reply: "Th\xF4i \u0111\u01B0\u1EE3c, t\xF4i ch\u1ECBu thi\u1EC7t l\u1EA7n n\xE0y.", tag: "haggle", roll: { p: 0.55, fail: "H\u1EAFn cu\u1ED9n b\u1EA3n v\u1EBD l\u1EA1i. Kh\xF4ng th\xEAm th\xEC th\xF4i, c\u1ECDc t\xF4i gi\u1EEF.", ends: true } }] }
         ],
         reward: { base: {}, by: {}, rel: 1, blueprint: true }
       },
@@ -204015,14 +203974,8 @@ ${risk.lines.join("\n")}`);
         fire: [1, 10],
         days: 3,
         steps: [
-          { say: ["T\xF4i \u0111i \u0111\xE3 l\xE2u, ch\xE2n s\u01B0ng c\u1EA3 r\u1ED3i.", "Cho t\xF4i m\u1ED9t g\xF3c kh\xF4 hai \u0111\xEAm. T\xF4i kh\xF4ng c\xF3 g\xEC ngo\xE0i v\xE0i l\u1EDDi."], options: [
-            { text: "Cho \u1EDF v\xE0 cho \u0103n.", cost: { food: 5 }, reply: "C\u01A1m l\xE0ng b\u1EA1n \u1EA5m. T\xF4i s\u1EBD nh\u1EDB.", tag: "feed" },
-            { text: "Cho m\u1ED9t g\xF3c c\u1EA1nh b\u1EBFp l\u1EEDa.", reply: "M\u1ED9t g\xF3c kh\xF4 l\xE0 \u0111\u1EE7 r\u1ED3i.", tag: "corner" }
-          ] },
-          { say: ["T\xF4i \u0111i \u0111\xE2y. Hai \u0111\xEAm qua t\xF4i nghe d\xE2n l\xE0ng b\u1EA1n n\xF3i chuy\u1EC7n.", "C\xF3 ng\u01B0\u1EDDi \u0111au l\u01B0ng, c\xF3 \u0111\u1EE9a tr\u1EBB ho. \u0110\u1EC3 l\u1EA1i \xEDt l\xE1 thu\u1ED1c hay k\u1EC3 cho l\u0169 tr\u1EBB m\u1ED9t chuy\u1EC7n?"], options: [
-            { text: "Xin \xEDt l\xE1 thu\u1ED1c.", reply: "S\u1EAFc v\u1EDBi n\u01B0\u1EDBc \u1EA5m, u\u1ED1ng ba h\xF4m.", tag: "herb" },
-            { text: "Xin m\u1ED9t c\xE2u chuy\u1EC7n cho l\u0169 tr\u1EBB.", reply: "L\u0169 tr\u1EBB ng\u1ED3i im c\u1EA3 bu\u1ED5i. Ng\u01B0\u1EDDi l\u1EDBn c\u0169ng gh\xE9 nghe.", tag: "tale" }
-          ] }
+          { say: ["T\xF4i \u0111i \u0111\xE3 l\xE2u, ch\xE2n s\u01B0ng c\u1EA3 r\u1ED3i.", "Cho t\xF4i m\u1ED9t g\xF3c kh\xF4 hai \u0111\xEAm. T\xF4i kh\xF4ng c\xF3 g\xEC ngo\xE0i v\xE0i l\u1EDDi."], options: [{ text: "Cho \u1EDF v\xE0 cho \u0103n.", cost: { food: 5 }, reply: "C\u01A1m l\xE0ng b\u1EA1n \u1EA5m. T\xF4i s\u1EBD nh\u1EDB.", tag: "feed" }, { text: "Cho m\u1ED9t g\xF3c c\u1EA1nh b\u1EBFp l\u1EEDa.", reply: "M\u1ED9t g\xF3c kh\xF4 l\xE0 \u0111\u1EE7 r\u1ED3i.", tag: "corner" }] },
+          { say: ["T\xF4i \u0111i \u0111\xE2y. Hai \u0111\xEAm qua t\xF4i nghe d\xE2n l\xE0ng b\u1EA1n n\xF3i chuy\u1EC7n.", "C\xF3 ng\u01B0\u1EDDi \u0111au l\u01B0ng, c\xF3 \u0111\u1EE9a tr\u1EBB ho. \u0110\u1EC3 l\u1EA1i \xEDt l\xE1 thu\u1ED1c hay k\u1EC3 cho l\u0169 tr\u1EBB m\u1ED9t chuy\u1EC7n?"], options: [{ text: "Xin \xEDt l\xE1 thu\u1ED1c.", reply: "S\u1EAFc v\u1EDBi n\u01B0\u1EDBc \u1EA5m, u\u1ED1ng ba h\xF4m.", tag: "herb" }, { text: "Xin m\u1ED9t c\xE2u chuy\u1EC7n cho l\u0169 tr\u1EBB.", reply: "L\u0169 tr\u1EBB ng\u1ED3i im c\u1EA3 bu\u1ED5i. Ng\u01B0\u1EDDi l\u1EDBn c\u0169ng gh\xE9 nghe.", tag: "tale" }] }
         ],
         reward: { base: { food: 6 }, by: { feed: { coin: 1, food: 6 }, herb: { food: 10 }, tale: { coin: 1 } } }
       },
@@ -204034,14 +203987,8 @@ ${risk.lines.join("\n")}`);
         fire: [2, 10],
         days: 3,
         steps: [
-          { say: ["L\xF2 c\u1EE7a th\u1EA7y ch\xE1u h\u1EBFt than, m\xE0 mai ph\u1EA3i giao r\xECu.", "L\xE0ng m\xECnh cho ch\xE1u xin \xEDt g\u1ED7 \u0111\u1ED1t than \u0111\u01B0\u1EE3c kh\xF4ng?"], options: [
-            { text: "Cho g\u1ED7.", cost: { wood: 15 }, reply: "Ch\xE1u v\xE1c \u0111\u01B0\u1EE3c h\u1EBFt! Th\u1EA7y ch\xE1u s\u1EBD m\u1EEBng l\u1EAFm.", tag: "wood" },
-            { text: "Ch\u1EC9 cho c\xE1ch h\u1EA7m than \xEDt t\u1ED1n g\u1ED7.", reply: "\u1EE6 k\xEDn, cho ch\xE1y ng\u1EA7m... Ch\xE1u nh\u1EDB r\u1ED3i!", tag: "teach" }
-          ] },
-          { cast: "smith", say: ["Con b\xE9 v\u1EC1 k\u1EC3 h\u1EBFt r\u1ED3i. R\xECu giao k\u1ECBp, nh\u1EDD l\xE0ng b\u1EA1n.", "T\xF4i kh\xF4ng n\u1EE3 ai l\xE2u. Mu\u1ED1n \xEDt \u0111\u1ED3 \u0111\xE1 m\xE0i s\u1EB5n, hay \u0111\u1EC3 t\xF4i s\u1EEDa gi\xFAp d\u1EE5ng c\u1EE5?"], options: [
-            { text: "L\u1EA5y \u0111\xE1 m\xE0i s\u1EB5n.", reply: "\u0110\xE1 t\u1ED1t, t\xF4i ch\u1ECDn t\u1EEBng vi\xEAn.", tag: "stone" },
-            { text: "Nh\u1EDD s\u1EEDa d\u1EE5ng c\u1EE5, l\u1EA5y c\xF4ng b\u1EB1ng da.", reply: "\u0110\u1EC3 \u0111\xF3 cho t\xF4i. Da thu\u1ED9c n\xE0y coi nh\u01B0 ti\u1EC1n c\xF4ng th\u1EEBa.", tag: "hide" }
-          ] }
+          { say: ["L\xF2 c\u1EE7a th\u1EA7y ch\xE1u h\u1EBFt than, m\xE0 mai ph\u1EA3i giao r\xECu.", "L\xE0ng m\xECnh cho ch\xE1u xin \xEDt g\u1ED7 \u0111\u1ED1t than \u0111\u01B0\u1EE3c kh\xF4ng?"], options: [{ text: "Cho g\u1ED7.", cost: { wood: 15 }, reply: "Ch\xE1u v\xE1c \u0111\u01B0\u1EE3c h\u1EBFt! Th\u1EA7y ch\xE1u s\u1EBD m\u1EEBng l\u1EAFm.", tag: "wood" }, { text: "Ch\u1EC9 cho c\xE1ch h\u1EA7m than \xEDt t\u1ED1n g\u1ED7.", reply: "\u1EE6 k\xEDn, cho ch\xE1y ng\u1EA7m... Ch\xE1u nh\u1EDB r\u1ED3i!", tag: "teach" }] },
+          { cast: "smith", say: ["Con b\xE9 v\u1EC1 k\u1EC3 h\u1EBFt r\u1ED3i. R\xECu giao k\u1ECBp, nh\u1EDD l\xE0ng b\u1EA1n.", "T\xF4i kh\xF4ng n\u1EE3 ai l\xE2u. Mu\u1ED1n \xEDt \u0111\u1ED3 \u0111\xE1 m\xE0i s\u1EB5n, hay \u0111\u1EC3 t\xF4i s\u1EEDa gi\xFAp d\u1EE5ng c\u1EE5?"], options: [{ text: "L\u1EA5y \u0111\xE1 m\xE0i s\u1EB5n.", reply: "\u0110\xE1 t\u1ED1t, t\xF4i ch\u1ECDn t\u1EEBng vi\xEAn.", tag: "stone" }, { text: "Nh\u1EDD s\u1EEDa d\u1EE5ng c\u1EE5, l\u1EA5y c\xF4ng b\u1EB1ng da.", reply: "\u0110\u1EC3 \u0111\xF3 cho t\xF4i. Da thu\u1ED9c n\xE0y coi nh\u01B0 ti\u1EC1n c\xF4ng th\u1EEBa.", tag: "hide" }] }
         ],
         reward: { base: { coin: 1 }, by: { wood: { coin: 1 }, teach: { food: 6 }, stone: { stone: 18 }, hide: { hide: 10 } }, rel: 4 }
       },
@@ -204054,17 +204001,9 @@ ${risk.lines.join("\n")}`);
         days: 4,
         cond: "soldiers>=3",
         steps: [
-          { say: ["L\xEDnh l\xE0ng {tribe} c\xF2n non, ch\u01B0a t\u1EEBng \u0111\u1EE9ng tr\u01B0\u1EDBc m\u1ED9t h\xE0ng gi\xE1o th\u1EADt.", "Cho t\xF4i m\u01B0\u1EE3n l\xEDnh l\xE0ng b\u1EA1n t\u1EADp m\u1ED9t bu\u1ED5i."], options: [
-            { text: "Cho m\u01B0\u1EE3n l\xEDnh l\xE0m qu\xE2n xanh.", cond: "soldiers>=3", reply: "T\xF4i s\u1EBD tr\u1EA3 h\u1ECD v\u1EC1 \u0111\u1EE7, kh\xF4ng thi\u1EBFu m\u1ED9t ng\u01B0\u1EDDi.", tag: "lend" },
-            { text: "T\u1EADp chung, hai l\xE0ng m\u1ED9t h\xE0ng.", cond: "soldiers>=3", reply: "C\xF2n hay h\u01A1n. \u0110\u1EE9ng c\u1EA1nh nhau m\u1ED9t l\u1EA7n th\xEC sau n\xE0y d\u1EC5 \u0111\u1EE9ng c\u1EA1nh nhau.", tag: "joint" }
-          ] },
-          { say: ["Gi\u1EEFa bu\u1ED5i t\u1EADp c\xF3 hai \u0111\u1EE9a n\xF3ng m\xE1u, \u0111\xE1nh th\u1EADt.", "D\u1EEBng bu\u1ED5i t\u1EADp, hay \u0111\u1EC3 ch\xFAng n\xF3 xong r\u1ED3i ph\u1EA1t c\u1EA3 hai?"], options: [
-            { text: "D\u1EEBng ngay.", reply: "Ph\u1EA3i. Kh\xF4ng ai b\u1ECB th\u01B0\u01A1ng l\xE0 \u0111\u01B0\u1EE3c.", tag: "stop" },
-            { text: "\u0110\u1EC3 xong r\u1ED3i ph\u1EA1t.", reply: "Hai \u0111\u1EE9a s\u01B0ng m\u1EB7t, nh\u01B0ng c\u1EA3 h\xE0ng h\u1ECDc \u0111\u01B0\u1EE3c m\u1ED9t b\xE0i.", tag: "finish", roll: { p: 0.7, fail: "M\u1ED9t \u0111\u1EE9a g\xE3y tay. Bu\u1ED5i t\u1EADp tan, hai b\xEAn nh\xECn nhau kh\xF3 ch\u1ECBu.", ends: true } }
-          ] },
-          { say: ["L\xEDnh t\xF4i \u0111\u1EE9ng h\xE0ng \u0111\xE3 ra d\xE1ng h\u01A1n.", "L\xE0ng {tribe} g\u1EEDi ch\xFAt l\u1EC5 cho nh\u1EEFng ng\u01B0\u1EDDi \u0111\xE3 t\u1EDBi t\u1EADp."], options: [
-            { text: "Nh\u1EADn l\u1EC5.", reply: "H\u1EB9n m\xF9a sau t\u1EADp n\u1EEFa." }
-          ] }
+          { say: ["L\xEDnh l\xE0ng {tribe} c\xF2n non, ch\u01B0a t\u1EEBng \u0111\u1EE9ng tr\u01B0\u1EDBc m\u1ED9t h\xE0ng gi\xE1o th\u1EADt.", "Cho t\xF4i m\u01B0\u1EE3n l\xEDnh l\xE0ng b\u1EA1n t\u1EADp m\u1ED9t bu\u1ED5i."], options: [{ text: "Cho m\u01B0\u1EE3n l\xEDnh l\xE0m qu\xE2n xanh.", cond: "soldiers>=3", reply: "T\xF4i s\u1EBD tr\u1EA3 h\u1ECD v\u1EC1 \u0111\u1EE7, kh\xF4ng thi\u1EBFu m\u1ED9t ng\u01B0\u1EDDi.", tag: "lend" }, { text: "T\u1EADp chung, hai l\xE0ng m\u1ED9t h\xE0ng.", cond: "soldiers>=3", reply: "C\xF2n hay h\u01A1n. \u0110\u1EE9ng c\u1EA1nh nhau m\u1ED9t l\u1EA7n th\xEC sau n\xE0y d\u1EC5 \u0111\u1EE9ng c\u1EA1nh nhau.", tag: "joint" }] },
+          { say: ["Gi\u1EEFa bu\u1ED5i t\u1EADp c\xF3 hai \u0111\u1EE9a n\xF3ng m\xE1u, \u0111\xE1nh th\u1EADt.", "D\u1EEBng bu\u1ED5i t\u1EADp, hay \u0111\u1EC3 ch\xFAng n\xF3 xong r\u1ED3i ph\u1EA1t c\u1EA3 hai?"], options: [{ text: "D\u1EEBng ngay.", reply: "Ph\u1EA3i. Kh\xF4ng ai b\u1ECB th\u01B0\u01A1ng l\xE0 \u0111\u01B0\u1EE3c.", tag: "stop" }, { text: "\u0110\u1EC3 xong r\u1ED3i ph\u1EA1t.", reply: "Hai \u0111\u1EE9a s\u01B0ng m\u1EB7t, nh\u01B0ng c\u1EA3 h\xE0ng h\u1ECDc \u0111\u01B0\u1EE3c m\u1ED9t b\xE0i.", tag: "finish", roll: { p: 0.7, fail: "M\u1ED9t \u0111\u1EE9a g\xE3y tay. Bu\u1ED5i t\u1EADp tan, hai b\xEAn nh\xECn nhau kh\xF3 ch\u1ECBu.", ends: true } }] },
+          { say: ["L\xEDnh t\xF4i \u0111\u1EE9ng h\xE0ng \u0111\xE3 ra d\xE1ng h\u01A1n.", "L\xE0ng {tribe} g\u1EEDi ch\xFAt l\u1EC5 cho nh\u1EEFng ng\u01B0\u1EDDi \u0111\xE3 t\u1EDBi t\u1EADp."], options: [{ text: "Nh\u1EADn l\u1EC5.", reply: "H\u1EB9n m\xF9a sau t\u1EADp n\u1EEFa." }] }
         ],
         reward: { base: { food: 18, hide: 6 }, by: { joint: { coin: 2 }, finish: { coin: 2 }, lend: { wood: 12 } }, rel: 6 }
       }
@@ -204120,23 +204059,23 @@ ${risk.lines.join("\n")}`);
   var SIDE = { config: side_quests_default.config, quests: side_quests_default.quests };
   var sideWeight = (id, flags) => from_flags_default.flags.some((f) => f.quest === id && flags.includes(f.flag)) ? from_flags_default.weight : 1;
   var sideQuest = (id) => SIDE.quests.find((q) => q.id === id);
-  var sideScriptId = (id, step3, era) => `sq:${id}:${step3}${era === "ancient" ? ":m" : ""}`;
-  var sideCode = (id, step3, opt, ok) => `${id}:${step3}:${opt}:${ok ? "y" : "n"}`;
-  function stepScript(q, i, medieval) {
+  var sideScriptId = (id, step3, era, field = false) => `sq:${id}:${step3}${era === "ancient" ? ":m" : ""}${field ? ":f" : ""}`;
+  var sideCode = (id, step3, opt, ok, field = false) => `${id}:${step3}:${opt}:${ok ? "y" : "n"}${field ? ":f" : ""}`;
+  function stepScript(q, i, medieval, field = false) {
     const st = q.steps[i], mul2 = medieval ? SIDE.config.costMulMedieval : 1;
     const price = (c) => c ? Object.fromEntries(Object.entries(c).map(([k, n]) => [k, Math.round((n ?? 0) * mul2)])) : void 0;
-    const nodes = { start: { say: st.say, choices: st.options.map((o, k) => ({ text: o.text, cond: o.cond, cost: price(o.cost), ...o.roll ? { roll: { p: o.roll.p, yes: `o${k}`, no: `o${k}f`, bonus: o.roll.bonus } } : { then: `o${k}` } })) } };
+    const nodes = { start: { say: st.say, choices: st.options.map((o, k) => ({ text: o.text, cond: o.cond, cost: price(o.cost), ...o.roll && !field ? { roll: { p: o.roll.p, yes: `o${k}`, no: `o${k}f`, bonus: o.roll.bonus } } : { then: `o${k}` } })) } };
     st.options.forEach((o, k) => {
-      nodes[`o${k}`] = { say: o.reply, effects: [{ quest: sideCode(q.id, i, k, true) }] };
-      if (o.roll) nodes[`o${k}f`] = { say: o.roll.fail, effects: [{ quest: sideCode(q.id, i, k, false) }] };
+      nodes[`o${k}`] = { say: field ? st.field.go : o.reply, effects: [{ quest: sideCode(q.id, i, k, true, field) }] };
+      if (o.roll && !field) nodes[`o${k}f`] = { say: o.roll.fail, effects: [{ quest: sideCode(q.id, i, k, false) }] };
     });
     if (i === 0) {
       nodes.start.choices.push({ text: SIDE.config.decline, then: "no" });
       nodes.no = { say: SIDE.config.declineReply, effects: [{ quest: sideCode(q.id, 0, -1, false) }] };
     }
-    return { id: sideScriptId(q.id, i, medieval ? "ancient" : "stone"), fireLevel: [1, 99], minDay: 0, weight: 0, anywhere: true, start: "start", nodes, cast: st.cast ?? q.giver };
+    return { id: sideScriptId(q.id, i, medieval ? "ancient" : "stone", field), fireLevel: [1, 99], minDay: 0, weight: 0, anywhere: true, start: "start", nodes, cast: st.cast ?? q.giver };
   }
-  var SIDE_SCRIPTS = SIDE.quests.flatMap((q) => q.steps.flatMap((_, i) => [stepScript(q, i, false), stepScript(q, i, true)]));
+  var SIDE_SCRIPTS = SIDE.quests.flatMap((q) => q.steps.flatMap((s, i) => [stepScript(q, i, false), stepScript(q, i, true), ...s.field ? [stepScript(q, i, false, true), stepScript(q, i, true, true)] : []]));
 
   // src/sim/encounterdata.ts
   var ENC = encounters_default;
@@ -205193,9 +205132,9 @@ ${risk.lines.join("\n")}`);
     const guards = v.escort.map((e) => sim2.get(e.id)).filter((g) => !!g);
     guards.forEach((g, k) => {
       const side = (k - (guards.length - 1) / 2) * 1.8;
-      const spot = sim2.nearestFree(Math.floor(f.x + ux * 2.4 - uy * side), Math.floor(f.y + uy * 2.4 + ux * side), taken) ?? [Math.floor(f.x), Math.floor(f.y)];
-      taken.add(spot[1] * N + spot[0]);
-      sendGuard(sim2, v, g, spot[0] + 0.5, spot[1] + 0.5);
+      const spot2 = sim2.nearestFree(Math.floor(f.x + ux * 2.4 - uy * side), Math.floor(f.y + uy * 2.4 + ux * side), taken) ?? [Math.floor(f.x), Math.floor(f.y)];
+      taken.add(spot2[1] * N + spot2[0]);
+      sendGuard(sim2, v, g, spot2[0] + 0.5, spot2[1] + 0.5);
     });
   }
   function faceOff(sim2, v, f) {
@@ -205336,7 +205275,7 @@ ${risk.lines.join("\n")}`);
     const a = sim2.encounters.active, v = a ? visitorOf(sim2, a.visitorId) : void 0, s = v ? scriptOf(v.scriptId) : void 0, node = a && s ? s.nodes[a.node] : void 0, f = v ? sim2.get(v.unitId) : void 0;
     if (!a || !v || !s || !node || !f) return null;
     const t = tribeOf2(sim2, v.tribe), who = { name: f.name, tribe: t?.def.name ?? "", sex: f.look.sex }, ctx2 = ctxOf(sim2, v), said = linesOf(node, v.seed, a.node, ctx2).map((l) => fillText(l, who)), lines = (said.length ? said : ["..."]).map((text) => ({ by: "npc", text }));
-    const alive2 = v.members.map((id) => sim2.get(id)).filter((m) => !!m && m.health > 0), party = 1 + alive2.length, armed = [f, ...alive2].filter((m) => !!m.weapon).length;
+    const alive3 = v.members.map((id) => sim2.get(id)).filter((m) => !!m && m.health > 0), party = 1 + alive3.length, armed = [f, ...alive3].filter((m) => !!m.weapon).length;
     const partyNote = party > 1 ? `\u0110i c\xF9ng ${party - 1} ng\u01B0\u1EDDi${armed ? `, ${armed === party ? "ai c\u0169ng" : "c\xF3 ng\u01B0\u1EDDi"} mang v\u0169 kh\xED` : ""}.` : "";
     const choices = [];
     nodeChoices(sim2, v, s, node).forEach((c, index) => {
@@ -205533,8 +205472,8 @@ ${risk.lines.join("\n")}`);
     const st = sim2.encounters, c = st.captives.find((x) => x.id === id);
     if (!c) return null;
     st.captives = st.captives.filter((x) => x !== c);
-    const spot = sim2.nearestFree(Math.floor(near2.x), Math.floor(near2.y), /* @__PURE__ */ new Set()) ?? [Math.floor(near2.x), Math.floor(near2.y)];
-    const p = sim2.spawn(spot[0], spot[1], c.data.look?.sex ?? "m");
+    const spot2 = sim2.nearestFree(Math.floor(near2.x), Math.floor(near2.y), /* @__PURE__ */ new Set()) ?? [Math.floor(near2.x), Math.floor(near2.y)];
+    const p = sim2.spawn(spot2[0], spot2[1], c.data.look?.sex ?? "m");
     Object.assign(p, c.data);
     return p;
   }
@@ -205761,6 +205700,28 @@ ${risk.lines.join("\n")}`);
     sim2.say(v.join === "all" ? `${n} ng\u01B0\u1EDDi t\u1ECB n\u1EA1n \u1EDF l\u1EA1i l\xE0ng.` : `${sim2.get(v.unitId)?.name ?? "Ng\u01B0\u1EDDi l\u1EA1"} \u1EDF l\u1EA1i l\xE0m d\xE2n c\u1EE7a l\xE0ng.`);
     st.visitors = st.visitors.filter((x) => x.id !== v.id);
   }
+  function openAtOnce(sim2, scriptId, tribeId) {
+    const s = scriptOf(scriptId), t = tribeOf2(sim2, tribeId);
+    if (!s || !t || sim2.encounters.active) return "Kh\xF4ng m\u1EDF \u0111\u01B0\u1EE3c cu\u1ED9c g\u1EB7p";
+    const st = sim2.encounters, fire = sim2.campfire(), fx2 = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 3 : sim2.world.start.y;
+    const at = sim2.nearestFree(Math.floor(fx2), Math.floor(fy), /* @__PURE__ */ new Set());
+    if (!at) return "Kh\xF4ng c\xF3 ch\u1ED7 cho ng\u01B0\u1EDDi t\u1EDBi";
+    const id = st.nextId++, seed2 = Math.floor(sim2.frnd() * 2147483647);
+    const f = sim2.makeVillager(at[0], at[1], sim2.frnd() < 0.5 ? "m" : "f", t.id, sim2.frnd);
+    f.look.hide = t.def.look.hide;
+    f.look.pants = t.def.look.pants;
+    const who = characterOf(s.cast);
+    if (who) {
+      const suit = suitOf(who, sim2.era);
+      f.look = { ...who.look };
+      f.name = `${who.name} ${f.name}`;
+      f.outfit = suit.armor ?? void 0;
+    }
+    f.ai = { role: "civ", camp: t.camp, wander: 0, goal: null, raid: 0, guest: id };
+    sim2.addFoe(f);
+    st.visitors.push({ id, scriptId, tribe: t.id, unitId: f.id, truth: "honest", seed: seed2, state: "waiting", mx: at[0] + 0.5, my: at[1] + 0.5, hx: at[0] + 0.5, hy: at[1] + 0.5, arrivedAt: sim2.time, expiresAt: sim2.time + 1e6, stuck: 0, notes: [], used: [], members: [], spots: [], join: "", agents: [], escort: [], placed: false, provoked: false, watch: [fx2, fy] });
+    return openEncounter(sim2, id);
+  }
 
   // src/sim/storydata.ts
   var initialStory = () => ({ mode: "normal", flags: [], knots: {}, pending: {}, fruits: {}, tips: {}, sent: {}, told: [], bonus: {}, old: [], eraDay: 0, baseVillages: 0 });
@@ -205936,7 +205897,7 @@ ${risk.lines.join("\n")}`);
     for (const th of STORY.threads) {
       if (th.tree !== tree.id) continue;
       th.chapters.forEach((ch, i) => {
-        if (!ch.scene || (w.seen[ch.id]?.times ?? 0) > 0) return;
+        if (!ch.scene || ch.on || (w.seen[ch.id]?.times ?? 0) > 0) return;
         if (st.sent[ch.id] !== void 0 && w.day - st.sent[ch.id] < CFG.resendDays) return;
         const prev = i > 0 ? th.chapters[i - 1] : void 0, prevSeen = prev ? w.seen[prev.script ?? prev.id] : void 0;
         if (prev && !(prevSeen && prevSeen.times > 0) || !evalCond(ch.when, c)) return;
@@ -205987,6 +205948,21 @@ ${risk.lines.join("\n")}`);
       out.push({ kind: "tell", what: "rumor", id: key, name: "L\u1EDDi \u0111\u1ED3n", text: r.text });
     }
     return out;
+  }
+  function warChapter(seen, ev, c) {
+    for (const th of STORY.threads) {
+      if (th.tree !== "medieval") continue;
+      for (let i = 0; i < th.chapters.length; i++) {
+        const ch = th.chapters[i];
+        if ((seen[ch.script ?? ch.id]?.times ?? 0) > 0) continue;
+        if (ch.on !== ev || !ch.scene) break;
+        const prev = i > 0 ? th.chapters[i - 1] : void 0;
+        if (prev && !((seen[prev.script ?? prev.id]?.times ?? 0) > 0)) break;
+        if (!evalCond(ch.when, c)) break;
+        return ch;
+      }
+    }
+    return null;
   }
 
   // src/sim/story.ts
@@ -206096,21 +206072,60 @@ ${risk.lines.join("\n")}`);
     if (sim2.day < st.vote.day) return "H\u1ED9i \u0111\u1ED3ng tr\u01B0\u1EDFng l\xE3o \u0111ang b\u1ECF phi\u1EBFu: ng\xE0y mai m\u1EDBi xu\u1EA5t qu\xE2n \u0111\u01B0\u1EE3c";
     return null;
   }
+  var runningPlan = (sim2) => sim2.plans.find((p) => p.kind === "attack" && p.status === "running" && !p.skirmish);
+  var ourAlive = (sim2, plan2) => plan2.missions.reduce((n, m) => n + (sim2.squadById(m.squad) ? sim2.squadUnits(sim2.squadById(m.squad)).filter((v) => v.health > 0).length : 0), 0);
+  var foesAlive = (sim2, tribe) => sim2.foes.filter((f) => f.team === tribe && f.health > 0 && f.ai && f.ai.role !== "civ" && f.ai.guest === void 0).length;
+  function warEvent(sim2, ev) {
+    if (!storyOn(sim2) || sim2.era !== "ancient" || sim2.encounters.active) return;
+    const w = sim2.legacy.war;
+    if (!w || w.fired.includes(ev)) return;
+    const ch = warChapter(sim2.encounters.seen, ev, sim2.encounterCond());
+    if (ch && !openAtOnce(sim2, ch.id, w.tribe)) w.fired.push(ev);
+  }
+  function warBegan(sim2, tribe) {
+    const plan2 = runningPlan(sim2);
+    sim2.legacy.war = { tribe, foe0: Math.max(1, foesAlive(sim2, tribe)), our0: Math.max(1, plan2 ? plan2.missions.reduce((n, m) => n + m.initial, 0) : 1), fired: [], pending: null };
+    sim2.legacy.war.pending = "war_start";
+  }
+  function tickWarStory(sim2, dt) {
+    const w = sim2.legacy.war, plan2 = runningPlan(sim2);
+    if (!w || !plan2) return;
+    if (w.pending) {
+      const ev = w.pending;
+      w.pending = null;
+      warEvent(sim2, ev);
+      return;
+    }
+    if (w.leaderDown) warEvent(sim2, "leader_down");
+    if (Math.floor(sim2.time) === Math.floor(sim2.time - dt)) return;
+    const foes = foesAlive(sim2, w.tribe), our = ourAlive(sim2, plan2);
+    if (foes <= w.foe0 * 0.5) warEvent(sim2, "half_way");
+    if (our > 0 && our <= w.our0 * 0.5) warEvent(sim2, "army_low");
+    if (foes <= Math.max(1, w.foe0 * 0.2)) warEvent(sim2, "near_fall");
+  }
+  function warLeaderDown(sim2, tribe) {
+    if (sim2.legacy.war?.tribe === tribe) sim2.legacy.war.leaderDown = true;
+  }
+  function warOver(sim2) {
+    sim2.legacy.war = null;
+  }
 
   // src/sim/sidequests.ts
   var CFG2 = SIDE.config;
   var on = (sim2) => CFG2.enabled || sim2.dev.side;
   var prefix = (r) => `sq:${r.id}:${r.step}`;
-  var isStep = (script, r) => script === prefix(r) || script === `${prefix(r)}:m`;
+  var isStep = (script, r) => script === prefix(r) || script.startsWith(`${prefix(r)}:`);
   var present = (sim2, r) => sim2.encounters.queue.some((q) => isStep(q.script, r)) || sim2.encounters.visitors.some((v) => isStep(v.scriptId, r));
   var gap = (sim2) => CFG2.offerGap[0] + Math.floor(seedRoll(sim2.seed, "sq:gap", sim2.day) * (CFG2.offerGap[1] - CFG2.offerGap[0] + 1));
   var end = (sim2, r) => {
+    if (r.stage) sim2.stageClear(r);
     sim2.side.runs = sim2.side.runs.filter((x) => x !== r);
     sim2.side.last[r.id] = sim2.day;
   };
   function send2(sim2, r) {
     const tribe = r.tribe && sim2.tribes.some((t) => t.id === r.tribe && t.state === "free") ? r.tribe : void 0;
-    sim2.queueEncounter(sideScriptId(r.id, r.step, sim2.era), r.fast || r.step === 0 ? 0 : CFG2.stepDays, r.fast ? 9 : CFG2.priority, CFG2.maxDelay, tribe);
+    const field = sideQuest(r.id)?.steps[r.step]?.field, onMap = !!field && !sim2.stageBlock(field);
+    sim2.queueEncounter(sideScriptId(r.id, r.step, sim2.era, onMap), r.fast || r.step === 0 ? 0 : CFG2.stepDays, r.fast ? 9 : CFG2.priority, CFG2.maxDelay, tribe);
     r.sentDay = sim2.day;
   }
   function eligible(sim2, q) {
@@ -206122,7 +206137,12 @@ ${risk.lines.join("\n")}`);
   function tickSideQuests(sim2, dt) {
     if (Math.floor(sim2.time) === Math.floor(sim2.time - dt)) return;
     const st = sim2.side;
+    sim2.stageSweep();
     for (const r2 of [...st.runs]) {
+      if (r2.stage) {
+        stageStep(sim2, r2);
+        continue;
+      }
       if (present(sim2, r2)) continue;
       if (!r2.taken) {
         end(sim2, r2);
@@ -206190,8 +206210,42 @@ ${risk.lines.join("\n")}`);
     sim2.say(`Vi\u1EC7c "${q.name}" \u0111\xE3 xong.${got ? ` Th\u01B0\u1EDFng: ${got}.` : ""}`);
     end(sim2, r);
   }
+  function stageStep(sim2, r) {
+    const q = sideQuest(r.id), s = r.stage, field = q?.steps[s.step]?.field, o = q?.steps[s.step]?.options[s.opt];
+    if (!q || !field || !o) {
+      sim2.stageClear(r);
+      return;
+    }
+    const res = sim2.stageCheck(r, field);
+    if (res === "run") return;
+    const fought = sim2.stageKills(r) > 0;
+    sim2.stageClear(r);
+    if (res === "lost") {
+      end(sim2, r);
+      sim2.say(`${field.lose} Vi\u1EC7c "${q.name}" kh\xF4ng th\xE0nh. Kh\xF4ng ai tr\xE1ch l\xE0ng b\u1EA1n.`);
+      return;
+    }
+    sim2.say(field.win);
+    settle2(sim2, r, q, s.step, o, true, fought ? field.tagWin : void 0, field.skipTo);
+  }
+  function settle2(sim2, r, q, step3, o, ok, extraTag, skipTo) {
+    if (!ok && o.roll?.ends) {
+      end(sim2, r);
+      sim2.say(`Vi\u1EC7c "${q.name}" kh\xF4ng th\xE0nh. Kh\xF4ng ai tr\xE1ch l\xE0ng b\u1EA1n.`);
+      return;
+    }
+    const tag = ok ? o.tag : o.roll?.tag;
+    if (tag) r.tags.push(tag);
+    if (extraTag && !r.tags.includes(extraTag)) r.tags.push(extraTag);
+    if (step3 >= q.steps.length - 1) {
+      pay2(sim2, r, q);
+      return;
+    }
+    r.step = skipTo ?? step3 + 1;
+    send2(sim2, r);
+  }
   function sideChoice(sim2, code, tribe) {
-    const [id, stepS, optS, okS] = code.split(":"), step3 = Number(stepS), opt = Number(optS), ok = okS === "y";
+    const [id, stepS, optS, okS, mapS] = code.split(":"), step3 = Number(stepS), opt = Number(optS), ok = okS === "y";
     const q = sideQuest(id), r = sim2.side.runs.find((x) => x.id === id && x.step === step3);
     if (!q || !r) return;
     if (opt < 0) {
@@ -206200,13 +206254,6 @@ ${risk.lines.join("\n")}`);
     }
     const o = q.steps[step3]?.options[opt];
     if (!o) return;
-    if (!ok && o.roll?.ends) {
-      end(sim2, r);
-      sim2.say(`Vi\u1EC7c "${q.name}" kh\xF4ng th\xE0nh. Kh\xF4ng ai tr\xE1ch l\xE0ng b\u1EA1n.`);
-      return;
-    }
-    const tag = ok ? o.tag : o.roll?.tag;
-    if (tag) r.tags.push(tag);
     if (step3 === 0) {
       r.taken = true;
       r.day = sim2.day;
@@ -206214,17 +206261,21 @@ ${risk.lines.join("\n")}`);
       r.tribe = tribe;
       sim2.say(`\u0110\xE3 nh\u1EADn vi\u1EC7c: ${q.name} (h\u1EA1n ${q.days} ng\xE0y). Xem \u1EDF Nhi\u1EC7m v\u1EE5.`);
     }
-    if (step3 >= q.steps.length - 1) {
-      pay2(sim2, r, q);
+    const field = q.steps[step3].field;
+    if (mapS === "f" && field) {
+      r.due = Math.max(r.due, sim2.day + field.days + 1);
+      if (sim2.stageStart(r, field, step3, opt)) return;
+      const won = !o.roll || seedRoll(sim2.seed, `sq:dice:${id}:${step3}`, sim2.day) < o.roll.p;
+      sim2.say(won ? field.win : o.roll.fail);
+      settle2(sim2, r, q, step3, o, won);
       return;
     }
-    r.step++;
-    send2(sim2, r);
+    settle2(sim2, r, q, step3, o, ok);
   }
   function sideQuestViews(sim2) {
     return sim2.side.runs.flatMap((r) => {
       const q = sideQuest(r.id);
-      return q ? [{ id: q.id, name: q.name, kind: q.kind, giver: characterOf(q.giver)?.name ?? "", step: r.step, steps: q.steps.length, daysLeft: r.taken ? Math.max(0, r.due - sim2.day) : -1, atGate: sim2.encounters.visitors.some((v) => isStep(v.scriptId, r) && v.state === "waiting") }] : [];
+      return q ? [{ id: q.id, name: q.name, kind: q.kind, giver: characterOf(q.giver)?.name ?? "", step: r.step, steps: q.steps.length, daysLeft: r.taken ? Math.max(0, r.due - sim2.day) : -1, atGate: sim2.encounters.visitors.some((v) => isStep(v.scriptId, r) && v.state === "waiting"), ...r.stage ? { at: r.stage.ward !== void 0 && sim2.get(r.stage.ward) ? [Math.floor(sim2.get(r.stage.ward).x), Math.floor(sim2.get(r.stage.ward).y)] : r.stage.at, todo: q.steps[r.stage.step]?.field?.say } : {} }] : [];
     });
   }
   function dropSideQuest(sim2, id) {
@@ -206245,7 +206296,7 @@ ${risk.lines.join("\n")}`);
 
   // src/sim/legacyfx.ts
   var FX = specialists_default.effects;
-  var initialLegacy = () => ({ aidStamp: -1, aidUntil: 0, warBanUntil: 0, vote: null, planTokens: 0, tokenGiven: false });
+  var initialLegacy = () => ({ aidStamp: -1, aidUntil: 0, warBanUntil: 0, vote: null, planTokens: 0, tokenGiven: false, war: null });
   var stands = (sim2, kind) => sim2.buildings.some((b) => b.kind === kind && b.done);
   var power2 = (sim2, id) => sim2.isUnlocked(`perk:${id}`) && !sim2.dev.unlockAll;
   function fx(sim2, key) {
@@ -206306,6 +206357,124 @@ ${risk.lines.join("\n")}`);
     }
   }
 
+  // src/sim/missions.ts
+  var MAP = SIDE.config.map;
+  var STAGE_ID = 9e8;
+  var far2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  var fireOf = (sim2) => {
+    const f = sim2.campfire();
+    return f ? { x: f.x + 1, y: f.y + 1 } : sim2.world.start;
+  };
+  var alive2 = (sim2, ids) => ids.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0);
+  function stageBlock(sim2, field) {
+    if (!MAP.enabled) return "off";
+    if (sim2.atWar()) return "war";
+    if (sim2.villagers.filter((v) => v.job === "fight" && v.health > 0 && !v.ally).length < (field.soldiers ?? 1)) return "no soldiers";
+    return null;
+  }
+  function spot(sim2, a, r) {
+    const c = fireOf(sim2), N = sim2.world.size;
+    for (const k of [1, 0.85, 0.7, 0.55]) {
+      const at = sim2.nearestFree(Math.floor(c.x + Math.cos(a) * r * k), Math.floor(c.y + Math.sin(a) * r * k), /* @__PURE__ */ new Set());
+      if (at && at[0] >= 0 && at[1] >= 0 && at[0] < N && at[1] < N && sim2.fog.state[at[1] * N + at[0]] === 2 && far2({ x: at[0], y: at[1] }, c) > MAP.minDist) return at;
+    }
+    return null;
+  }
+  function where(sim2, at) {
+    const c = fireOf(sim2), dx = at[0] - c.x, dy = at[1] - c.y;
+    return Math.abs(dx) > Math.abs(dy) * 2 ? dx > 0 ? "ph\xEDa \u0111\xF4ng" : "ph\xEDa t\xE2y" : Math.abs(dy) > Math.abs(dx) * 2 ? dy > 0 ? "ph\xEDa nam" : "ph\xEDa b\u1EAFc" : `ph\xEDa ${dx > 0 ? "\u0111\xF4ng" : "t\xE2y"} ${dy > 0 ? "nam" : "b\u1EAFc"}`;
+  }
+  function make2(sim2, run, at, kind, cast) {
+    const st = sim2.side, n = st.seq = (st.seq ?? 0) + 1;
+    let i = 0;
+    const rnd = () => seedRoll(sim2.seed, `stage:${run.id}:${n}`, i++);
+    const free = sim2.nearestFree(at[0], at[1], /* @__PURE__ */ new Set()) ?? at;
+    const f = sim2.makeVillager(free[0], free[1], rnd() < 0.5 ? "m" : "f", kind === "ward" ? "ward" : "stage", rnd);
+    sim2.nextVid--;
+    f.id = STAGE_ID + n;
+    const era = sim2.era === "ancient" ? "ancient" : "stone", who = characterOf(cast);
+    if (who) {
+      const suit = suitOf(who, sim2.era);
+      f.look = { ...who.look };
+      f.name = `${who.name} ${f.name}`;
+      f.outfit = suit.armor ?? void 0;
+    } else {
+      f.look.hide = "#3a2f2a";
+      f.look.pants = "#2a2622";
+      f.name = kind === "killer" ? `K\u1EBB l\u1EA1 m\u1EB7t ${f.name}` : `C\u01B0\u1EDBp ${f.name}`;
+    }
+    f.ai = { role: kind === "ward" ? "civ" : "raider", camp: { x: free[0] + 0.5, y: free[1] + 0.5 }, wander: 0, goal: null, raid: 0, stage: { run: run.id, kind, lead: MAP.lead } };
+    sim2.addFoe(f);
+    const arms2 = MAP.weapons[era];
+    sim2.armFoe(f, kind === "ward" ? null : arms2[Math.floor(rnd() * arms2.length)], kind !== "ward" && era === "ancient", 1);
+    return f;
+  }
+  var band2 = (sim2, run, at, field, part = 1) => {
+    const [lo, hi] = field.count, n = Math.max(1, Math.round((lo + Math.floor(seedRoll(sim2.seed, `stage:n:${run.id}`, sim2.day) * (hi - lo + 1)) + (sim2.era === "ancient" ? MAP.moreMedieval : 0)) * part));
+    return Array.from({ length: n }, () => make2(sim2, run, at, "bandit").id);
+  };
+  function stageStart(sim2, run, field, step3, opt) {
+    if (stageBlock(sim2, field)) return false;
+    const q = sideQuest(run.id), R2 = MAP.dist, a0 = seedRoll(sim2.seed, `stage:a:${run.id}`, sim2.day) * Math.PI * 2;
+    for (let t = 0; t < 12; t++) {
+      const a = a0 + t * Math.PI / 6, at = spot(sim2, a, R2);
+      if (!at) continue;
+      const base = { kind: field.kind, step: step3, opt, until: sim2.day + field.days, at, units: [], spawned: 0 };
+      if (field.kind === "bandits") {
+        run.stage = { ...base, units: band2(sim2, run, at, field) };
+      } else if (field.kind === "escort") {
+        const goal = spot(sim2, a + MAP.escortArc, R2), mid = spot(sim2, a + MAP.escortArc / 2, R2);
+        if (!goal || !mid) continue;
+        const ward = make2(sim2, run, at, "ward", q?.giver);
+        ward.ai.stage.goal = { x: goal[0] + 0.5, y: goal[1] + 0.5 };
+        run.stage = { ...base, ward: ward.id, goal, ambush: mid };
+      } else {
+        const near2 = spot(sim2, a, Math.max(MAP.minDist + 2, R2 * 0.6)) ?? at;
+        const ward = make2(sim2, run, near2, "ward", q?.giver);
+        run.stage = { ...base, at: near2, ward: ward.id, ambush: at, killAt: sim2.time + MAP.killerDelay };
+      }
+      run.stage.spawned = run.stage.units.length;
+      sim2.say(`${q?.name ?? "Vi\u1EC7c nh\u1EADn th\xEAm"}: ${field.say} (${where(sim2, run.stage.at)} l\xE0ng, h\u1EA1n ${field.days} ng\xE0y).`);
+      return true;
+    }
+    return false;
+  }
+  function stageCheck(sim2, run, field) {
+    const s = run.stage;
+    if (!s) return "lost";
+    const left = alive2(sim2, s.units), ward = s.ward !== void 0 ? sim2.get(s.ward) : void 0;
+    if (s.kind === "bandits") return left.length === 0 ? "won" : sim2.day > s.until ? "lost" : "run";
+    if (!ward || ward.health <= 0) return "lost";
+    if (s.kind === "escort") {
+      if (!s.sprung && s.ambush && far2(ward, { x: s.ambush[0], y: s.ambush[1] }) < MAP.ambushAt) {
+        s.sprung = true;
+        s.units = band2(sim2, run, s.ambush, field);
+        s.spawned = s.units.length;
+        sim2.say("C\xF3 k\u1EBB ch\u1EB7n \u0111\u01B0\u1EDDng \u0111o\xE0n h\u1ED9 t\u1ED1ng!");
+      }
+      if (s.goal && far2(ward, { x: s.goal[0] + 0.5, y: s.goal[1] + 0.5 }) < 2.2) return "won";
+      return sim2.day > s.until ? "lost" : "run";
+    }
+    if (!s.sprung && s.killAt !== void 0 && sim2.time >= s.killAt && s.ambush) {
+      s.sprung = true;
+      const k = make2(sim2, run, s.ambush, "killer");
+      k.ai.stage.mark = ward.id;
+      s.units = [k.id, ...band2(sim2, run, s.ambush, field, 0.5)];
+      s.spawned = s.units.length;
+      sim2.say("C\xF3 k\u1EBB l\u1EA1 \u0111ang ti\u1EBFn v\u1EC1 ph\xEDa ng\u01B0\u1EDDi l\xE0ng \u0111ang gi\u1EEF!");
+    }
+    if (s.sprung && left.length === 0) return "won";
+    return sim2.day > s.until ? "won" : "run";
+  }
+  var stageKills = (sim2, run) => run.stage ? run.stage.spawned - alive2(sim2, run.stage.units).length : 0;
+  function stageClear(sim2, run) {
+    for (const f of [...sim2.foes]) if (f.ai?.stage?.run === run.id) sim2.removeFoe(f);
+    run.stage = void 0;
+  }
+  function stageSweep(sim2) {
+    for (const f of [...sim2.foes]) if (f.ai?.stage && !sim2.side.runs.some((r) => r.id === f.ai.stage.run && r.stage)) sim2.removeFoe(f);
+  }
+
   // src/sim/specialists.ts
   var BG = specialists_default.bodyguard;
   var AS = specialists_default.assassin;
@@ -206349,9 +206518,9 @@ ${risk.lines.join("\n")}`);
     }
   }
   function pickTarget(sim2) {
-    const alive2 = sim2.villagers.filter((v) => v.team === "player" && v.health > 0 && v.inside === null);
+    const alive3 = sim2.villagers.filter((v) => v.team === "player" && v.health > 0 && v.inside === null);
     const pick3 = (l) => l[Math.floor(sim2.frnd() * l.length)];
-    return pick3(alive2.filter((v) => sim2.villagers.some((g) => g.wardOf === v.id))) ?? pick3(alive2.filter((v) => v.job !== "fight")) ?? pick3(alive2);
+    return pick3(alive3.filter((v) => sim2.villagers.some((g) => g.wardOf === v.id))) ?? pick3(alive3.filter((v) => v.job !== "fight")) ?? pick3(alive3);
   }
   function sendAssassin(sim2, tribeId, targetId) {
     const t = sim2.tribes.find((x) => x.id === tribeId);
@@ -206359,8 +206528,8 @@ ${risk.lines.join("\n")}`);
     if (!t || !target || target.team !== "player") return null;
     const fire = sim2.campfire(), fx2 = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
     const dx = t.camp.x - fx2, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), d = Math.min(AS.spawnDist, len);
-    const gx = Math.floor(fx2 + dx / len * d), gy = Math.floor(fy + dy / len * d), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-    const f = sim2.makeVillager(spot[0], spot[1], "m", t.id, sim2.frnd);
+    const gx = Math.floor(fx2 + dx / len * d), gy = Math.floor(fy + dy / len * d), spot2 = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const f = sim2.makeVillager(spot2[0], spot2[1], "m", t.id, sim2.frnd);
     f.look.hide = "#2a2a30";
     f.look.pants = "#1c1c22";
     f.weapon = AS.weapon;
@@ -206762,16 +206931,16 @@ ${risk.lines.join("\n")}`);
       });
     }
     const fireAt = sim2.campfire(), fx2 = fireAt ? fireAt.x + 1 : sim2.world.start.x, fy = fireAt ? fireAt.y + 1 : sim2.world.start.y;
-    const far = sim2.villagers.filter((v) => v.job === "idle" && v.shift === "both" && v.inside === null && v.energy < 40 && v.phase !== "sleep" && v.phase !== "goHome" && Math.hypot(v.x - fx2, v.y - fy) > 20);
-    if (far.length) {
-      const low = Math.min(...far.map((v) => v.energy));
+    const far3 = sim2.villagers.filter((v) => v.job === "idle" && v.shift === "both" && v.inside === null && v.energy < 40 && v.phase !== "sleep" && v.phase !== "goHome" && Math.hypot(v.x - fx2, v.y - fy) > 20);
+    if (far3.length) {
+      const low = Math.min(...far3.map((v) => v.energy));
       out.push({
         id: "explorers-tired",
         level: low < 25 ? "urgent" : "warn",
         icon: "stat_sta",
         title: "D\xE2n \u0111i xa \u0111\xE3 c\u1EA1n s\u1EE9c",
         when: "c\u1EA7n quay v\u1EC1",
-        body: `${far.slice(0, 3).map((v) => `${v.name} (${Math.round(v.energy)}%)`).join(", ")}${far.length > 3 ? ` v\xE0 ${far.length - 3} ng\u01B0\u1EDDi n\u1EEFa` : ""} \xB7 c\xE1ch l\xE0ng h\u01A1n 20 \xF4`,
+        body: `${far3.slice(0, 3).map((v) => `${v.name} (${Math.round(v.energy)}%)`).join(", ")}${far3.length > 3 ? ` v\xE0 ${far3.length - 3} ng\u01B0\u1EDDi n\u1EEFa` : ""} \xB7 c\xE1ch l\xE0ng h\u01A1n 20 \xF4`,
         tip: "D\xE2n \u0111\u01B0\u1EE3c b\u1EA1n sai \u0111i kh\xE1m ph\xE1 l\xE0m c\u1EA3 ng\xE0y l\u1EABn \u0111\xEAm. Khi s\u1EE9c xu\u1ED1ng d\u01B0\u1EDBi 20% h\u1ECD t\u1EF1 quay v\u1EC1 l\xE0ng ngh\u1EC9, nh\u01B0ng \u0111\u01B0\u1EDDng xa th\xEC r\u1EA5t l\xE2u: h\xE3y ra l\u1EC7nh cho h\u1ECD v\u1EC1 s\u1EDBm.",
         action: { building: "campfire", label: "V\u1EC1 l\xE0ng" }
       });
@@ -207195,9 +207364,9 @@ ${risk.lines.join("\n")}`);
     if (!b) return;
     b.staff = b.staff.filter((id) => id !== v.id);
     const d = BUILDINGS[b.kind], ring3 = sim2.ringTiles(v, b.x, b.y, d.w, d.h);
-    const spot = ring3[0] ?? [b.x - 1, b.y + d.h];
-    v.x = spot[0] + 0.5;
-    v.y = spot[1] + 0.5;
+    const spot2 = ring3[0] ?? [b.x - 1, b.y + d.h];
+    v.x = spot2[0] + 0.5;
+    v.y = spot2[1] + 0.5;
   }
   function releaseStaff(sim2, ids) {
     if (sim2.warLock()) return;
@@ -207773,12 +207942,12 @@ ${risk.lines.join("\n")}`);
     else v.out = true;
   }
   function recallFar(sim2) {
-    const fire = sim2.campfire(), far = farFolk(sim2);
-    if (!far.length) return 0;
+    const fire = sim2.campfire(), far3 = farFolk(sim2);
+    if (!far3.length) return 0;
     const sx = fire ? fire.x + 1 : sim2.world.start.x, sy = fire ? fire.y + 3 : sim2.world.start.y + 3;
-    orderMove(sim2, far.map((v) => v.id), Math.floor(sx), Math.floor(sy));
-    for (const v of far) if (v.job === "idle") v.shift = "day";
-    return far.length;
+    orderMove(sim2, far3.map((v) => v.id), Math.floor(sx), Math.floor(sy));
+    for (const v of far3) if (v.job === "idle") v.shift = "day";
+    return far3.length;
   }
   function clearCombat(sim2, v) {
     v.fight.target = null;
@@ -208167,10 +208336,10 @@ ${risk.lines.join("\n")}`);
     if (v.inside !== null) return;
     const w = sim2.world, ours = passOf(v);
     if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v)) {
-      const spot = freeSpotNear(sim2, v.x, v.y);
-      if (spot) {
-        v.x = spot[0];
-        v.y = spot[1];
+      const spot2 = freeSpotNear(sim2, v.x, v.y);
+      if (spot2) {
+        v.x = spot2[0];
+        v.y = spot2[1];
         v.slide = null;
       }
     }
@@ -208530,7 +208699,7 @@ ${risk.lines.join("\n")}`);
   }
 
   // src/sim/brainplayer.ts
-  var { sight: SIGHT2, defensive: DEFENSIVE } = PLAYER;
+  var { sight: SIGHT3, defensive: DEFENSIVE } = PLAYER;
   function brainPlayer(sim2, v, dt) {
     if (v.phase === "goStore" || v.phase === "goEquip") return false;
     if (v.fight.obey && (v.phase !== "move" || !v.path.length)) v.fight.obey = false;
@@ -208558,7 +208727,7 @@ ${risk.lines.join("\n")}`);
     const scanNow = v.fight.scan <= 0;
     if (scanNow) v.fight.scan = 0.35;
     const looking = scanNow || v.phase === "flee" || v.phase === "fight" && !v.fight.target;
-    const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT2;
+    const sight = v.team === "player" ? sim2.sightOf(v) : SIGHT3;
     const rally = v.guard && guardRallyOn(sim2), reach = rally ? Math.max(sight, PLAYER.guardRally) : sight;
     const threats = looking ? threatsOf(sim2, v, reach + 1) : [];
     if (rest) {
@@ -208611,8 +208780,8 @@ ${risk.lines.join("\n")}`);
       gx += dx / len * 1.5;
       gy += dy / len * 1.5;
     }
-    const spot = sim2.nearestFree(Math.floor(gx), Math.floor(gy), /* @__PURE__ */ new Set());
-    return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
+    const spot2 = sim2.nearestFree(Math.floor(gx), Math.floor(gy), /* @__PURE__ */ new Set());
+    return spot2 ? sim2.pathTo(v, spot2[0], spot2[1], 4e3) : [];
   }
   var shelters = (v) => !isFighter(v) || v.job === "hunt";
   var FEAR = PLAYER.fear;
@@ -208646,8 +208815,8 @@ ${risk.lines.join("\n")}`);
   }
   function runAway(sim2, v, from) {
     const ang = sim2.rnd() * Math.PI * 2, ax = from ? v.x - from.x : Math.cos(ang), ay = from ? v.y - from.y : Math.sin(ang), len = Math.hypot(ax, ay) || 1;
-    const spot = sim2.nearestFree(Math.floor(v.x + ax / len * 12), Math.floor(v.y + ay / len * 12), /* @__PURE__ */ new Set());
-    return spot ? sim2.pathTo(v, spot[0], spot[1], 4e3) : [];
+    const spot2 = sim2.nearestFree(Math.floor(v.x + ax / len * 12), Math.floor(v.y + ay / len * 12), /* @__PURE__ */ new Set());
+    return spot2 ? sim2.pathTo(v, spot2[0], spot2[1], 4e3) : [];
   }
   function startFlee(sim2, v, secs, from) {
     const keep = v.job, nightOwl = v.nightOwl;
@@ -209119,9 +209288,9 @@ ${risk.lines.join("\n")}`);
     if (!fire) return;
     const d = BUILDINGS[fire.kind];
     const taken = new Set(sim2.villagers.filter((o) => o !== v && o.bed >= 0).map((o) => o.bed));
-    const spot = sim2.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
-    if (!spot || sim2.routeTo(v, [spot], 1, 8e4) < 0) return;
-    v.bed = spot[1] * sim2.world.size + spot[0];
+    const spot2 = sim2.nearestFree(fire.x + (d.w >> 1), fire.y + d.h, taken);
+    if (!spot2 || sim2.routeTo(v, [spot2], 1, 8e4) < 0) return;
+    v.bed = spot2[1] * sim2.world.size + spot2[0];
     v.phase = "goHome";
   }
   function seekBed(sim2, v, dt) {
@@ -209195,13 +209364,13 @@ ${risk.lines.join("\n")}`);
     if (!sim2.newcomersOpen) return;
     sim2.dailyArrival();
   }
-  function settle2(sim2, n, room = false) {
+  function settle3(sim2, n, room = false) {
     const { femaleChance } = start_default.arrivals, fire = sim2.campfire(), s = sim2.world.start, names = [];
     if (room) n = Math.min(n, Math.max(0, sim2.popCap() - sim2.villagers.length));
     for (let i = 0; i < n; i++) {
       const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 2;
-      const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-      const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < femaleChance ? "f" : "m", "player", sim2.frnd);
+      const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot2 = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+      const v = sim2.makeVillager(spot2[0], spot2[1], sim2.frnd() < femaleChance ? "f" : "m", "player", sim2.frnd);
       sim2.villagers.push(v);
       sim2.registerUnit(v);
       names.push(v.name);
@@ -209874,8 +210043,8 @@ ${risk.lines.join("\n")}`);
   }
   function postFor(sim2, house) {
     const taken = new Set(sim2.villagers.filter((o) => o.guardAt).map((o) => Math.floor(o.guardAt.y) * sim2.world.size + Math.floor(o.guardAt.x)));
-    const spot = sim2.nearestFree(house.x + 1, house.y + 4, taken) ?? [house.x + 1, house.y + 4];
-    return { x: spot[0] + 0.5, y: spot[1] + 0.5 };
+    const spot2 = sim2.nearestFree(house.x + 1, house.y + 4, taken) ?? [house.x + 1, house.y + 4];
+    return { x: spot2[0] + 0.5, y: spot2[1] + 0.5 };
   }
   function postGuard(sim2, v) {
     const house = roleHouses(sim2, "guard")[0] ?? sim2.campfire();
@@ -210216,7 +210385,7 @@ ${risk.lines.join("\n")}`);
     for (const b of [...sim2.buildings]) {
       if (b.kind !== "trap" || !b.done) continue;
       for (const f of sim2.foes) {
-        if (f.health <= 0 || f.ai?.guest !== void 0 || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
+        if (f.health <= 0 || f.ai?.guest !== void 0 || f.team === "ward" || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
         b.staff.push(f.id);
         hurt(sim2, { kind: "unit", id: f.id }, 14 * b.level * (1 + statBonus(sim2.researched, "trap", "atk") / 100), "pierce", { x: b.x, y: b.y }, {});
         sim2.noteBattle("note", "M\u1ED9t h\u1ED1 ch\xF4ng \u0111\xE3 l\xE0m \u0111\u1ECBch b\u1ECB th\u01B0\u01A1ng.");
@@ -210358,16 +210527,16 @@ ${risk.lines.join("\n")}`);
     us.forEach((v, i) => {
       if (sim2.warIds.has(v.id)) v.nightOwl = true;
       const [px, py] = placeOffset(offs[i], s.heading, x, y);
-      const spot = sim2.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
-      taken.add(spot[1] * sim2.world.size + spot[0]);
+      const spot2 = sim2.nearestFree(Math.floor(px), Math.floor(py), taken) ?? [Math.floor(px), Math.floor(py)];
+      taken.add(spot2[1] * sim2.world.size + spot2[0]);
       if (mode === "move") {
         sim2.pathLeft++;
-        sim2.orderMove([v.id], spot[0], spot[1]);
+        sim2.orderMove([v.id], spot2[0], spot2[1]);
         v.fight.obey = v.path.length > 0;
-      } else if (mode === "attack") sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
+      } else if (mode === "attack") sim2.orderAttackMove([v.id], spot2[0] + 0.5, spot2[1] + 0.5);
       else {
-        sim2.orderAttackMove([v.id], spot[0] + 0.5, spot[1] + 0.5);
-        v.fight.anchor = { x: spot[0] + 0.5, y: spot[1] + 0.5 };
+        sim2.orderAttackMove([v.id], spot2[0] + 0.5, spot2[1] + 0.5);
+        v.fight.anchor = { x: spot2[0] + 0.5, y: spot2[1] + 0.5 };
       }
     });
   }
@@ -210748,9 +210917,9 @@ ${risk.lines.join("\n")}`);
       }
       const k = 1 + Math.min(legion_default.catchup - 1, d / 4), moved = step2(sim2, v, tx, ty, L2.speed * k * dt);
       if (marching || moved > 0) {
-        const far = d > 1.5;
-        v.facing = far ? faceOf(Math.atan2(ty - v.y, tx - v.x)) : heading;
-        v.slide = { x: tx, y: ty, face: far ? tx >= v.x ? "right" : "left" : headSide };
+        const far3 = d > 1.5;
+        v.facing = far3 ? faceOf(Math.atan2(ty - v.y, tx - v.x)) : heading;
+        v.slide = { x: tx, y: ty, face: far3 ? tx >= v.x ? "right" : "left" : headSide };
       } else {
         v.slide = null;
         v.facing = heading;
@@ -211083,19 +211252,19 @@ ${risk.lines.join("\n")}`);
     const bx = cx + dx / len * t, by = cy + dy / len * t, taken = /* @__PURE__ */ new Set();
     for (const v of crew2) {
       if (v.phase === "fight" || v.phase === "sleep" || v.inTent || v.down > 0) continue;
-      const spot = sim2.nearestFree(Math.floor(bx), Math.floor(by), taken);
-      if (!spot) continue;
-      taken.add(spot[1] * sim2.world.size + spot[0]);
-      const away = Math.hypot(spot[0] + 0.5 - v.x, spot[1] + 0.5 - v.y);
+      const spot2 = sim2.nearestFree(Math.floor(bx), Math.floor(by), taken);
+      if (!spot2) continue;
+      taken.add(spot2[1] * sim2.world.size + spot2[0]);
+      const away = Math.hypot(spot2[0] + 0.5 - v.x, spot2[1] + 0.5 - v.y);
       v.hurry = away > 6;
       const end3 = v.path[v.path.length - 1];
-      if (away < 4 || end3 && Math.hypot(end3[0] - spot[0], end3[1] - spot[1]) < 3 || sim2.pathLeft <= 0) continue;
+      if (away < 4 || end3 && Math.hypot(end3[0] - spot2[0], end3[1] - spot2[1]) < 3 || sim2.pathLeft <= 0) continue;
       sim2.pathLeft--;
-      v.path = sim2.pathTo(v, spot[0], spot[1], 3e3);
+      v.path = sim2.pathTo(v, spot2[0], spot2[1], 3e3);
       v.phase = v.path.length ? "move" : "idle";
     }
   }
-  function settle3(sim2) {
+  function settle4(sim2) {
     for (const plan2 of sim2.plans) {
       if (!plan2.supplyIds.length) continue;
       const left = packFood(sim2, plan2), crew2 = supplyOf(sim2, plan2);
@@ -211411,9 +211580,9 @@ ${risk.lines.join("\n")}`);
         taken.add(Math.floor(c.y) * sim2.world.size + Math.floor(c.x));
         return;
       }
-      const spot = sim2.nearestFree(Math.floor(c.x), Math.floor(c.y), taken) ?? [Math.floor(c.x), Math.floor(c.y)];
-      taken.add(spot[1] * sim2.world.size + spot[0]);
-      sim2.orderMove([v.id], spot[0], spot[1]);
+      const spot2 = sim2.nearestFree(Math.floor(c.x), Math.floor(c.y), taken) ?? [Math.floor(c.x), Math.floor(c.y)];
+      taken.add(spot2[1] * sim2.world.size + spot2[0]);
+      sim2.orderMove([v.id], spot2[0], spot2[1]);
     });
   }
   function assembled(sim2, plan2) {
@@ -211570,6 +211739,7 @@ ${risk.lines.join("\n")}`);
     plan2.result = "";
     plan2.endedAt = 0;
     sim2.say(`Tri\u1EC3n khai qu\xE2n \u0111\xE1nh ${sim2.tribes.find((t) => t.id === plan2.tribe)?.def.name ?? ""} b\u1EAFt \u0111\u1EA7u.`);
+    if (plan2.tribe) sim2.warBegan(plan2.tribe);
     return null;
   }
   function winCheck(sim2, plan2, t) {
@@ -211625,10 +211795,10 @@ ${risk.lines.join("\n")}`);
         const x0 = v.x, y0 = v.y, taken = /* @__PURE__ */ new Set();
         let freed = false;
         search: for (const r of [6, 10, 16, 24, 36]) for (let k = 0; k < 8; k++) {
-          const a = k / 8 * Math.PI * 2, spot = sim2.nearestFree(Math.floor(x0 + Math.cos(a) * r), Math.floor(y0 + Math.sin(a) * r), taken);
-          if (!spot) continue;
-          v.x = spot[0] + 0.5;
-          v.y = spot[1] + 0.5;
+          const a = k / 8 * Math.PI * 2, spot2 = sim2.nearestFree(Math.floor(x0 + Math.cos(a) * r), Math.floor(y0 + Math.sin(a) * r), taken);
+          if (!spot2) continue;
+          v.x = spot2[0] + 0.5;
+          v.y = spot2[1] + 0.5;
           if (sim2.pathTo(v, rx, ry, 14e3).length) {
             freed = true;
             break search;
@@ -211709,7 +211879,7 @@ ${risk.lines.join("\n")}`);
           m.state = "hold";
           continue;
         }
-        const alive2 = sim2.squadUnits(s).length, c = sim2.squadCenter(s);
+        const alive3 = sim2.squadUnits(s).length, c = sim2.squadCenter(s);
         if (m.state === "wait" && triggered(sim2, plan2, m)) dispatch(sim2, plan2, m, s);
         else if (m.state === "blocked") {
           if (second && sim2.blockCleared(m)) {
@@ -211732,7 +211902,7 @@ ${risk.lines.join("\n")}`);
               if (pos.target) sim2.orderAttack(sim2.squadUnits(s).map((v) => v.id), { kind: "unit", id: pos.target });
             } else if (m.state === "march" && m.route === "forest" && d > 12 && Math.hypot((s.anchor?.x ?? 0) - c.x, (s.anchor?.y ?? 0) - c.y) < 4) dispatch(sim2, plan2, { ...m, route: "main" }, s);
           }
-          const lost = m.initial ? 1 - alive2 / m.initial : 0;
+          const lost = m.initial ? 1 - alive3 / m.initial : 0;
           if (m.withdrawAt > 0 && lost >= m.withdrawAt) {
             m.state = "withdraw";
             m.leg = 0;
@@ -212333,19 +212503,19 @@ ${risk.lines.join("\n")}`);
     const spots = legSpots(sim2, s, p), skip = aimSkip(m);
     let block = null;
     for (const v of us) {
-      const spot = spots.get(v.id);
+      const spot2 = spots.get(v.id);
       v.speed = (1.6 + 0.1 * v.stats.agi) * FORMATIONS[s.formation].speed;
-      sim2.orderAttackMove([v.id], spot.x, spot.y);
+      sim2.orderAttackMove([v.id], spot2.x, spot2.y);
       v.fight.strict = true;
-      if (mode === "hold") v.fight.anchor = { x: spot.x, y: spot.y };
+      if (mode === "hold") v.fight.anchor = { x: spot2.x, y: spot2.y };
       if (mode === "move") {
         v.fight.mode = "guard";
         v.fight.dest = null;
-        v.fight.anchor = { x: spot.x, y: spot.y };
+        v.fight.anchor = { x: spot2.x, y: spot2.y };
       }
-      v.path = lineSteps(sim2, v, spot);
+      v.path = lineSteps(sim2, v, spot2);
       v.phase = v.path.length ? "move" : "idle";
-      block ?? (block = firstBlock(sim2, v, spot, SIEGE.lookAhead, skip));
+      block ?? (block = firstBlock(sim2, v, spot2, SIEGE.lookAhead, skip));
     }
     return block;
   }
@@ -212367,15 +212537,15 @@ ${risk.lines.join("\n")}`);
     if (!p) return false;
     const spots = legSpots(sim2, s, p), skip = aimSkip(m);
     for (const v of sim2.squadUnits(s)) {
-      const spot = spots.get(v.id);
+      const spot2 = spots.get(v.id);
       if (v.breaks || v.phase === "fight" || v.down > 0) continue;
-      const ob = firstBlock(sim2, v, spot, SIEGE.lookAhead, skip);
+      const ob = firstBlock(sim2, v, spot2, SIEGE.lookAhead, skip);
       if (ob) {
         haltSquad(sim2, m, s, ob);
         return true;
       }
-      if (!v.path.length && Math.hypot(spot.x - v.x, spot.y - v.y) > 1.5) {
-        v.path = lineSteps(sim2, v, spot);
+      if (!v.path.length && Math.hypot(spot2.x - v.x, spot2.y - v.y) > 1.5) {
+        v.path = lineSteps(sim2, v, spot2);
         v.phase = v.path.length ? "move" : "idle";
       }
     }
@@ -212407,9 +212577,9 @@ ${risk.lines.join("\n")}`);
       const p = t.props.find((q) => q.x === tg.x && q.y === tg.y);
       return p ? { state: "live", prop: { x: p.x, y: p.y, tribe: t.id }, x: p.x + p.w / 2, y: p.y + p.h / 2 } : { state: "gone" };
     }
-    const alive2 = t.unitIds.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0);
-    const pool = tg.leader ? alive2.filter((u) => u.id === t.leaderId) : alive2.filter((u) => u.ai?.role !== "civ");
-    if (!pool.length) return tg.leader || !alive2.length ? { state: "gone" } : { state: "moved" };
+    const alive3 = t.unitIds.map((id) => sim2.get(id)).filter((u) => !!u && u.health > 0);
+    const pool = tg.leader ? alive3.filter((u) => u.id === t.leaderId) : alive3.filter((u) => u.ai?.role !== "civ");
+    if (!pool.length) return tg.leader || !alive3.length ? { state: "gone" } : { state: "moved" };
     const best = pool.slice().sort((a, b) => Math.hypot(a.x - tg.x, a.y - tg.y) - Math.hypot(b.x - tg.x, b.y - tg.y))[0];
     return Math.hypot(best.x - tg.x, best.y - tg.y) <= SIEGE.driftMax ? { state: "live", unit: best.id, x: best.x, y: best.y } : { state: "moved" };
   }
@@ -212446,8 +212616,8 @@ ${risk.lines.join("\n")}`);
         breakProp(v, house);
         continue;
       }
-      const far = fire ?? nearest(t.props.filter((q) => q.kind === "tower"), (q) => [q.x, q.y]);
-      if (far) breakProp(v, far);
+      const far3 = fire ?? nearest(t.props.filter((q) => q.kind === "tower"), (q) => [q.x, q.y]);
+      if (far3) breakProp(v, far3);
       else {
         const left = nearest(foes, (u) => [u.x, u.y]);
         if (left) sim2.orderAttack([v.id], { kind: "unit", id: left.id });
@@ -212708,6 +212878,7 @@ ${risk.lines.join("\n")}`);
       this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
       for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
       tickTribes(this, dt);
+      this.tickWarStory(dt);
     },
     /** → warskirmish.skirmishOrder: soldiers took an order against a village (commands.ts), which may begin a skirmish. */
     skirmishOrder(ids, t) {
@@ -213785,6 +213956,25 @@ ${risk.lines.join("\n")}`);
     sideQuestChoice(code, tribe) {
       return sideChoice(this, code, tribe);
     }
+    /** → missions: a step of a side quest played on the map (stageBlock: why it cannot be, stageStart, stageCheck, stageKills, stageClear, stageSweep) */
+    stageBlock(field) {
+      return stageBlock(this, field);
+    }
+    stageStart(run, field, step3, opt) {
+      return stageStart(this, run, field, step3, opt);
+    }
+    stageCheck(run, field) {
+      return stageCheck(this, run, field);
+    }
+    stageKills(run) {
+      return stageKills(this, run);
+    }
+    stageClear(run) {
+      return stageClear(this, run);
+    }
+    stageSweep() {
+      return stageSweep(this);
+    }
     /** → sidequests.sideQuestViews */
     sideQuests() {
       return sideQuestViews(this);
@@ -213882,6 +214072,19 @@ ${risk.lines.join("\n")}`);
     /** → tribes.rebelTributary: the tributary that likes us least turns on us (a leaf of the story) */
     rebelTributary() {
       return rebelTributary(this);
+    }
+    /** → story.warEvent / warBegan / warLeaderDown / warOver / tickWarStory: trunk V of the story tree plays in the war */
+    warBegan(tribe) {
+      return warBegan(this, tribe);
+    }
+    warLeaderDown(tribe) {
+      return warLeaderDown(this, tribe);
+    }
+    warOver() {
+      return warOver(this);
+    }
+    tickWarStory(dt) {
+      return tickWarStory(this, dt);
     }
     /** → story.legacyView */
     legacyView() {
@@ -214179,7 +214382,7 @@ ${risk.lines.join("\n")}`);
     }
     /** → environment.settle */
     settle(n, room = false) {
-      return settle2(this, n, room);
+      return settle3(this, n, room);
     }
     /** → environment.toggleNewcomers */
     toggleNewcomers() {
@@ -214657,7 +214860,8 @@ ${risk.lines.join("\n")}`);
       }
       if (this.warSince >= 0) {
         this.addDeed("war_fought");
-        settle3(this);
+        this.warOver();
+        settle4(this);
         finish(this, this.warMeals);
         clearHarass(this);
         eatWar(this, (this.time - this.warSince) / this.dayLen);
@@ -215589,7 +215793,7 @@ ${risk.lines.join("\n")}`);
       this.notes = notes;
       const cur = views.find((v) => v.open);
       if (this.open === "quests") {
-        const key = views.map((v) => v.done ? "d" : v.open ? "o" : "l").join("") + (cur ? `#${cur.progress}` : "#all") + `L${this.c.sim.legacyView().filter((x) => x.open).length}${this.c.sim.era}` + this.c.sim.sideQuests().map((s) => `|${s.id}${s.step}${s.daysLeft}${s.atGate ? "g" : ""}`).join("");
+        const key = views.map((v) => v.done ? "d" : v.open ? "o" : "l").join("") + (cur ? `#${cur.progress}` : "#all") + `L${this.c.sim.legacyView().filter((x) => x.open).length}${this.c.sim.era}` + this.c.sim.sideQuests().map((s) => `|${s.id}${s.step}${s.daysLeft}${s.atGate ? "g" : ""}${s.at ? "m" : ""}`).join("");
         if (key !== this.questKey) {
           this.questKey = key;
           this.drawQuests(views, cur);
@@ -215650,8 +215854,11 @@ ${risk.lines.join("\n")}`);
       };
       return [h("h3", { class: "dsub", text: "Vi\u1EC7c nh\u1EADn th\xEAm (kh\xF4ng b\u1EAFt bu\u1ED9c, ch\u1EC9 c\xF3 th\u01B0\u1EDFng)" }), ...side.map((s) => dlg.tile(
         { state: s.daysLeft < 0 ? "next" : "now", pic: "\u2709", name: s.name, chip: dlg.chip(s.daysLeft < 0 ? "\u0111ang m\u1EDDi" : s.daysLeft === 0 ? "h\u1EA1n h\xF4m nay" : `c\xF2n ${s.daysLeft} ng\xE0y`) },
-        [dlg.text(`${s.kind} \xB7 ${s.giver} \xB7 b\u01B0\u1EDBc ${s.step + 1}/${s.steps}${s.atGate ? " \xB7 c\xF3 ng\u01B0\u1EDDi \u0111ang ch\u1EDD \u1EDF c\u1ED5ng" : s.daysLeft < 0 ? " \xB7 ng\u01B0\u1EDDi nh\u1EDD \u0111ang tr\xEAn \u0111\u01B0\u1EDDng t\u1EDBi c\u1ED5ng" : " \xB7 ng\u01B0\u1EDDi ti\u1EBFp theo s\u1EBD t\u1EDBi c\u1ED5ng"}`)],
-        s.daysLeft < 0 ? null : dlg.button("B\u1ECF vi\u1EC7c", () => drop(s.id), { small: true, tone: "bad", title: "B\u1ECF vi\u1EC7c n\xE0y: kh\xF4ng b\u1ECB ph\u1EA1t, ch\u1EC9 m\u1EA5t ph\u1EA7n th\u01B0\u1EDFng" })
+        [dlg.text(`${s.kind} \xB7 ${s.giver} \xB7 b\u01B0\u1EDBc ${s.step + 1}/${s.steps}${s.todo ? ` \xB7 tr\xEAn b\u1EA3n \u0111\u1ED3: ${s.todo}` : s.atGate ? " \xB7 c\xF3 ng\u01B0\u1EDDi \u0111ang ch\u1EDD \u1EDF c\u1ED5ng" : s.daysLeft < 0 ? " \xB7 ng\u01B0\u1EDDi nh\u1EDD \u0111ang tr\xEAn \u0111\u01B0\u1EDDng t\u1EDBi c\u1ED5ng" : " \xB7 ng\u01B0\u1EDDi ti\u1EBFp theo s\u1EBD t\u1EDBi c\u1ED5ng"}`)],
+        s.daysLeft < 0 ? null : h("div", { class: "dacts" }, s.at ? dlg.button("T\u1EDBi n\u01A1i", () => {
+          this.close();
+          this.c.ctl.centerOn((s.at[0] + 0.5) * TILE, (s.at[1] + 0.5) * TILE);
+        }, { small: true, title: "\u0110\u01B0a m\xE0n h\xECnh t\u1EDBi ch\u1ED7 vi\u1EC7c n\xE0y \u0111ang di\u1EC5n ra" }) : null, dlg.button("B\u1ECF vi\u1EC7c", () => drop(s.id), { small: true, tone: "bad", title: "B\u1ECF vi\u1EC7c n\xE0y: kh\xF4ng b\u1ECB ph\u1EA1t, ch\u1EC9 m\u1EA5t ph\u1EA7n th\u01B0\u1EDFng" }))
       ))];
     }
     /** Di sản: the specialists and powers the village holds, by name; the others only as shadows (how each opens is never told). Shown from the medieval age, or once one is open. */
@@ -217332,8 +217539,8 @@ ${risk.lines.join("\n")}`);
   function addVillager(sim2) {
     const fire = sim2.campfire(), s = sim2.world.start;
     const a = sim2.frnd() * Math.PI * 2, r = 2 + sim2.frnd() * 3;
-    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
-    const v = sim2.makeVillager(spot[0], spot[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
+    const gx = Math.floor((fire ? fire.x + 1 : s.x) + Math.cos(a) * r), gy = Math.floor((fire ? fire.y + 3 : s.y) + Math.sin(a) * r), spot2 = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const v = sim2.makeVillager(spot2[0], spot2[1], sim2.frnd() < 0.5 ? "m" : "f", "player", sim2.frnd);
     sim2.villagers.push(v);
     sim2.registerUnit(v);
   }
@@ -218854,9 +219061,9 @@ ${risk.lines.join("\n")}`);
     }
     /** A squad that cannot go on along its arrow: what is in the way, and the soldiers to send to break it down (they work fast and gather nothing). */
     blockedRow(plan2, m, act) {
-      const { sim: sim2 } = this.c, s = sim2.squadById(m.squad), b = m.block, alive2 = sim2.squadUnits(s).length, working = sim2.squadUnits(s).filter((v) => v.breaks).length;
-      const n = Math.min(alive2, this.crew.get(m.squad) ?? Math.min(3, alive2)), pick3 = document.createElement("select");
-      for (let i = 1; i <= alive2; i++) {
+      const { sim: sim2 } = this.c, s = sim2.squadById(m.squad), b = m.block, alive3 = sim2.squadUnits(s).length, working = sim2.squadUnits(s).filter((v) => v.breaks).length;
+      const n = Math.min(alive3, this.crew.get(m.squad) ?? Math.min(3, alive3)), pick3 = document.createElement("select");
+      for (let i = 1; i <= alive3; i++) {
         const o = document.createElement("option");
         o.value = String(i);
         o.textContent = `${i} l\xEDnh`;
@@ -219013,8 +219220,8 @@ ${risk.lines.join("\n")}`);
         break;
       }
       case "sleep": {
-        const bed = sim2 && v.inside !== null ? sim2.getBuilding(v.inside) : void 0, where = bed ? ` trong ${BUILDINGS[bed.kind].name.toLowerCase()}` : "";
-        t = sim2 && sim2.sleepLocked(v) ? `ng\u1EE7 say${where} (h\u1ED3i s\u1EE9c ${Math.round(v.energy)}/${v.lockUntil}%)` : `\u0111ang ng\u1EE7${where}`;
+        const bed = sim2 && v.inside !== null ? sim2.getBuilding(v.inside) : void 0, where2 = bed ? ` trong ${BUILDINGS[bed.kind].name.toLowerCase()}` : "";
+        t = sim2 && sim2.sleepLocked(v) ? `ng\u1EE7 say${where2} (h\u1ED3i s\u1EE9c ${Math.round(v.energy)}/${v.lockUntil}%)` : `\u0111ang ng\u1EE7${where2}`;
         break;
       }
       case "fight":
@@ -220406,9 +220613,9 @@ ${risk.lines.join("\n")}`);
         if (this.group && !this.group.startsWith("*") && !groups.includes(this.group)) this.group = "";
         this.groupSel.value = this.group;
       }
-      const far = farFolk(sim2).length;
-      this.recall.hidden = far === 0;
-      this.recall.textContent = `G\u1ECDi ${far} d\xE2n \u1EDF xa v\u1EC1 l\xE0ng`;
+      const far3 = farFolk(sim2).length;
+      this.recall.hidden = far3 === 0;
+      this.recall.textContent = `G\u1ECDi ${far3} d\xE2n \u1EDF xa v\u1EC1 l\xE0ng`;
       this.dirBtn.textContent = this.desc ? "\u2193 Cao tr\u01B0\u1EDBc" : "\u2191 Th\u1EA5p tr\u01B0\u1EDBc";
       this.dirBtn.hidden = this.sort === "order";
       const filtered = this.sorted(this.group ? all.filter((v2) => _PeoplePane.matches(v2, this.group)) : all);
@@ -221078,11 +221285,11 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
     }
     /** One village in the list: its name, how far, what the map shows and whether scouts are out there. */
     villageTile(id) {
-      const { sim: sim2 } = this.c, t = sim2.tribes.find((x) => x.id === id), best = sim2.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level)[0], where = sim2.whereIs(id), trip = sim2.scouts.find((m) => m.tribe === id);
+      const { sim: sim2 } = this.c, t = sim2.tribes.find((x) => x.id === id), best = sim2.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level)[0], where2 = sim2.whereIs(id), trip = sim2.scouts.find((m) => m.tribe === id);
       const known = best ? t.def.name : "M\u1ED9t ng\xF4i l\xE0ng";
       const tile = dlg.tile(
         { pic: "\u{1F3D5}", name: known, chip: trip ? dlg.chip(`${trip.ids.length} trinh s\xE1t ${PHASE[trip.phase]}`) : best ? dlg.chip(`B\u1EA3n \u0111\u1ED3 c\u1EA5p ${sim2.mapLevel(id) || best.level}`) : dlg.chip("Ch\u01B0a v\u1EBD"), state: id === this.sel ? "now" : void 0 },
-        [dlg.more(where ? `C\xE1ch kho\u1EA3ng ${where.dist} \xF4, h\u01B0\u1EDBng ${where.dir}` : ""), best ? dlg.more(`${best.gaps ? "C\xF2n h\u1EDF \xB7 " : ""}${this.ageWords(best.at)}`) : null]
+        [dlg.more(where2 ? `C\xE1ch kho\u1EA3ng ${where2.dist} \xF4, h\u01B0\u1EDBng ${where2.dir}` : ""), best ? dlg.more(`${best.gaps ? "C\xF2n h\u1EDF \xB7 " : ""}${this.ageWords(best.at)}`) : null]
       );
       tile.classList.add("pick");
       tile.addEventListener("click", () => {
@@ -221095,9 +221302,9 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
     }
     /** The chosen village: the map it has, the scouts going, and how the trip would turn out. */
     detail(id) {
-      const { sim: sim2 } = this.c, t = sim2.tribes.find((x) => x.id === id), maps = sim2.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level), best = maps[0], where = sim2.whereIs(id), trip = sim2.scouts.find((m) => m.tribe === id);
+      const { sim: sim2 } = this.c, t = sim2.tribes.find((x) => x.id === id), maps = sim2.maps.filter((m) => m.tribe === id).sort((a, b) => b.level - a.level), best = maps[0], where2 = sim2.whereIs(id), trip = sim2.scouts.find((m) => m.tribe === id);
       const body = h("div", { class: "pside" });
-      body.append(h("div", { class: "dhead" }, h("div", { class: "dpic glyph", text: "\u{1F3D5}" }), h("div", { class: "dwho" }, h("b", { class: "dtitle", text: best ? t.def.name : "M\u1ED9t ng\xF4i l\xE0ng" }), h("small", { class: "dsub", text: where ? `C\xE1ch kho\u1EA3ng ${where.dist} \xF4, h\u01B0\u1EDBng ${where.dir}` : "" }))));
+      body.append(h("div", { class: "dhead" }, h("div", { class: "dpic glyph", text: "\u{1F3D5}" }), h("div", { class: "dwho" }, h("b", { class: "dtitle", text: best ? t.def.name : "M\u1ED9t ng\xF4i l\xE0ng" }), h("small", { class: "dsub", text: where2 ? `C\xE1ch kho\u1EA3ng ${where2.dist} \xF4, h\u01B0\u1EDBng ${where2.dir}` : "" }))));
       if (best) {
         const days2 = Math.floor((sim2.time - best.at) / sim2.dayLen), accuracy = Math.max(0, 1 - 0.1 * days2);
         body.append(
@@ -221764,7 +221971,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
       const summary = h("p", { class: "sub" });
       page.append(banner, summary, none);
       const cards = /* @__PURE__ */ new Map();
-      const make2 = (t) => {
+      const make3 = (t) => {
         const status = h("span"), people = h("div", { class: "kv" }), fill = h("b"), note = h("p", { class: "sub" }), rewards = h("p", { class: "sub" });
         const act = (action, done) => () => {
           const e = sim2.diplomacy(t.id, action);
@@ -221798,7 +222005,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
           c.card.remove();
           cards.delete(id);
         }
-        for (const t of sim2.tribes) if (!cards.has(t.id)) cards.set(t.id, make2(t));
+        for (const t of sim2.tribes) if (!cards.has(t.id)) cards.set(t.id, make3(t));
         for (const c of cards.values()) {
           const { t } = c, seen = sim2.tribeSeen(t);
           c.card.hidden = !seen;
@@ -221808,8 +222015,8 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
           c.status.textContent = (t.rebel ? "Th\u1EE7 l\u0129nh ph\u1EA3n b\u1ED9i \xB7 " : "") + (t.state === "free" ? relationLabel(rel) + (sim2.tribeHostile(t.id) ? " \xB7 \u0111ang th\xF9 \u0111\u1ECBch" : "") : { surrendered: "\u0110\xE3 xin h\xE0ng", tribute: "\u0110ang c\u1ED1ng n\u1EA1p", destroyed: "\u0110\xE3 b\u1ECB x\xF3a s\u1ED5" }[t.state]);
           c.fill.style.left = rel >= 0 ? "50%" : `${50 + rel / 2}%`;
           c.fill.style.width = `${Math.abs(rel) / 2}%`;
-          const alive2 = t.unitIds.map((u) => sim2.get(u)).filter(Boolean);
-          c.people.innerHTML = t.state === "destroyed" ? "" : `Ng\u01B0\u1EDDi <b>${alive2.length}</b> \xB7 l\xEDnh <b>${alive2.filter((u) => u.ai?.role !== "civ").length}</b> \xB7 quan h\u1EC7 <b>${Math.round(rel)}</b>${t.raid ? " \xB7 <b>\u0111ang t\u1EADp k\xEDch!</b>" : ""}`;
+          const alive3 = t.unitIds.map((u) => sim2.get(u)).filter(Boolean);
+          c.people.innerHTML = t.state === "destroyed" ? "" : `Ng\u01B0\u1EDDi <b>${alive3.length}</b> \xB7 l\xEDnh <b>${alive3.filter((u) => u.ai?.role !== "civ").length}</b> \xB7 quan h\u1EC7 <b>${Math.round(rel)}</b>${t.raid ? " \xB7 <b>\u0111ang t\u1EADp k\xEDch!</b>" : ""}`;
           if (t.bandit) {
             const strength = { normal: "y\u1EBFu", medium: "v\u1EEBa", raider: "m\u1EA1nh" }[t.tier] ?? t.tier, bag = Object.entries(spoilsOf(t, sim2.era)).filter(([, n]) => (n ?? 0) > 0).map(([k, n]) => `${n} ${RES_NAME[k].toLowerCase()}`).join(" \xB7 "), left = Math.max(0, Math.ceil((t.rerollAt ?? sim2.day) - sim2.day));
             c.status.textContent = `Tr\u1EA1i c\u01B0\u1EDBp \xB7 \u0111ang ${strength} \xB7 \u0111\u1ED5i m\u1EE9c ${left ? `sau ${left} ng\xE0y` : "h\xF4m nay"}`;

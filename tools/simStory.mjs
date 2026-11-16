@@ -58,7 +58,19 @@ function play(seed, mode, policy, quiet) {
   for (let d = 1; d <= END; d++) {
     const w = worldAt(d), ctx = { ...w.base, fireLevel: w.fireLevel, story: S.condOf(st, w) };
     if (d === ERA) say(d, '=== Ngày Sương Tan: bắt đầu thời Trung cổ ===');
-    if (wars.includes(d)) { deeds.push({ key: 'war_fought', day: d }); say(d, '[trận] Quân làng vừa đi đánh về'); }
+    if (wars.includes(d)) { // a war: its moments open the chapters of trunk V in the middle of the battle (story.warEvent); then the war is over and leaves its deed
+      say(d, '[trận] Quân làng ra trận');
+      for (const ev of ['war_start', 'half_way', 'leader_down', 'army_low', 'near_fall']) {
+        const ch = S.warChapter(seen, ev, ctx);
+        if (!ch) continue;
+        const o = best(ch.scene.options.filter((x) => S.evalCond(x.cond, ctx)), (x) => (x.deed ? [x.deed] : []), ch.id);
+        saw(ch.id, d);
+        if (o?.deed) deeds.push({ key: o.deed, day: d });
+        for (const e of o?.effects ?? []) { if (e.deed) deeds.push({ key: e.deed, day: d }); if (e.sflag && !st.flags.includes(e.sflag)) st.flags.push(e.sflag); }
+        say(d, `[giữa trận: ${ev}] ${ch.name}: chọn "${o?.text ?? '?'}"`);
+      }
+      deeds.push({ key: 'war_fought', day: d });
+    }
     // the scenes the tree sent arrive, and the pretend player answers
     for (const a of arrivals.filter((x) => x.day <= d)) {
       arrivals.splice(arrivals.indexOf(a), 1);

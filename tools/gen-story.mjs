@@ -60,7 +60,7 @@ function tree(id, T) {
   const leafIds = new Set([...T.leaves, ...T.wild].map((l) => l.id));
   const threads = T.threads.map((t) => ({ id: `thread:${t.id}`, name: t.name, trunk: t.trunk, tree: id, chapters: t.chapters.map((c, i) => {
     const cid = `chapter:${t.id}-${i + 1}`;
-    return { id: cid, name: c.name, ...(c.script ? { script: c.script, options: c.options } : { scene: scene(cid, c.scene) }), ...(c.when ? { when: c.when } : {}), ...(c.days ? { days: c.days } : {}) };
+    return { id: cid, name: c.name, ...(c.script ? { script: c.script, options: c.options } : { scene: scene(cid, c.scene) }), ...(c.when ? { when: c.when } : {}), ...(c.days ? { days: c.days } : {}), ...(c.on ? { on: c.on } : {}) };
   }) }));
   const knots = T.knots.map((k) => {
     for (const [leaf] of k.leaves) if (!leafIds.has(leaf)) errors.push(`knot ${k.id}: no leaf ${leaf}`);
