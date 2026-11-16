@@ -1,0 +1,29 @@
+{
+  "id": "old_master",
+  "name": "Thợ già",
+  "role": "mentor",
+  "look": {
+    "sex": "m",
+    "skin": "#c68642",
+    "hair": "#9a968c",
+    "hide": "#7b6a4c",
+    "pants": "#4a4032"
+  },
+  "stone": {
+    "armor": "grass",
+    "weapon": null,
+    "handtool": {
+      "kind": "hammer",
+      "tier": 2
+    }
+  },
+  "ancient": {
+    "armor": "peasant_straw_brown",
+    "weapon": null,
+    "handtool": {
+      "kind": "hammer",
+      "tier": 4
+    }
+  },
+  "shape": "Ông thợ gầy, tóc muối tiêu, tay chai, búa không rời tay."
+}

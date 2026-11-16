@@ -1,4 +1,5 @@
 import { isRankRole, rankName } from './ranks';
+import { specialistDef } from './specialdata';
 import type { BuildingKind, Era } from './buildings';
 import type { Res } from './resources';
 import paceJson from '../data/pace.json';
@@ -86,9 +87,10 @@ export const ROLES: Record<RoleId, RoleDef> = {
 };
 export const ROLE_IDS = Object.keys(ROLES) as RoleId[];
 /** What a person of a role is called: a soldier of a camp by his rank ("Lính cầm gậy", "Kỵ binh hoàng gia"), anyone else by the name of the role. */
-export function titleOfRole(v: { job: Job; arm: SoldierArm; post: number; guard?: boolean; rank?: number }, era: Era): string | null {
+export function titleOfRole(v: { job: Job; arm: SoldierArm; post: number; guard?: boolean; rank?: number; spec?: string }, era: Era): string | null {
   const role = roleOf(v);
   if (!role) return null;
+  if (v.job === 'fight' && v.spec && specialistDef(v.spec)) return specialistDef(v.spec)!.name;
   if (v.job === 'fight' && isRankRole(role)) return rankName(role, v.rank ?? 1) ?? roleName(role, era);
   return roleName(role, era);
 }

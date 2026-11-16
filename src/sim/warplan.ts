@@ -99,7 +99,7 @@ export function setMissionTarget(sim: Sim, plan: Plan, squadId: number, target: 
 /** Tiles a second the squad walks at: its slowest soldier (an average one while it has none), in its formation, in today's weather. */
 export function squadPace(sim: Sim, s: Squad): number {
   const us = sim.squadUnits(s), base = us.length ? Math.min(...us.map((v) => (1.6 + 0.1 * v.stats.agi) * sim.mountSpeed(v))) : 2.1;
-  return base * FORMATIONS[s.formation].speed * WEATHER[sim.weather].speed;
+  return base * FORMATIONS[s.formation].speed * WEATHER[sim.weather].speed * sim.legacyFx('marchMul'); // (Đài Chinh Phạt)
 }
 
 /** How long the squad takes to walk from a point along the arrow, leg by leg. A leg that runs through water, trees or works is slower (the squad goes round) and is marked blocked. */
@@ -419,6 +419,8 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
   const bad = reviewPlan(sim, plan).find((l) => l.startsWith('✗'));
   if (bad) return bad.slice(2);
   if (plan.kind === 'defense') return 'Kế hoạch phòng thủ chạy khi bạn đánh trống báo động';
+  const held = sim.warBlock(plan.tribe); // the story tree: no one on the seat, or the council has not voted yet (the one case where an order of the player is refused by a rule: the user's decision of 2026-11-16)
+  if (held) return held;
   if (sim.plans.some((p) => p.skirmish && p.status === 'running')) return 'Đang giao tranh: chờ trận này kết thúc rồi hãy triển khai kế hoạch';
   const attacked = sim.attackReason();
   if (attacked) return `Làng đang bị tấn công (${attacked.toLowerCase()}): không thể đi đánh`;
@@ -431,6 +433,7 @@ export function startPlan(sim: Sim, plan: Plan): string | null {
   warsupply.loadPacks(sim, plan); warlog.begin(sim, plan);
   plan.status = 'running'; plan.stage = 'assemble'; plan.startedAt = sim.time; plan.signal = false; plan.result = ''; plan.endedAt = 0;
   sim.say(`Triển khai quân đánh ${sim.tribes.find((t) => t.id === plan.tribe)?.def.name ?? ''} bắt đầu.`);
+  if (plan.tribe) sim.warBegan(plan.tribe);
   return null;
 }
 

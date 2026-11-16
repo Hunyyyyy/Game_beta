@@ -53,6 +53,7 @@ export const WAR = {
     this.pathLeft = Math.max(this.pathLeft, FOE_PATH_SHARE);
     for (const f of [...this.foes]) if (f.team === enemy) tickFoe(this, f, dt);
     tickTribes(this, dt);
+    this.tickWarStory(dt); // trunk V: a scene of the story may open in the middle of the battle (the dialogue stops the clock)
   },
   /** → warskirmish.skirmishOrder: soldiers took an order against a village (commands.ts), which may begin a skirmish. */
   skirmishOrder(this: Sim, ids: readonly number[], t: Parameters<typeof warskirmish.skirmishOrder>[2]): void { warskirmish.skirmishOrder(this, ids, t); },

@@ -2,6 +2,10 @@
 import MARKET from '../data/market.json';
 import { BARTER, RES_LIST, RES_NAME, Res, resourceOpen } from './resources';
 import { perkPct } from './research';
+import { SEASON_DAYS } from './calendar';
+import { seedRoll, shortOf, type Cost } from './encounterdata';
+import { STORY } from './storyscenes';
+import { unlockName } from './specialdata';
 import type { Sim } from './sim';
 
 export type Good = Exclude<Res, 'coin'>;
@@ -17,7 +21,9 @@ export interface MarketQuote {
 }
 /** A bargain of the day: the market buys this good dearer (`sell`: the village gets more for it) or sells it cheaper (`buy`), by `pct` percent. */
 export interface Bargain { good: string; kind: 'sell' | 'buy'; pct: number }
-export interface MarketState { quota: Record<string, number>; used: Record<string, number>; bargain?: Bargain | null }
+export interface MarketState { quota: Record<string, number>; used: Record<string, number>; bargain?: Bargain | null; /** The blueprints on the shelf this season (`stamp`: which season of the game). */ plans?: { stamp: number; keys: string[] } }
+/** A blueprint on the shelf: the specialist it opens, its price, and why it cannot be bought now (null: it can). */
+export interface PlanOffer { key: string; name: string; kind: 'unit' | 'building' | 'perk' | 'research'; cost: Array<{ res: Res; n: number }>; owned: boolean; why: string | null }
 
 /** The level of the finished Chợ (0: there is none). */
 export function marketLevel(sim: Sim): number {
@@ -28,7 +34,8 @@ export function marketLevel(sim: Sim): number {
 /** The terms of the market now: its level, bettered by the research of the Kinh tế branch (perks market_rate, market_fee, market_quota in percent, market_free steps at the fair price). */
 function tier(sim: Sim): { rate: number; fee: number; quotaMin: number; quotaMax: number; free: number } {
   const t = MARKET.levels[Math.max(1, marketLevel(sim)) - 1], r = sim.researched, q = 1 + perkPct(r, 'market_quota') / 100;
-  return { rate: t.rate * (1 + perkPct(r, 'market_rate') / 100), fee: Math.max(0, t.fee - perkPct(r, 'market_fee') / 100), quotaMin: Math.round(t.quotaMin * q), quotaMax: Math.round(t.quotaMax * q), free: perkPct(r, 'market_free') };
+  const fee = sim.storyMod('marketFee'), quota = sim.storyMod('marketQuota'); // what the story tree does to the market (1 while it sleeps)
+  return { rate: t.rate * (1 + perkPct(r, 'market_rate') / 100), fee: Math.min(0.9, Math.max(0, t.fee - perkPct(r, 'market_fee') / 100) * fee), quotaMin: Math.round(t.quotaMin * q * quota), quotaMax: Math.round(t.quotaMax * q * quota), free: perkPct(r, 'market_free') };
 }
 
 /** A new day: the market draws how much of each good it will take at the fair price today. */
@@ -36,6 +43,7 @@ export function marketRoll(sim: Sim): void {
   const t = tier(sim), q: Record<string, number> = {};
   for (const r of RES_LIST) if (r !== 'coin') q[r] = Math.round(t.quotaMin + sim.frnd() * (t.quotaMax - t.quotaMin));
   sim.market.quota = q; sim.market.used = {};
+  plansRoll(sim, false);
   // a bargain now and then (research raises the chance): one good, for today only; in the medieval age bigger ones, and sometimes a merchant caravan that buys every good dearer
   sim.market.bargain = null;
   const B = MARKET.bargain, med = sim.era === 'ancient', M = B.medieval, lift = perkPct(sim.researched, 'market_bargain') / 100;
@@ -169,4 +177,48 @@ export function marketTrade(sim: Sim, give: Good | 'coin', get: Good | 'coin', s
   if (!marketTradable(sim, give) || (get !== 'coin' && !marketTradable(sim, get))) return 'Chợ chưa nhận hàng này';
   const q = walk(sim, give, get, steps, keep, true);
   return q.steps > 0 ? null : q.why ?? 'Không đổi được';
+}
+
+// ---------------------------------------------------------------- blueprints (doc/UPDATE_di_san_mo_khoa.md A1.5)
+/** The shelf of blueprints is open: the data (or the dev switch) has it on, the medieval age has come and the Chợ is high enough. */
+export function plansOpen(sim: Sim): boolean {
+  return (MARKET.blueprints.enabled || sim.dev.side) && sim.era === 'ancient' && marketLevel(sim) >= MARKET.blueprints.minLevel;
+}
+/** A new season (or `force`): the shelf draws its blueprints anew from the seed of the game, among the specialists not yet open. */
+export function plansRoll(sim: Sim, force: boolean): void {
+  if (!plansOpen(sim)) return;
+  const stamp = Math.floor((sim.day - 1) / SEASON_DAYS);
+  if (!force && sim.market.plans?.stamp === stamp) return;
+  const pool = STORY.unlocks.filter((u) => u.sources.includes('blueprint') && u.blueprintCost && !sim.isUnlocked(u.key)).map((u) => u.key), keys: string[] = [];
+  const show = plansShown(sim);
+  for (let i = 0; i < show && pool.length; i++) keys.push(...pool.splice(Math.floor(seedRoll(sim.seed, `plans:${stamp}${force ? `:${sim.day}` : ''}`, i) * pool.length), 1));
+  sim.market.plans = { stamp, keys };
+  if (keys.length) sim.say(`Chợ mùa này có bản vẽ: ${keys.map(unlockName).join(', ')}.`);
+}
+/** How many blueprints the season's draw shows: more with a Sàn Thương Hội (the specialist building of the fruit TM3). */
+const plansShown = (sim: Sim): number => MARKET.blueprints.show + (sim.buildings.some((b) => b.kind === ('guild_exchange' as typeof b.kind) && b.done) ? MARKET.blueprints.guildExtra : 0);
+/** The blueprints on the shelf now: the season's draw, and with the power Thư Viện Di Sản every other specialist left, dearer. */
+export function blueprintShelf(sim: Sim): PlanOffer[] {
+  if (!plansOpen(sim)) return [];
+  const drawn = sim.market.plans?.keys ?? [], price = sim.storyMod('blueprintPrice');
+  const free = sim.legacy.planTokens > 0; // a blueprint for nothing (the easy mode): any specialist left may be chosen
+  const rest = sim.isUnlocked('perk:library') || free ? STORY.unlocks.filter((u) => u.sources.includes('blueprint') && u.blueprintCost && !drawn.includes(u.key) && !sim.isUnlocked(u.key)).map((u) => u.key) : [];
+  return [...drawn, ...rest].flatMap((key, at) => {
+    const u = STORY.unlocks.find((x) => x.key === key);
+    if (!u) return [];
+    const mul = free ? 0 : price * (at >= drawn.length ? MARKET.blueprints.libraryFactor : 1), cost = free ? {} : Object.fromEntries(Object.entries(u.blueprintCost ?? {}).map(([k, n]) => [k, Math.max(1, Math.round((n ?? 0) * mul))])) as Cost;
+    const owned = sim.unlocksBought.includes(key) || sim.isUnlocked(key), lack = shortOf(cost, sim.stock);
+    return [{ key, name: unlockName(key), kind: u.kind, cost: Object.entries(cost).map(([res, n]) => ({ res: res as Res, n: n ?? 0 })), owned, why: owned ? 'Đã có' : lack ? `Thiếu ${RES_NAME[lack.res].toLowerCase()} (có ${lack.have}/${lack.need})` : null }];
+  });
+}
+/** Buy a blueprint of the shelf: the specialist is open for good. Returns an error, or null. */
+export function buyBlueprint(sim: Sim, key: string): string | null {
+  const o = blueprintShelf(sim).find((x) => x.key === key);
+  if (!o) return 'Chợ không có bản vẽ này';
+  if (o.why) return o.why;
+  for (const c of o.cost) sim.stock[c.res] -= c.n;
+  if (sim.legacy.planTokens > 0) sim.legacy.planTokens--;
+  sim.unlocksBought.push(key);
+  sim.say(`Đã mua bản vẽ ${o.name}: ${o.kind === 'building' ? 'công trình này dựng được từ nay' : 'đơn vị này huấn luyện được từ nay'}.`);
+  return null;
 }

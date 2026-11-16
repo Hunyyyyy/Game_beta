@@ -1,0 +1,36 @@
+{
+ "kind": "liaison_post",
+ "name": "Trạm Liên Lạc",
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 5,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Trạm Liên Lạc",
+    "cost": {
+     "wood": 192,
+     "hide": 66,
+     "stone": 180,
+     "iron": 20,
+     "hardwood": 16,
+     "leather": 16
+    },
+    "buildTime": 525,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 7,
+    "hp": 878,
+    "sight": 0
+   }
+  ]
+ }
+}

@@ -26,7 +26,8 @@ export function houseRate(sim: Sim, b: Building): number {
   let r = 0;
   for (const id of b.staff) { const v = sim.byId.get(id); if (v && v.phase === 'inside') r += sim.workFactor(v, job); }
   const perk = b.kind === 'workshop' ? perkPct(sim.researched, 'craftSpeed') : b.kind === 'lab' ? perkPct(sim.researched, 'researchSpeed') : b.kind === 'stable' ? perkPct(sim.researched, 'tameSpeed') : 0; // the research of the craftsmen and of the researchers
-  return r * levelDef(b).craftSpeed * (1 + perk / 100) * (sim.dev.fastWorks ? 1e6 : 1);
+  const tale = b.kind === 'workshop' ? sim.storyMod('craftSpeed') : b.kind === 'lab' ? sim.storyMod('researchSpeed') : 1; // the story tree (school, lost books, a secret craft...)
+  return r * levelDef(b).craftSpeed * (1 + perk / 100) * tale * (sim.dev.fastWorks ? 1e6 : 1);
 }
 
 /** Villagers heading for a house or already in it. */

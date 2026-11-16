@@ -1,4 +1,4 @@
-import { isRankRole, rankDef, rankName, rankPower } from './ranks';
+import { MAX_RANK, isRankRole, rankDef, rankName, rankPower } from './ranks';
 import weaponsJson from '../data/weapons.json';
 import statsJson from '../data/stats.json';
 import type { RankRole } from './ranks';
@@ -197,7 +197,7 @@ export const RANK_TECHS_OF: Record<string, Tech[]> = {};
 for (const c of Object.values(CHAINS)) {
   const rt = c.rankTiers as ({ roles: string[] } & Record<string, { needLab: number; cost: Partial<Stock>; time: number }>) | undefined;
   if (!rt) continue;
-  for (const role of rt.roles as RankRole[]) for (const n of [2, 3, 4, 5, 6, 7]) {
+  for (const role of rt.roles as RankRole[]) for (let n = 2; n <= MAX_RANK; n++) {
     const cfg = rt[String(n)], name = rankName(role, n) ?? `bậc ${n}`;
     const t: Tech = {
       id: tierTechId(role, n), name: `Mở ${name.toLowerCase()}`, desc: `Mở khóa ${name.toLowerCase()}: cầm ${weaponName(rankDef(role, n)?.weapon ?? '')}, sức mạnh ×${num(rankPower(n))}.`,
@@ -271,7 +271,7 @@ const GROUPS_OF: Record<string, string[]> = {};
 for (const [id, r] of Object.entries(TREE_ROLES)) for (const m of (r as { members?: string[] }).members ?? []) (GROUPS_OF[m] ??= []).push(id);
 export const researchRoles = (role: string): string[] => [role, ...(GROUPS_OF[role] ?? [])];
 /** The highest tier of soldiers a role has open (1 until research opens the next). */
-export const soldierTier = (done: ReadonlySet<string>, role: string): number => { let n = 1; for (const r of researchRoles(role)) for (let k = 2; k <= 7; k++) if (done.has(tierTechId(r, k))) n = Math.max(n, k); return n; };
+export const soldierTier = (done: ReadonlySet<string>, role: string): number => { let n = 1; for (const r of researchRoles(role)) for (let k = 2; k <= MAX_RANK; k++) if (done.has(tierTechId(r, k))) n = Math.max(n, k); return n; };
 
 /** How many levels of a stat line are researched. */
 export function lineLevel(done: ReadonlySet<string>, role: string, stat: string): number {

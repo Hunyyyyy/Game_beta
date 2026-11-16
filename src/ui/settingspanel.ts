@@ -58,6 +58,11 @@ export class SettingsPanel {
     this.syncs.push(() => { auto.checked = this.o.autosave.get(); });
 
     const fresh = confirmButton('🌱 Ván mới', 'Bấm lại để bắt đầu ván mới', () => session.newGame(), { tone: 'alt', title: 'Bắt đầu một ván khác trên bản đồ mới. Các bản lưu vẫn còn, tải lại lúc nào cũng được' });
+    // how hard the story is on the village (story tree, doc/story_tree.md "Mức khó chịu theo chế độ"): kept in the save, may be changed at any time
+    const MODES = [['easy', 'Dễ', 'Không có lá đau: phản bội, sát thủ, nổi dậy được thay bằng chuyện nhẹ'], ['normal', 'Thường', 'Chuyện đau có thể xảy ra, tùy cách làng đã sống'], ['harsh', 'Khắc nghiệt', 'Chuyện đau dễ xảy ra hơn một nửa']] as const;
+    const modeBtns = MODES.map(([id, label, tip]) => { const b = h('button', { class: 'sm', type: 'button', text: label, title: tip }) as HTMLButtonElement; b.addEventListener('click', () => { sim.setStoryMode(id); sync(); }); return b; });
+    const sync = (): void => modeBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(sim.story.mode === MODES[i][0])));
+    this.syncs.push(sync);
     const titles = [this.saveBtn.title, this.newSaveBtn.title];
     this.syncs.push(() => {
       const war = sim.atWar(), why = war ? 'Đang chiến tranh: không lưu hay tải được cho tới khi trận kết thúc' : '';
@@ -69,6 +74,7 @@ export class SettingsPanel {
       h('section', { class: 'dsec' }, h('h3', { text: 'Tự động lưu' }),
         h('div', { class: 'row' }, h('div', { class: 'nm' }, 'Lưu vào đầu mỗi ngày', h('small', { text: 'Cả khi bạn rời trang. Tắt đi thì chỉ lưu khi bạn bấm Lưu ngay. Bản lưu nằm trong trình duyệt của máy này.' })), auto)),
       h('section', { class: 'dsec' }, this.listHead, this.listBox),
+      h('section', { class: 'dsec' }, h('h3', { text: 'Cốt truyện' }), h('div', { class: 'row' }, h('div', { class: 'nm' }, 'Độ gắt của cốt truyện', h('small', { text: 'Những chuyện đau (phản bội, sát thủ, nổi dậy) có xảy ra hay không. Đổi lúc nào cũng được; chuyện đã xảy ra thì không đổi lại.' })), h('div', { class: 'btns' }, ...modeBtns))),
       h('section', { class: 'dsec' }, fresh));
   }
 

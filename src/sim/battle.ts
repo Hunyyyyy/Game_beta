@@ -1,5 +1,6 @@
 import animsJson from '../data/anims.json';
 import { armorRank } from './ranks';
+import { specialistDef } from './specialdata';
 import { ARMORS, ArmorDef, damageOf, DmgType, RULES, Team, WeaponDef, WEAPONS } from './combat';
 import { WEATHER } from './calendar';
 import { Arm, armOfWeapon, clampTactical, matchup, UNIT_RULES } from './formations';
@@ -46,6 +47,8 @@ export const isFighter = (v: Villager) => v.job === 'fight' || v.job === 'hunt' 
 
 export function teamsHostile(sim: Sim, a: Team, b: Team): boolean {
   if (a === b || a === 'wild' || b === 'wild') return false;
+  if (a === 'stage' || b === 'stage') return a === 'player' || b === 'player' || a === 'ward' || b === 'ward'; // the foes of a side quest fight us and the one we keep, nobody else
+  if (a === 'ward' || b === 'ward') return false;
   if (a === 'player') return sim.tribeWilling(b);
   if (b === 'player') return sim.tribeWilling(a);
   return sim.tribesFeud(a, b); // two villages fight only when they are at feud
@@ -89,7 +92,7 @@ export function threatsOf(sim: Sim, v: Villager, radius: number): Threat[] {
   const sk = v.fight.skip && sim.time < v.fight.skip.until ? v.fight.skip : null; // a target given up for a while
   const seen = (x: number, y: number) => !player || sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
   for (const o of nearbyOthers(sim, v, radius)) {
-    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
+    if (o.health <= 0 || o.down > 0 || o.inside !== null || o.inTent || o.ai?.guest !== undefined || (player && o.ai?.assassin?.hidden) || (!player && o.team === 'player' && specialistDef(o.spec)?.stealth && Math.hypot(o.x - v.x, o.y - v.y) > 3) || !teamsHostile(sim, v.team, o.team) || (sk && sk.kind === 'unit' && sk.id === o.id)) continue;
     const d = Math.hypot(o.x - v.x, o.y - v.y);
     if (d <= radius && seen(o.x, o.y)) out.push({ t: { kind: 'unit', id: o.id }, x: o.x, y: o.y, d, name: o.name, fighter: isFighter(o) || (!!o.ai && o.ai.role !== 'civ') });
   }
@@ -133,8 +136,10 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
+  const keeper = sim.bodyguardOf(v); // a bodyguard stands between him and the blow: he takes his share of it (as a blow of his own, armour and all)
+  if (keeper) { const part = dmg * sim.bodyguardShare(); dmg -= part; hurt(sim, { kind: 'unit', id: keeper.id }, part, type, from, src); }
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
-  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
+  const armor = armorOf(v), final = dmg * (1 - guardCut(sim, v, missile, armor ? (missile ? armor.defr : armor.defm) : 0, src.unit ? armPerk(sim, src.unit, 'pierce') : 0)) * (v.team === 'player' ? sim.takenFactor(v, missile) : 1) * sim.mountGuard(v) * sim.skirmishEdge(src.unit, v) * sim.grudgeEdge(src.unit, v); // a boss village fought without a war plan is stronger (warskirmish.ts)
   if (v.team === 'player') sim.noteDamage(false, Math.min(final, v.health)); else if (v.ai?.role === 'raider') sim.noteDamage(true, Math.min(final, v.health));
   v.health -= final; v.calm = 0; v.flinch = 0.3;
   if (src.unit && sim.mountOf(src.unit) === 'elephant') sim.addSfx('elephant', false, src.unit.x, src.unit.y); // the beast bellows when its rider strikes
@@ -211,12 +216,12 @@ function resolveSwing(sim: Sim, v: Villager, target: Target): void {
   const e = resolve(sim, target);
   if (!e) return;
   const w = weaponOf(v), d = Math.hypot(entX(e) - v.x, entY(e) - v.y), arm = armMultiplier(sim, v, e);
-  if (w.ranged) { fireProjectile(sim, v, e, { x: v.x, y: v.y }, 1, 0); return; }
-  if (d > w.range + 1.1) return; // the target stepped away: the blow misses
+  if (w.ranged) { const top = sim.onWall(v); fireProjectile(sim, v, e, { x: v.x, y: v.y }, top ? sim.wallArcher().damage : 1, top ? sim.wallArcher().range : 0); return; } // an archer on a wall shoots as one in a tower
+  if (d > w.range + 1.1 || layerApart(sim, v, e)) return; // the target stepped away, or is on the other side of a wall: the blow misses
   let behind = false;
   if (e.kind === 'unit') behind = (e.v.facing === 'right' && v.x < e.v.x) || (e.v.facing === 'left' && v.x > e.v.x);
   else behind = (e.a.dir === 1 && v.x < e.a.x) || (e.a.dir === -1 && v.x > e.a.x);
-  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, behind) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
+  hurt(sim, target, damageOf({ ...w, damage: weaponDamage(sim, v, w) }, v.stats.str, behind) * (behind ? specialistDef(v.spec)?.ambush ?? 1 : 1) * critRoll(sim, v, w) * clampTactical(arm * sim.attackFactor(v, e)), w.type, { x: v.x, y: v.y }, { unit: v });
   if (v.weapon) sim.wearGear(v, 'weapon');
 }
 
@@ -285,13 +290,19 @@ function chaseGivenUp(sim: Sim, v: Villager, e: Ent, d: number, dt: number): boo
   return true;
 }
 
+/** A blow of the sword or the spear passes only between two on the same layer, both on the ground or both on the top of a wall (walltop.ts): the one below must climb, the one above must come down. A missile goes any way. */
+function layerApart(sim: Sim, v: Villager, e: Ent): boolean {
+  if (e.kind !== 'unit' || weaponOf(v).ranged) return false;
+  return sim.onWall(v) !== sim.onWall(e.v);
+}
+
 /** Walk toward a target, strike when in reach. */
 export function engage(sim: Sim, v: Villager, e: Ent, dt: number): void {
   const w = weaponOf(v), x = entX(e), y = entY(e), d = Math.hypot(x - v.x, y - v.y);
   if (dt > 0 && chaseGivenUp(sim, v, e, d, dt)) return;
   const reach = w.ranged ? w.range : w.range + (e.kind === 'animal' ? 0.45 : 0.5);
   v.phase = 'fight';
-  if (d <= reach && (!w.ranged || canSee(sim, v, x, y))) {
+  if (d <= reach && (!w.ranged || canSee(sim, v, x, y)) && !layerApart(sim, v, e)) {
     v.path = []; v.slide = null;
     v.facing = x >= v.x ? 'right' : 'left';
     if (!v.swing && v.atkCd <= 0) { startSwing(sim, v, e.kind === 'unit' ? { kind: 'unit', id: e.v.id } : { kind: 'animal', id: e.a.id }); v.fight.chaseT = 0; }

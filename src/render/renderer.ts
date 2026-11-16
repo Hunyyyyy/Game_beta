@@ -325,6 +325,17 @@ export class Renderer {
     return [...out];
   }
 
+  /** A stretch of stone wall with a walkway on top (levels 6 and up, data/walls.json): a face in courses, a lit walkway edge, crenels on the outer side. `lp` below 1: still being built (it rises). */
+  private stoneSpan(x0: number, y0: number, x1: number, y1: number, lp: number): void {
+    const { ctx } = this, z = this.cam.zoom, H = 24 * z * Math.min(1, 0.25 + lp * 1.2), len = Math.hypot(x1 - x0, y1 - y0);
+    this.shape([[x0, y0], [x1, y1], [x1, y1 - H], [x0, y0 - H]], '#8e9498');
+    this.shape([[x0, y0 - H], [x1, y1 - H], [x1, y1 - H - 3.5 * z], [x0, y0 - H - 3.5 * z]], '#b9bfc2'); // the walkway, seen from the side
+    ctx.strokeStyle = '#60676b'; ctx.lineWidth = Math.max(1, z * 0.7);
+    for (const h of [8, 16]) { if (h * z >= H) break; ctx.beginPath(); ctx.moveTo(x0, y0 - h * z); ctx.lineTo(x1, y1 - h * z); ctx.stroke(); }
+    ctx.strokeStyle = '#2b1d10'; ctx.lineWidth = Math.max(1, z); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x1, y1 - H - 3.5 * z); ctx.lineTo(x0, y0 - H - 3.5 * z); ctx.closePath(); ctx.stroke();
+    if (lp >= 0.9) for (let k = 3 * z; k < len - 3 * z; k += 7 * z) { const f = k / len, cx = x0 + (x1 - x0) * f, cy = y0 + (y1 - y0) * f - H - 3.5 * z; this.block(cx - 1.5 * z, cy - 3 * z, 3 * z, 3 * z, '#8e9498', '#b9bfc2', '#60676b'); } // crenels
+  }
+
   /** The rails (and a middle picket) from a wall piece to the pieces touching it: each link is drawn once, by the piece below or to the right of the other. A piece with no neighbour gets a short stub of rail either side. */
   private drawWallLinks(b: Building, wallAt: Map<number, Building>, two: boolean, prog = 1): void {
     const { ctx } = this, z = this.cam.zoom, [gx, gy] = this.groundOf(b), p = this.worldToScreen(gx, gy);
@@ -345,6 +356,7 @@ export class Renderer {
       if (len - r0 - r1 <= 1) continue;
       const x0 = p.x + ux * r0, y0 = p.y + uy * r0, x1 = q.x - ux * r1, y1 = q.y - uy * r1;
       const lp = Math.min(prog, o.done ? 1 : o.progress); // a span under construction: the low rail first, then the high one and the middle picket
+      if (b.level >= 6 && o.level >= 6) { this.stoneSpan(x0, y0, x1, y1, lp); continue; } // a stone wall with a walkway: soldiers walk on it
       for (const h of lp >= 0.75 ? rails : lp >= 0.5 ? [rails[1]] : []) rail(x0, y0, x1, y1, h);
       const lowerTwo = o.level >= 2 && b.level >= 2;
       if (lp >= 0.75 && len - r0 - r1 > 14 * z) this.picket((x0 + x1) / 2, (y0 + y1) / 2, 5 * z, (lowerTwo ? 22 : 19) * z, lowerTwo); // the middle picket of the span
@@ -359,6 +371,11 @@ export class Renderer {
     const full = two ? 30 : 27, hgt = full * Math.min(1, 0.2 + prog * 1.6);
     ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 * z, 3.5 * z, 0, 0, Math.PI * 2); ctx.fill();
     this.drawWallLinks(b, wallAt, two, prog);
+    if (b.level >= 6) { // a stone tower-post of a wall with a walkway
+      const sp = 26 * Math.min(1, 0.2 + prog * 1.6);
+      this.block(p.x - 6 * z, p.y - sp * z, 12 * z, sp * z, '#8e9498', '#b9bfc2', '#60676b'); this.block(p.x - 7.5 * z, p.y - (sp + 4) * z, 15 * z, 4 * z, '#b9bfc2', '#d3d8da', '#8e9498');
+      return;
+    }
     this.picket(p.x, p.y, (two ? 8 : 7) * z, hgt * z, two); // the post, taller than the pickets between
     ctx.fillStyle = two ? '#9a6c3c' : '#c79a5e'; ctx.fillRect(Math.round(p.x - (two ? 4 : 3.5) * z), Math.round(p.y - hgt * z), Math.max(1, Math.round(z)), Math.round(hgt * z)); // lit edge
     if (prog < 1) { ctx.fillStyle = 'rgba(120,90,50,.55)'; ctx.beginPath(); ctx.ellipse(p.x, p.y + 1 * z, 10 * z, 4 * z, 0, 0, Math.PI * 2); ctx.fill(); } // trodden earth round a piece being built
@@ -373,7 +390,7 @@ export class Renderer {
     const sign = open ? '#4fbf5a' : '#d9473f', signDark = open ? '#2a7a33' : '#8f2620';
     // u runs along the gate, v across it (towards the viewer), h up from the ground
     const X = (u: number, v = 0) => (col ? p.x + v * z : p.x + u * z), Y = (u: number, h: number, v = 0) => (col ? p.y + u * z : p.y + v * z) - h * z;
-    const U = L * 16 - 3, top = (two ? 46 : 40) * Math.min(1, 0.2 + prog * 1.6), pw = two ? 8 : 6; // being built: the posts rise first, then the leaves, then the beam and the banner
+    const U = L * 16 - 3, top = (b.level >= 6 ? 30 : two ? 46 : 40) * Math.min(1, 0.2 + prog * 1.6), pw = two ? 8 : 6; // being built: the posts rise first, then the leaves, then the beam and the banner
     const leaves = prog >= 0.6;
     const wood = '#8a6238', woodL = '#aa7c48', woodD = '#5e4026', stone = '#8e9498', stoneL = '#b9bfc2', stoneD = '#60676b', iron = '#454a52';
     // the ground between the posts: a green path when open, barred in red when shut
@@ -574,9 +591,9 @@ export class Renderer {
       if (fireB && b.kind !== 'campfire' && bare(b.x + footOf(b).w / 2, b.y + footOf(b).h / 2)) continue;
       list.push({ y: ay, kind: 'building', i: 0, j: 0, b });
     }
-    for (const v of sim.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE, kind: 'villager', i: 0, j: 0, v });
+    for (const v of sim.villagers) if (v.inside === null && !v.inTent && onScr(v.x, v.y)) list.push({ y: v.y * TILE + (sim.onWall(v) ? 20 : 0), kind: 'villager', i: 0, j: 0, v }); // (one on a wall is drawn in front of it)
     const seen = (x: number, y: number) => sim.fog.state[Math.floor(y) * N + Math.floor(x)] === 2;
-    for (const f of sim.foes) if (!f.inTent && onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE, kind: 'villager', i: 0, j: 0, v: f });
+    for (const f of sim.foes) if (!f.inTent && !f.ai?.assassin?.hidden && onScr(f.x, f.y) && seen(f.x, f.y)) list.push({ y: f.y * TILE + (sim.onWall(f) ? 20 : 0), kind: 'villager', i: 0, j: 0, v: f });
     for (const a of sim.animals) if (onScr(a.x, a.y) && seen(a.x, a.y)) list.push({ y: a.state === 'dead' ? a.y * TILE - 1 : a.y * TILE, kind: 'animal', i: 0, j: 0, a });
     // the works of a village are drawn one by one, each where its own feet stand: a village is a dozen tiles wide, and it must not vanish as its fire leaves the screen
     for (const t of sim.tribes) {
@@ -697,6 +714,7 @@ export class Renderer {
           }
           lift = m.ride + 1; // the seated animations bob by themselves
         }
+        if (sim.onWall(d.v)) lift += sim.wallLift(); // on the top of a wall (walltop.ts)
         if (d.v.phase === 'sleep' || d.v.phase === 'down') {
           // lying asleep: sprite rotated 90°, head to the left
           ctx.save(); ctx.translate(Math.round((fx + 16 - cx) * z), Math.round((fy - 2 - cy) * z)); ctx.rotate(-Math.PI / 2);

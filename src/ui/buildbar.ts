@@ -1,6 +1,6 @@
 import { CAMP_KINDS, CAMP_PCT, campPicks, TENT_PCT } from '../sim/upgradebonus';
 import MARKET from '../data/market.json';
-import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelDef, maxHp, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, footOf, BuildingKind, canGrow, gatherMult, levelCapByFire, levelCapOf, levelDef, maxHp, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { TILE, workDays } from '../sim/constants';
 import { ROLES, roleOf } from '../sim/jobs';
 import { isProcessKind, PROCESS_HOUSES } from '../sim/processdata';
@@ -18,6 +18,7 @@ import type { Ctx } from './panels';
 const STAFF_HOUSES: string[] = ['workshop', 'lab', 'stable', 'ranch'];
 
 const OPEN_LABEL: Record<BuildingKind, string> = {
+  elder_hall: 'Mở', tribute_post: 'Mở', guild_exchange: 'Mở', bodyguard_lodge: 'Mở', liaison_post: 'Mở', twin_camp: 'Mở', conquest_beacon: 'Mở', memorial_shrine: 'Mở', academy: 'Mở', hidden_forge: 'Mở',
   campfire: 'Xem dân', builder: 'Thợ xây', storage: 'Kho', market: 'Giao thương', workshop: 'Chế tạo', smelter: 'Chế biến', carpentry: 'Chế biến', tannery: 'Chế biến', lab: 'Nghiên cứu', toolstore: 'Kho công cụ', armory: 'Kho vũ khí', infantry: 'Quản lý lính', cavalry: 'Quản lý lính', archery: 'Quản lý lính', guardpost: 'Quản lý lính gác', farmhouse: 'Giao việc', huntlodge: 'Giao việc', lumberyard: 'Giao việc', quarry: 'Giao việc', mine: 'Giao việc', house: 'Người trong nhà', field: 'Người làm ruộng', fence: 'Hàng rào', gate: 'Lính gác', tower: 'Cung thủ canh', wartent: 'Mở Lều họp chiến', scouttent: 'Xem trinh sát', drill: 'Xem bãi tập', trap: 'Hố chông', stable: 'Thuần thú', ranch: 'Chăn nuôi', supplycamp: 'Quản lý hậu cần', fieldtent: 'Lều hành quân',
 };
 
@@ -179,7 +180,7 @@ export class BuildingBar {
     if (!b || !show) { this.id = null; return; }
     this.id = b.id;
     const fire = sim.campfire(), def = BUILDINGS[b.kind], lv = levelDef(b);
-    const top = b.kind === 'campfire' || !fire || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapByFire(fire.level)); // a house may not rise above what the campfire allows
+    const top = b.kind === 'campfire' || !fire || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapOf(b.kind, fire.level)); // a house may not rise above what the campfire allows
     const st = sim.staffing(b), crowd = st ? ` 👥 ${st.have}/${st.slots}` : ''; // the people of the house, beside its name
     const state = !b.done ? `đang xây ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.repairing ? `đang sửa chữa ${Math.round((b.hp / maxHp(b)) * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : b.upgrading ? `đang nâng cấp ${Math.floor(b.progress * 100)}%${this.c.sim.buildWhy(b) ? ` · ${this.c.sim.buildWhy(b)}` : ''}` : canGrow(b.kind) ? `cấp ${b.level}/${top} · ${lv.name.toLowerCase()}` : lv.name.toLowerCase();
     const hp = b.done ? ` · bền ${Math.max(0, Math.round(b.hp))}/${maxHp(b)}${b.hp <= maxHp(b) * 0.3 ? ' · đang cháy' : b.hp <= maxHp(b) * 0.7 ? ' · bốc khói' : ''}` : '';

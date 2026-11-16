@@ -1,0 +1,36 @@
+{
+ "kind": "bodyguard_lodge",
+ "name": "Phòng Hộ Vệ",
+ "group": "defence",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 5,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Phòng Hộ Vệ",
+    "cost": {
+     "wood": 148,
+     "stone": 216,
+     "hide": 66,
+     "iron": 40,
+     "hardwood": 16,
+     "leather": 12
+    },
+    "buildTime": 591,
+    "cap": 0,
+    "craftSpeed": 1.88,
+    "slots": 30,
+    "hp": 878,
+    "sight": 0
+   }
+  ]
+ }
+}

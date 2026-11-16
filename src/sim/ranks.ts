@@ -29,6 +29,8 @@ export const armorRank = (id: string | null | undefined): number => (id ? ARMOR_
 /** The name of a soldier of a rank, or null when the branch has no such rank. */
 export const rankName = (role: RankRole, rank: number): string | null => rankDef(role, rank)?.name ?? null;
 
+/** The highest rank there is (the length of the tables of ranks.json). */
+export const MAX_RANK: number = ranksJson.power.length;
 /** The strength of a rank (1 for the first): the number the soldiers of that rank are worth against a rank 1 one. */
 export const rankPower = (rank: number): number => ranksJson.power[Math.max(0, Math.min(ranksJson.power.length, rank) - 1)];
 /** What a rank does to a stat: the power of the rank to the exponent of that stat (1 when the stat does not follow the rank). */

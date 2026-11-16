@@ -70,7 +70,8 @@ export function orderMove(sim: Sim, ids: readonly number[], tx: number, ty: numb
   const taken = new Set<number>();
   for (const v of vs) {
     if (queue && busy(sim, v)) { v.queue.push({ k: 'move', x: tx, y: ty }); continue; }
-    const goal = sim.nearestFree(tx, ty, taken);
+    const onTop = v.job === 'fight' && sim.topAt(tx, ty) && !taken.has(Math.floor(ty) * sim.world.size + Math.floor(tx)); // the top of a wall: a soldier may be sent up on it (walltop.ts)
+    const goal = onTop ? [Math.floor(tx), Math.floor(ty)] as [number, number] : sim.nearestFree(tx, ty, taken);
     resetTask(sim, v); clearCombat(sim, v); v.prefer = -1;
     keepSoldierJob(sim, v); takeOut(sim, v); keepWatch(sim, v);
     if (v.job === 'idle') v.shift = 'both'; // sent out by hand: they go on by night too, and turn back by themselves when their strength runs low (see rest.onShift, the notices)

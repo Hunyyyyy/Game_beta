@@ -1,0 +1,23 @@
+{
+  "id": "elder",
+  "name": "Trưởng lão",
+  "role": "elder",
+  "look": {
+    "sex": "m",
+    "skin": "#c68642",
+    "hair": "#e4e0d4",
+    "hide": "#d9cfb4",
+    "pants": "#8a7c5a"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "peasant_hood_grey",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Cụ già râu trắng, áo sáng màu, nói chậm, ai cũng im khi cụ nói."
+}

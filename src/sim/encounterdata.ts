@@ -2,6 +2,8 @@
 import CONFIG from '../data/encounters.json';
 import STONE from '../data/encounters/stone.json';
 import type { Res, Stock } from './resources';
+import { STORY_SCRIPTS } from './storyscenes';
+import { SIDE_SCRIPTS } from './sidequestdata';
 
 export type Cost = Partial<Record<Res, number>>;
 /** What a choice or a node does. `join`: the visitor stays as a villager, `takeIn`: the whole party stays (and is remembered as refugees) - both when the talk ends, so the answer is heard first; `handOver`: the refugees are given away; `raid`: a raid of that size from the visitor's village; `schedule`: another script comes later. */
@@ -20,10 +22,14 @@ export interface Effect {
   welcome?: number; buy?: string;
   /** Change a raid that is coming (the one this visit is about, else the next of the visitor's village): its strength (`powerMul`), its day (`shiftDays`), or call it off (`cancel`). */
   eventMod?: { powerMul?: number; shiftDays?: number; cancel?: boolean };
+  /** The story tree (story.ts): `sflag` sets a flag that stays for the whole game (`sflag.<name>` in a condition), `journal` writes a line in the Nhật ký. */
+  sflag?: string; journal?: string;
+  /** An answer of a side quest talk (sidequests.sideChoice): the code of sidequestdata.sideCode. */
+  quest?: string;
 }
 /** `by`: the next node by what the visitor really is; `roll`: by chance, drawn from the visitor's seed; `reveals`: ask closely (adds a clue, once); `cond`: the choice shows only when it holds. */
 export interface Choice { text: string; /** Choices with the same group are folded under one button on the screen ("Hỏi họ"), opened by a click. */ group?: string; /** What the player says when he takes it, shown as his own line before the answer ("Các bạn từ đâu tới?"); without it nothing is said aloud. */ say?: string;
-  /** Stay at this node after the choice (the shop: buy again), saying `note` to the player. */ stay?: boolean; note?: string; cost?: Cost; effects?: Effect[]; then?: string; /** The first of these whose condition holds decides the node; else `then`. */ branch?: Array<{ cond: string; then: string }>; by?: Record<string, string>; roll?: { p: number; yes: string; no: string; /** The chance goes up by this for each point of the visitor's mood (p + mood x this). */ mood?: number; }; reveals?: boolean; cond?: string }
+  /** Stay at this node after the choice (the shop: buy again), saying `note` to the player. */ stay?: boolean; note?: string; cost?: Cost; effects?: Effect[]; then?: string; /** The first of these whose condition holds decides the node; else `then`. */ branch?: Array<{ cond: string; then: string }>; by?: Record<string, string>; roll?: { p: number; yes: string; no: string; /** The chance goes up by this for each point of the visitor's mood (p + mood x this). */ mood?: number; /** Added to the chance while a condition holds (`spec.assassin>=1`, `mark.lo>=4`). */ bonus?: Array<{ cond: string; add: number }> }; reveals?: boolean; cond?: string }
 /** `effects` run when the node is entered. */
 /**
  * One beat of what is said (each beat is one or more lines, a page each): a plain line, `{ any: [...] }` (one of the options, drawn for this visitor and this beat), or `{ tone: [...] }` (the option at the visitor's
@@ -60,6 +66,8 @@ export interface Script {
   talk?: { hub: string; final: string; /** The node he says when he ends the talk himself (no choice). Without `walkout` and `below` he never does. */ walkout?: string; below?: number; rounds: [number, number] };
   /** Who comes with the visitor: how many (the visitor is one of them), what they carry (weapons of weapons.json, in turn), whether they wear armour, and what share of health the others have (the wounded). */
   party?: { size: [number, number]; weapons?: string[]; armor?: boolean; hurt?: number };
+  /** The named character (data/characters) who comes as the visitor: his look, his clothes of the age and his title before his name. */
+  cast?: string;
 }
 
 export const ENC = CONFIG as unknown as {
@@ -76,7 +84,8 @@ export const ENC = CONFIG as unknown as {
   /** `restSeconds`: how long a party let in sits about the fire; `actSeconds`: how long one who came to do harm tries before he gives up. */
   visit: { restSeconds: number; actSeconds: number };
 };
-export const SCRIPTS: Script[] = (STONE as unknown as { scripts: Script[] }).scripts;
+/** The visitor scripts, then the scenes of the story tree and the steps of the side quests (never drawn by chance: the tree and the quest tracker send them). */
+export const SCRIPTS: Script[] = [...(STONE as unknown as { scripts: Script[] }).scripts, ...STORY_SCRIPTS, ...SIDE_SCRIPTS];
 export const scriptOf = (id: string): Script | undefined => SCRIPTS.find((s) => s.id === id);
 
 /** A visitor met: where they are in the walk, and their place in the dialogue. */
@@ -200,33 +209,62 @@ export function deedCount(deeds: readonly Deed[], key: string, tribe: string | u
   return deeds.filter((d) => d.key === key && (tribe === undefined || d.tribe === tribe) && (within === undefined || day - d.day <= within)).length;
 }
 
-/** What a condition may ask about. */
-export interface CondCtx { stock: Stock; day: number; fireLevel: number; rel: number; truth: string; refugees: number; soldiers: number; captives: number; room: number; party: number; flags: readonly string[]; mood: number; deeds: readonly Deed[]; tribe?: string }
+/** What the story tree lets a condition ask about (storydata.condOf): the hidden marks, the lasting flags, the leaves and fruits there are, the stages done of each branch, the tips (1 the main one, 0.5 the second). Ids without their prefix. */
+export interface StoryCond { marks: Record<string, number>; flags: readonly string[]; progress: number; leaves: readonly string[]; fruits: readonly string[]; chapters: Record<string, number>; tips: Record<string, number>; mode: string; /** The share of the common villages of the land that are ours, pay us or fell (0..1). */ power: number }
 
-/** A condition: terms joined by `&&`, each `name op value` with `op` of >= <= == != > <. Names: `stock.<good>`, `deed.<key>` (add `@30d` for the last 30 days), `rel`, `day`, `fireLevel`, `refugees`, `soldiers` (how many soldiers we have), `captives` (villagers held by strangers), `room` (free places to live), `party` (how many came), `flag.<name>` (1 if it was set in this talk, else 0), `mood` (the visitor's, moved by `mood` effects), `truth`. An empty condition holds. */
+/** What a condition may ask about. */
+export interface CondCtx { stock: Stock; day: number; fireLevel: number; rel: number; truth: string; refugees: number; soldiers: number; captives: number; room: number; party: number; flags: readonly string[]; mood: number; deeds: readonly Deed[]; tribe?: string; story?: StoryCond; /** How many specialist soldiers of each kind we have (`spec.<id>`). */ specs?: Record<string, number> }
+
+/** The value of one name of a condition; undefined for a name nobody knows. */
+function condValue(key: string, c: CondCtx, win: number | undefined): number | string | undefined {
+  if (key.startsWith('stock.')) return c.stock[key.slice(6) as Res] ?? 0;
+  if (key.startsWith('deed.')) return deedCount(c.deeds, key.slice(5), c.tribe, win, c.day);
+  if (key.startsWith('flag.')) return c.flags.includes(key.slice(5)) ? 1 : 0;
+  if (key.startsWith('mark.')) return c.story?.marks[key.slice(5)] ?? 0;
+  if (key.startsWith('sflag.')) return c.story?.flags.includes(key.slice(6)) ? 1 : 0;
+  if (key.startsWith('leaf.')) return c.story?.leaves.includes(key.slice(5)) ? 1 : 0;
+  if (key.startsWith('fruit.')) return c.story?.fruits.includes(key.slice(6)) ? 1 : 0;
+  if (key.startsWith('chapters.')) return c.story?.chapters[key.slice(9)] ?? 0;
+  if (key.startsWith('tip.')) return c.story?.tips[key.slice(4)] ?? 0;
+  if (key.startsWith('spec.')) return c.specs?.[key.slice(5)] ?? 0;
+  switch (key) {
+    case 'rel': return c.rel;
+    case 'day': return c.day;
+    case 'fireLevel': return c.fireLevel;
+    case 'refugees': return c.refugees;
+    case 'soldiers': return c.soldiers;
+    case 'captives': return c.captives;
+    case 'room': return c.room;
+    case 'party': return c.party;
+    case 'mood': return c.mood;
+    case 'truth': return c.truth;
+    case 'progress': return c.story?.progress ?? 0;
+    case 'mode': return c.story?.mode ?? 'normal';
+    case 'power': return c.story?.power ?? 0;
+    default: return undefined;
+  }
+}
+
+/** The names a condition may use, for the checker of the story (a prefix ends with a dot). */
+export const COND_NAMES = ['stock.', 'deed.', 'flag.', 'mark.', 'sflag.', 'leaf.', 'fruit.', 'chapters.', 'tip.', 'spec.', 'rel', 'day', 'fireLevel', 'refugees', 'soldiers', 'captives', 'room', 'party', 'mood', 'truth', 'progress', 'mode', 'power'];
+const TERM = /^\s*([\w.:+\-\s]+?)\s*(>=|<=|==|!=|>|<)\s*(-?[\w.]+?)(?:@(\d+)d)?\s*$/;
+/** The terms of a condition taken apart: the names on the left (added up when joined by `+`), the sign, the value. Null for a term that cannot be read. */
+export const condTerms = (expr: string): Array<{ keys: string[]; op: string; rhs: string; win?: number } | null> => expr.split('&&').map((term) => { const m = TERM.exec(term); return m ? { keys: m[1].split('+').map((k) => k.trim()), op: m[2], rhs: m[3], win: m[4] ? Number(m[4]) : undefined } : null; });
+
+/**
+ * A condition: terms joined by `&&`, each `name op value` with `op` of >= <= == != > <; names joined by `+` are added up (`mark.hop+mark.lo>=5`). Names: `stock.<good>`, `deed.<key>` (add `@30d` for the last 30 days), `rel`, `day`,
+ * `fireLevel`, `refugees`, `soldiers` (how many soldiers we have), `captives` (villagers held by strangers), `room` (free places to live), `party` (how many came), `flag.<name>` (1 if it was set in this talk, else 0), `mood` (the
+ * visitor's, moved by `mood` effects), `truth`; of the story tree: `mark.<id>`, `sflag.<name>` (a lasting flag), `leaf.<id>`, `fruit.<id>`, `chapters.<branch>`, `tip.<id>`, `progress`, `mode`. An empty condition holds.
+ */
 export function evalCond(expr: string | undefined, c: CondCtx): boolean {
   if (!expr) return true;
-  return expr.split('&&').every((term) => {
-    const m = /^\s*([\w.:]+?)\s*(>=|<=|==|!=|>|<)\s*(-?[\w.]+?)(?:@(\d+)d)?\s*$/.exec(term);
-    if (!m) return false;
-    const [, key, op, rhs, win] = m;
-    let left: number | string;
-    if (key.startsWith('stock.')) left = c.stock[key.slice(6) as Res] ?? 0;
-    else if (key.startsWith('deed.')) left = deedCount(c.deeds, key.slice(5), c.tribe, win ? Number(win) : undefined, c.day);
-    else if (key === 'rel') left = c.rel;
-    else if (key === 'day') left = c.day;
-    else if (key === 'fireLevel') left = c.fireLevel;
-    else if (key === 'refugees') left = c.refugees;
-    else if (key === 'soldiers') left = c.soldiers;
-    else if (key === 'captives') left = c.captives;
-    else if (key === 'room') left = c.room;
-    else if (key === 'party') left = c.party;
-    else if (key === 'mood') left = c.mood;
-    else if (key.startsWith('flag.')) left = c.flags.includes(key.slice(5)) ? 1 : 0;
-    else if (key === 'truth') left = c.truth;
-    else return false;
-    const r: number | string = typeof left === 'number' ? Number(rhs) : rhs;
-    return op === '>=' ? left >= r : op === '<=' ? left <= r : op === '==' ? left === r : op === '!=' ? left !== r : op === '>' ? left > r : left < r;
+  return condTerms(expr).every((t) => {
+    if (!t) return false;
+    const vals = t.keys.map((k) => condValue(k, c, t.win));
+    if (vals.some((v) => v === undefined)) return false;
+    const left: number | string = vals.length === 1 ? vals[0]! : vals.reduce<number>((a, v) => a + Number(v), 0);
+    const r: number | string = typeof left === 'number' ? Number(t.rhs) : t.rhs;
+    return t.op === '>=' ? left >= r : t.op === '<=' ? left <= r : t.op === '==' ? left === r : t.op === '!=' ? left !== r : t.op === '>' ? left > r : left < r;
   });
 }
 

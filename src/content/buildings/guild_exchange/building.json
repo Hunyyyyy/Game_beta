@@ -1,0 +1,30 @@
+{
+ "kind": "guild_exchange",
+ "name": "Sàn Thương Hội",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 5,
+ "requires": [],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Sàn Thương Hội",
+    "cost": {
+     "wood": 146,
+     "stone": 204
+    },
+    "buildTime": 354,
+    "cap": 0,
+    "craftSpeed": 1.08,
+    "slots": 0,
+    "hp": 874,
+    "sight": 0
+   }
+  ]
+ }
+}

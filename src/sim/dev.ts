@@ -1,7 +1,7 @@
 import { SEASONS, SEASON_DAYS, Season, WeatherKind } from './calendar';
 import { SCRIPTS } from './encounterdata';
 import { ANIMALS, WEAPONS } from './combat';
-import { BUILDINGS, BuildingKind, eraLocked, fireUnlockLevel, levelCapByFire, maxHp, maxLevel, WALL_KINDS } from './buildings';
+import { BUILDINGS, BuildingKind, eraLocked, fireUnlockLevel, levelCapOf, maxHp, maxLevel, WALL_KINDS } from './buildings';
 import { CORE, OUTSIDE, ring } from './campplan';
 import { isRankRole, rankDef, ranksOf } from './ranks';
 import type { RankRole } from './ranks';
@@ -181,7 +181,7 @@ export function simulateCamp(sim: Sim, level: number, medieval = sim.era === 'an
     for (const kind of CORE.filter(open)) for (let n = sim.buildingLimit(kind); n > 0; n--) { if (placeAt(sim, kind, inside) || placeAt(sim, kind, outside)) houses++; else break; }
     for (const kind of OUTSIDE.filter(open)) for (let n = sim.buildingLimit(kind); n > 0; n--) { if (placeAt(sim, kind, outside)) houses++; else break; }
     // every house stands as high as the level lets it
-    for (const b of sim.buildings) if (b.done && b.kind !== 'campfire') { const top = Math.min(maxLevel(b.kind, b.era), levelCapByFire(fire.level)); b.level = Math.max(b.level, top); b.upgrading = false; b.hp = maxHp(b); }
+    for (const b of sim.buildings) if (b.done && b.kind !== 'campfire') { const top = Math.min(maxLevel(b.kind, b.era), levelCapOf(b.kind, fire.level)); b.level = Math.max(b.level, top); b.upgrading = false; b.hp = maxHp(b); }
     const people = peopleFor(sim);
     sim.fogDirty = true;
     return `Trại cấp ${fire.level}: ${houses} nhà${wall ? `, ${wall} đoạn rào/cổng/chòi` : ''}, ${people.total} dân (${people.soldiers} lính)`;

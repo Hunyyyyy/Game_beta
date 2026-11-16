@@ -1,0 +1,34 @@
+{
+ "kind": "academy",
+ "name": "Học Viện",
+ "group": "development",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 5,
+ "requires": [
+  "workshop"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Học Viện",
+    "cost": {
+     "wood": 124,
+     "stone": 206,
+     "iron": 40,
+     "hardwood": 30
+    },
+    "buildTime": 644,
+    "cap": 0,
+    "craftSpeed": 1.45,
+    "slots": 5,
+    "hp": 878,
+    "sight": 0
+   }
+  ]
+ }
+}

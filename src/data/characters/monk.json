@@ -1,0 +1,23 @@
+{
+  "id": "monk",
+  "name": "Nhà sư lang thang",
+  "role": "monk",
+  "look": {
+    "sex": "m",
+    "skin": "#c68642",
+    "hair": "#c68642",
+    "hide": "#c9722a",
+    "pants": "#8a4a1c"
+  },
+  "stone": {
+    "armor": "grass",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "peasant_straw_grey",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Đầu trọc, áo vải màu nghệ, chân trần, một cái bát gỗ."
+}

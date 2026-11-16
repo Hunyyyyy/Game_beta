@@ -1,4 +1,4 @@
-import { BUILDINGS, Building, buildingName, levelCapByFire, levelDef, topLevel, POP_BY_FIRE } from '../sim/buildings';
+import { BUILDINGS, Building, buildingName, levelCapByFire, levelCapOf, levelDef, topLevel, POP_BY_FIRE } from '../sim/buildings';
 import { huntRange } from '../sim/hunting';
 import { ARMORS, WEAPONS } from '../sim/combat';
 import { JOBS, ROLES, STAT_NAME } from '../sim/jobs';
@@ -61,6 +61,9 @@ export class BuildingPanel {
   private swapRows: MarketRow[] = [];
   private swapKey = '';
   private marketKeepOn = true;
+  private readonly planBox = h('div', { class: 'barter' });
+  private planKey = '#';
+  private aidSync: () => void = () => {};
   private readonly marketHead = h('p', { class: 'sub' });
   private marketMake: ((give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin') => MarketRow) | null = null;
   private readonly swapBox = h('div', { class: 'barter' });
@@ -215,7 +218,13 @@ export class BuildingPanel {
       this.resRows.push({ res, num, bar, row }); stockRows.push(row);
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }];
-    this.tabs.market = [{ label: 'Giao thương', page: page(market()) }];
+    { // Trạm Liên Lạc (a specialist building): call the allies to keep the village, once a season
+      const why = h('p', { class: 'sub' }), call = h('button', { type: 'button', text: 'Gọi viện binh giữ làng' }) as HTMLButtonElement;
+      call.addEventListener('click', () => { const e = sim.callAid(); if (e) c.toast(e); ctl.onChange(); });
+      this.aidSync = () => { const no = sim.aidBlock(); call.disabled = !!no; why.textContent = no ?? 'Các làng đứng về phía mình (làng cống nạp, làng thân thiết hết mức) gửi lính tới giữ làng vài ngày. Mỗi mùa một lần.'; };
+      (this.tabs as Record<string, typeof this.tabs.market>).liaison_post = [{ label: 'Viện binh', page: page(hint('Viện binh', 'Gọi lính của các làng đồng minh tới giữ làng trong vài ngày, mỗi mùa một lần. Họ tự về khi hết hạn.'), why, call) }];
+    }
+    this.tabs.market = [{ label: 'Giao thương', page: page(market()) }, { label: 'Bản vẽ', page: page(hint('Bản vẽ', 'Mỗi mùa Chợ bày vài bản vẽ của các đơn vị và công trình chuyên chưa mở. Mua một bản vẽ là mở hẳn thứ đó: đơn vị thì huấn luyện ở trại của nó, công trình thì dựng ở mục Di sản. Giá cao: đây là đường bù cho thứ cốt truyện chưa mở.'), this.planBox), show: () => sim.blueprintsOpen() }];
     // the processing houses: the order at work with its bar above the tabs, and a forge bench (recipes, slots in and out, queue) in the tab
     for (const k of ['smelter', 'carpentry', 'tannery'] as const) {
       this.forges[k] = new ForgePane(c, k);
@@ -404,7 +413,7 @@ export class BuildingPanel {
     if (this.peopleFor !== b.id) { this.peopleFor = b.id; this.peopleOpen = false; } // another house: its page first
     if (ctl.openPeople) { ctl.openPeople = false; this.peopleOpen = !!STAFF_OF[b.kind as keyof typeof STAFF_OF] && b.done; }
     if (b.kind !== 'lab') this.labSub = null;
-    const def = BUILDINGS[b.kind], lv = levelDef(b), fire0 = sim.campfire(), top = b.kind === 'campfire' || !fire0 || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapByFire(fire0.level)), ready = b.done;
+    const def = BUILDINGS[b.kind], lv = levelDef(b), fire0 = sim.campfire(), top = b.kind === 'campfire' || !fire0 || sim.dev.freeBuild ? topLevel(b) : Math.min(topLevel(b), levelCapOf(b.kind, fire0.level)), ready = b.done;
     this.title.textContent = `${buildingName(b.kind, b.era, b.level)}${def.buildable ? ` · cấp ${b.level}/${top} (${lv.name.toLowerCase()})` : ''}`;
     const pk = `${b.kind}${b.level}${b.done}`;
     if (pk !== this.picKey) { this.picKey = pk; try { this.picBox.replaceChildren(iconCanvas(this.c.sprites.building(b.kind, b.era, Math.max(1, b.level), 4).frames[0])); } catch { this.picBox.textContent = '🏠'; this.picBox.className = 'dpic glyph'; } }
@@ -417,6 +426,7 @@ export class BuildingPanel {
     if (b.kind === 'campfire' && ready) this.updateCampfire();
     if (b.kind === 'storage' && ready) for (const r of this.resRows) { r.row.hidden = ANIMAL_MATERIALS.includes(r.res) && sim.stock[r.res] < 1; r.num.textContent = `${Math.floor(sim.stock[r.res])} / ${sim.capacity(r.res)}`; r.bar.style.width = `${Math.min(100, (sim.stock[r.res] / Math.max(1, sim.capacity(r.res))) * 100)}%`; }
     if (b.kind === 'market' && ready) this.updateMarket();
+    if ((b.kind as string) === 'liaison_post' && ready) this.aidSync();
     if (ready && isProcessKind(b.kind)) this.updateProcess(b, b.kind as 'smelter' | 'carpentry' | 'tannery');
     if (this.bedList[b.kind] && ready) this.updateBeds(b);
     if (this.rolePanes[b.kind] && ready) this.rolePanes[b.kind]!.update();
@@ -443,6 +453,17 @@ export class BuildingPanel {
   /** Draw the Chợ again: the swaps that are open (the rows are made again when research opens one), and for each row the price now, how many steps can be had at most, and what the steps wanted would cost and give. */
   private updateMarket(): void {
     const { sim } = this.c, lv = sim.marketLevel(), coin = RES_NAME.coin.toLowerCase();
+    // the shelf of blueprints: drawn again only when the shelf or what can be paid changes
+    const shelf = sim.blueprintShelf(), pkey = shelf.map((o) => `${o.key}|${o.why ?? ''}`).join(';');
+    if (pkey !== this.planKey) {
+      this.planKey = pkey;
+      this.planBox.replaceChildren(...(shelf.length ? shelf.map((o) => {
+        const buy = h('button', { class: 'sm', type: 'button', text: o.owned ? 'Đã có' : 'Mua', title: o.why ?? '' }) as HTMLButtonElement;
+        buy.disabled = !!o.why;
+        buy.addEventListener('click', () => { const e = sim.buyBlueprint(o.key); if (e) this.c.toast(e); this.c.ctl.onChange(); });
+        return h('p', { class: 'bline' }, h('span', {}, h('b', { text: o.name }), ` (${o.kind === 'building' ? 'công trình' : 'đơn vị'}) · giá `, ...o.cost.flatMap((c) => [resIcon(c.res), ` ${c.n} `]), o.why && !o.owned ? h('small', { class: 'lock', text: ` ${o.why}` }) : null), buy);
+      }) : [h('p', { class: 'sub', text: 'Mùa này Chợ không có bản vẽ nào (hoặc mọi thứ chuyên đã mở). Kệ đổi vào đầu mỗi mùa.' })]));
+    }
     const t = MARKET.levels[Math.max(1, lv) - 1];
     this.marketHead.textContent = lv < 1 ? 'Chưa có Chợ.' : `Chợ cấp ${lv}: tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại ở giá gốc (hôm nay mỗi loại một con số khác nhau).${sim.market.bargain ? (sim.market.bargain.good === '*' ? ` Đoàn thương nhân đang ở chợ: thu mua mọi hàng giá cao hơn ${sim.market.bargain.pct}%.` : ` Món hời hôm nay: ${sim.market.bargain.kind === 'sell' ? 'thu mua' : 'bán'} ${RES_NAME[sim.market.bargain.good as Res].toLowerCase()} ${sim.market.bargain.kind === 'sell' ? 'giá cao hơn' : 'rẻ hơn'} ${sim.market.bargain.pct}%.`) : ''}`;
     const routes = sim.marketRoutes(), key = routes.map((r) => `${r.give}>${r.get}`).join();
@@ -518,7 +539,7 @@ export class BuildingPanel {
     const { sim } = this.c;
     this.staffBoxes.research.update(b); this.activeBoxes.research.update(b);
     const waiting = sim.researchQueue[0];
-    this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
+    this.queueNote.research.textContent = `${waiting ? `Chờ bắt đầu: ${TECH_BY_ID[waiting]?.name ?? waiting}` : sim.legacyFx('researchSlots') > 1 ? 'Có Học Viện: nghiên cứu được hai thứ cùng lúc' : 'Mỗi lần chỉ nghiên cứu một thứ'}`;
     this.research.update();
   }
 

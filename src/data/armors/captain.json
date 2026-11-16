@@ -1,0 +1,229 @@
+{
+ "_note": "Đội trưởng cấm quân (Bộ binh bậc 10): giáp tấm mạ vàng, áo choàng đỏ thẫm. (Bậc 10; tạo bởi tools/gen-ranks.mjs từ templar.)",
+ "name": "Giáp đội trưởng cấm quân",
+ "palette": {
+  "steel": "#e8e3cf",
+  "steelH": "#ffffe6",
+  "steelD": "#9ea198",
+  "steelDD": "#636865",
+  "slit": "#15181c",
+  "gold": "#f6d56a",
+  "cloth": "#8a1f2b",
+  "clothD": "#5e1520",
+  "cross": "#f2d26a",
+  "belt": "#2a1c10",
+  "scab": "#33200f",
+  "hilt": "#9aa2a8"
+ },
+ "legs": {
+  "near": "steelD",
+  "far": "steelDD"
+ },
+ "wraps": {
+  "arm": {
+   "full": true,
+   "color": "steel",
+   "far": "steelD",
+   "hand": "gold",
+   "w": 3,
+   "h": 3
+  },
+  "leg": {
+   "dy": 4,
+   "w": 3,
+   "h": 6,
+   "color": "steel",
+   "edge": "gold"
+  }
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "r": "cross"
+   },
+   "rows": [
+    "..sssssssss..",
+    ".sHHHsssssssD",
+    ".sHHsssssssDD",
+    ".ssssssssssDD",
+    ".ssssssssssDD",
+    ".ssssssddddsD",
+    ".ssssssdkkksD",
+    ".ssssssddddsD",
+    ".ssssssssssDD",
+    ".sssssssssssD",
+    ".DssssssssDDD",
+    "..DDsssssDDD.",
+    "...DDDDDDD..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "ssHHssD",
+    "sHHHssD",
+    "ssHsssD",
+    "sssssdD",
+    "ssssddD",
+    "dddddDD",
+    "ggggggg",
+    "TTTTTTt",
+    "TTTRTTt",
+    "TTRRRTt",
+    "TTTRTt."
+   ]
+  },
+  "over": {
+   "ox": -3,
+   "oy": 6,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "gg...",
+    "gk...",
+    ".kk..",
+    ".kk..",
+    "..kk.",
+    "...k."
+   ]
+  }
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "r": "cross"
+   },
+   "rows": [
+    "..ssssssss..",
+    ".sHHHsssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".sddddsddddD",
+    ".sdkkkdkkkdD",
+    ".sddddsddddD",
+    ".sssssssssD.",
+    ".sssssssssD.",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD.",
+    "....DDDDDD.."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHTTTTHHs",
+    "ssHTTRTHss",
+    "ssssRRRsss",
+    "sssTTRTsss",
+    "ddddTRTddd",
+    "gggggggggg",
+    "TTTTTRTTTt",
+    "TTTTTRTTTt",
+    "TTTRRRRRTt",
+    "TTTTTRTTTt"
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit",
+    "r": "cross"
+   },
+   "rows": [
+    "..ssssssss..",
+    ".sHHHsssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD.",
+    "....DDDDDD.."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "R": "cross"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHHssHHHs",
+    "ssHHssHHss",
+    "ssssssssss",
+    "ssssdsdsss",
+    "dddddddddd",
+    "gggggggggg",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt"
+   ]
+  }
+ }
+}

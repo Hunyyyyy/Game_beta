@@ -40,7 +40,9 @@ const GROUPS: Array<[string, BuildingKind[]]> = [
   ['Tài nguyên', ['farmhouse', 'huntlodge', 'lumberyard', 'quarry', 'mine', 'stable']],
   ['Quân sự', ['infantry', 'cavalry', 'archery', 'guardpost', 'wartent', 'scouttent', 'supplycamp', 'drill']],
   ['Phòng thủ', ['fence', 'gate', 'tower', 'trap']],
+  ['Di sản', ['elder_hall', 'tribute_post', 'guild_exchange', 'bodyguard_lodge', 'liaison_post', 'twin_camp', 'conquest_beacon', 'memorial_shrine', 'academy', 'hidden_forge']],
 ];
+const LEGACY = GROUPS.length - 1; // the tab of the specialist buildings: shown only when the legacy has opened one
 
 /** The bottom tray of what can be built: category tabs and a row of cards with the building's picture; tap one to place it. */
 export class BuildTray {
@@ -66,11 +68,12 @@ export class BuildTray {
   update(): void {
     if (!this.isOpen) return;
     const { sim, ctl, sprites } = this.c;
-    [...this.tabs.children].forEach((b, i) => b.setAttribute('aria-pressed', String(i === this.group)));
+    [...this.tabs.children].forEach((b, i) => { b.setAttribute('aria-pressed', String(i === this.group)); if (i === LEGACY) (b as HTMLElement).hidden = !GROUPS[LEGACY][1].some((k) => sim.isUnlocked(`building:${k}`)); });
+    if (this.group === LEGACY && (this.tabs.children[LEGACY] as HTMLElement).hidden) this.group = 0;
     const key = `${this.group}|${sim.era}`;
     if (key !== this.key) {
       this.key = key; this.refresh.length = 0; this.cards.scrollLeft = 0;
-      const kinds = GROUPS[this.group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k, this.c.sim));
+      const kinds = GROUPS[this.group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k, this.c.sim) && (this.group !== LEGACY || this.c.sim.isUnlocked(`building:${k}`)));
       this.cards.replaceChildren(...kinds.map((kind) => {
         const lv = { cost: sim.startCost(kind) }, d = BUILDINGS[kind]; // a fallen house is raised again at the level it had, and costs that
         let pic: HTMLElement;
@@ -101,7 +104,7 @@ export class BuildTray {
   /** How many kinds of a category can be built now and are not at their limit yet: the new houses waiting to be raised. */
   private openIn(group: number): number {
     const { sim } = this.c;
-    return GROUPS[group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k, sim) && !sim.buildingLock(k)).length;
+    return GROUPS[group][1].filter((k) => BUILDINGS[k].buildable && !eraLocked(k, sim) && !sim.buildingLock(k)).length; // (a specialist building not opened has a lock, so it is not counted)
   }
   /** The same for the whole menu, shown on the Xây button. Called every frame, so the button shows it while the tray is shut. */
   badge(btn: HTMLElement): void {

@@ -1,0 +1,29 @@
+{
+  "id": "assassin",
+  "name": "Người bí ẩn",
+  "role": "assassin",
+  "look": {
+    "sex": "m",
+    "skin": "#f0c8a0",
+    "hair": "#1f1611",
+    "hide": "#2a2a30",
+    "pants": "#1c1c20"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": "hatchet",
+    "handtool": {
+      "kind": "hatchet",
+      "tier": 2
+    }
+  },
+  "ancient": {
+    "armor": "archer",
+    "weapon": "arming_sword",
+    "handtool": {
+      "kind": "arming_sword",
+      "tier": 4
+    }
+  },
+  "shape": "Kẻ trùm kín, áo sẫm màu, dao ngắn giấu trong tay áo."
+}

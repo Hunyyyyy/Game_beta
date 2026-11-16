@@ -1,0 +1,9 @@
+{
+  "_note": "Walkable walls (doc PLAN.md, Phase 3): from `minLevel` the fences, gates and towers have a top that soldiers (ours and the enemy's) stand and walk on, in a layer of their own over the ground. Stairs: the ground tiles next to a gate or a tower (stairKinds) lead up to it, from both sides. A soldier on a wall is drawn `lift` pixels higher; a blow of the sword or the spear passes only between two units of the same layer (the two on the same tile of the stairs excepted), a missile goes any way; an archer on a wall shoots as one in a tower (`archer`). The tops are looked at again every `refreshSeconds`.",
+  "minLevel": { "default": 6, "tower": 6 },
+  "kinds": ["fence", "gate", "tower"],
+  "stairKinds": ["gate", "tower"],
+  "lift": 26,
+  "archer": { "damage": 1.25, "range": 2 },
+  "refreshSeconds": 1
+}

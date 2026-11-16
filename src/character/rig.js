@@ -52,11 +52,37 @@ import peasantHoodBrownArmor from '../data/armors/peasant_hood_brown.json';
 import peasantHoodGreyArmor from '../data/armors/peasant_hood_grey.json';
 import peasantStrawBrownArmor from '../data/armors/peasant_straw_brown.json';
 import peasantStrawGreyArmor from '../data/armors/peasant_straw_grey.json';
+// gen-ranks:imports
+import halberdTool from '../data/handtools/halberd.json';
+import bastardSwordTool from '../data/handtools/bastard_sword.json';
+import royalBladeTool from '../data/handtools/royal_blade.json';
+import heavyCrossbowTool from '../data/handtools/heavy_crossbow.json';
+import fireLanceTool from '../data/handtools/fire_lance.json';
+import handCannonTool from '../data/handtools/hand_cannon.json';
+import longLanceTool from '../data/handtools/long_lance.json';
+import knightLanceTool from '../data/handtools/knight_lance.json';
+import royalLanceTool from '../data/handtools/royal_lance.json';
+import glaiveTool from '../data/handtools/glaive.json';
+import poleaxeTool from '../data/handtools/poleaxe.json';
+import partisanTool from '../data/handtools/partisan.json';
+import halberdierArmor from '../data/armors/halberdier.json';
+import footknightArmor from '../data/armors/footknight.json';
+import captainArmor from '../data/armors/captain.json';
+import arbalistArmor from '../data/armors/arbalist.json';
+import firelancerArmor from '../data/armors/firelancer.json';
+import gunnerArmor from '../data/armors/gunner.json';
+import heavyriderArmor from '../data/armors/heavyrider.json';
+import knightArmor from '../data/armors/knight.json';
+import kingsriderArmor from '../data/armors/kingsrider.json';
+import royalguardArmor from '../data/armors/royalguard.json';
+import eliteguardArmor from '../data/armors/eliteguard.json';
+import kingsguardArmor from '../data/armors/kingsguard.json';
+// gen-ranks:end
 
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
-const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe, arming_sword: armingSword, shortsword, lance, composite_bow: compositeBow, thrown_stone: thrownStone, warhammer, greatsword, alloy_crossbow: alloyCrossbow, knight_sword: knightSword, yew_longbow: yewLongbow, paladin_lance: paladinLance, longbow, heavy_lance: heavyLance, short_spear: shortSpear, pike, ward_sword: armingSword, bronze_bow: bow };
+const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe, arming_sword: armingSword, shortsword, lance, composite_bow: compositeBow, thrown_stone: thrownStone, warhammer, greatsword, alloy_crossbow: alloyCrossbow, knight_sword: knightSword, yew_longbow: yewLongbow, paladin_lance: paladinLance, longbow, heavy_lance: heavyLance, short_spear: shortSpear, pike, ward_sword: armingSword, bronze_bow: bow, /*gen-ranks*/ halberd: halberdTool, bastard_sword: bastardSwordTool, royal_blade: royalBladeTool, heavy_crossbow: heavyCrossbowTool, fire_lance: fireLanceTool, hand_cannon: handCannonTool, long_lance: longLanceTool, knight_lance: knightLanceTool, royal_lance: royalLanceTool, glaive: glaiveTool, poleaxe: poleaxeTool, partisan: partisanTool };
 /* Worn armour, drawn over the body from JSON (src/data/armors). */
-const armors = { grass: grassArmor, hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor };
+const armors = { grass: grassArmor, hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor, /*gen-ranks*/ halberdier: halberdierArmor, footknight: footknightArmor, captain: captainArmor, arbalist: arbalistArmor, firelancer: firelancerArmor, gunner: gunnerArmor, heavyrider: heavyriderArmor, knight: knightArmor, kingsrider: kingsriderArmor, royalguard: royalguardArmor, eliteguard: eliteguardArmor, kingsguard: kingsguardArmor };
 /* Shields, held in the off hand: hand-drawn poses written as rows of letters (see src/data/shields). */
 const shields = { heater: heaterShield, tower: towerShield, aegis: aegisShield, wood: woodShield };
 

@@ -1,0 +1,34 @@
+{
+ "kind": "tribute_post",
+ "name": "Đồn Thu Cống",
+ "group": "storage",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 5,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Đồn Thu Cống",
+    "cost": {
+     "wood": 166,
+     "stone": 102,
+     "iron": 30,
+     "hardwood": 28
+    },
+    "buildTime": 491,
+    "cap": 1500,
+    "craftSpeed": 1.25,
+    "slots": 0,
+    "hp": 878,
+    "sight": 0
+   }
+  ]
+ }
+}

@@ -10,6 +10,7 @@ import { TOOL_OF_JOB } from './tools';
 import { CARRY_CAP } from './resources';
 import type { Res } from './resources';
 import { branchStatMult, rankStatMult } from './ranks';
+import { specStat } from './specialdata';
 import { craftQuality, LineStat, perkPct, soldierTier, statBonus, StatId, TREE_ROLES, weaponsTechId } from './research';
 
 /** What the stat rules read of the game: the research done and the squads. A narrow type of its own so that this file, shared by the systems, never has to know the Sim. */
@@ -78,7 +79,7 @@ export function statValue(sim: Sim, v: Villager, stat: StatId): number {
   const tier = role && TREE_ROLES[role] ? soldierTier(sim.researched, role) : 1;
   // a soldier of a camp is worth what his rank is worth (ranks.json); the other roles keep the tier their research opened
   const camp = v.team === 'player' && v.job === 'fight' && (!v.guard || v.post < 0); // the guards of the Trại lính gác are trained by rank too; the men of a tower are not
-  const mult = camp ? rankStatMult(v.rank ?? 1, stat) * (role ? branchStatMult(role, stat) : 1) : tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
+  const mult = camp ? rankStatMult(v.rank ?? 1, stat) * (role ? branchStatMult(role, stat) : 1) * specStat(v.spec, stat) : tier > 1 ? TIER_MULT[String(tier)]?.[stat] ?? 1 : 1;
   const squad = v.team === 'player' && v.squad >= 0 ? sim.squads.find((q) => q.id === v.squad) : undefined;
   const bonus = (stat === 'move' && v.team === 'player' && isGatherer(v) ? perkPct(sim.researched, 'gatherSpeed') : 0) + (stat === 'hp' || stat === 'atk' ? campBonus(sim, v, stat) : 0) + tentBonus(sim, v, stat) + (v.team !== 'player' ? sim.foeBonus?.(v.team, stat) ?? 0 : 0) + (role ? statBonus(sim.researched, role, stat) : 0) + (squad ? statBonus(sim.researched, FORMATIONS[squad.formation].tech.replace(/^form_/, ''), stat) : 0);
   // the research of the war: Hành quân adds on the march and at rest, Kế hoạch chiến đấu while fighting (the soldiers of the three arms only)

@@ -30,6 +30,8 @@ export class UnitDetail {
   private readonly toolRows: Array<{ k: ToolKind; row: HTMLElement; state: HTMLElement; pick: HTMLSelectElement; drop: HTMLButtonElement }> = [];
   /** The beast he rides: a drop-down of what the stable holds, for soldiers (the riders of the camp have their own), hunters and scouts. */
   private readonly mountSec: HTMLElement; private readonly mountPick: HTMLSelectElement;
+  /** The bodyguard's choice: the villager he keeps (only for a guard of rank 7 or more). */
+  private readonly wardSec: HTMLElement; private readonly wardPick: HTMLSelectElement; private wardKey = '';
   private gearSec: HTMLElement | null = null; private toolsSec!: HTMLElement;
   private readonly stanceBtns: HTMLButtonElement[];
   private readonly gearSel: Array<{ pick: HTMLSelectElement; slot: 'weapon' | 'armor'; label: string; kinds: string[] }> = [];
@@ -60,6 +62,10 @@ export class UnitDetail {
     } }) as HTMLSelectElement;
     this.mountPick.append(h('option', { value: '', text: '— chọn —', hidden: true }), h('option', { value: 'none' }), ...MOUNT_KINDS.map((k) => h('option', { value: k })));
     this.mountSec = h('section', { class: 'dgear' }, h('div', { class: 'row' }, h('div', { class: 'nm', text: 'Thú cưỡi' }), this.mountPick));
+    this.wardPick = h('select', { class: 'sm', 'aria-label': 'Cận vệ cho', title: 'Cận vệ đứng cạnh người này và đỡ phần lớn đòn đánh nhắm vào họ (kể cả sát thủ)', onchange: () => {
+      const e = sim.setBodyguard(ids()[0], this.wardPick.value === '' ? null : Number(this.wardPick.value)); if (e) c.toast(e); else after(); ctl.onChange();
+    } }) as HTMLSelectElement;
+    this.wardSec = h('section', { class: 'dgear' }, h('div', { class: 'row' }, h('div', { class: 'nm', text: 'Cận vệ cho' }), this.wardPick));
 
 
     // tools: handed out of the stock, mended or thrown away by hand
@@ -86,6 +92,7 @@ export class UnitDetail {
         shiftSec,
         this.gearSec = h('section', { class: 'dgear' }, gearRow),
         this.mountSec,
+        this.wardSec,
         toolsSec,
       );
   }
@@ -108,6 +115,14 @@ export class UnitDetail {
     // the beast: soldiers who are not riders of the camp, hunters and scouts
     const canRide = chosen.every((o) => (o.job === 'fight' && o.arm === 'cavalry') || o.job === 'hunt' || o.job === 'scout');
     this.mountSec.hidden = !canRide;
+    const first = chosen[0], guardOk = !!first && first.guard && first.rank >= 7 && chosen.length === 1;
+    this.wardSec.hidden = !guardOk;
+    if (guardOk) { // the choices: the villagers of the village (rebuilt when they change)
+      const people = sim0.villagers.filter((p) => p.team === 'player' && p.health > 0 && p.id !== first.id), key = people.map((p) => `${p.id}${p.name}`).join(',');
+      if (key !== this.wardKey && document.activeElement !== this.wardPick) { this.wardKey = key; this.wardPick.replaceChildren(h('option', { value: '', text: '— không ai —' }), ...people.map((p) => h('option', { value: String(p.id), text: p.name }))); }
+      const want = first.wardOf === undefined ? '' : String(first.wardOf);
+      if (this.wardPick.value !== want && document.activeElement !== this.wardPick) this.wardPick.value = want;
+    }
     if (canRide) {
       const kinds = new Set(chosen.map((o) => o.mount ?? 'none')), want = kinds.size === 1 ? [...kinds][0] : '';
       this.mountPick.querySelectorAll('option').forEach((op) => {

@@ -1,0 +1,281 @@
+{
+  "_note": "The two specialists of the story (doc/story_tree.md, Thân VII). bodyguard: a soldier of the guard branch of rank minRank or more, given one villager to keep (sim.setBodyguard); while he lives and stands within `within` tiles of that villager he takes `share` of every blow meant for him, and he keeps his post (guardAt) within `stay` tiles of him. assassin: a hidden foe sent by a village (sim.sendAssassin): walks to one target, unseen until a soldier or guard is within revealRadius (a tower within towerRadius), strikes once for strikeMult times the health of the target (before armour), then runs home; fleeSeconds is how long he may run before he is gone. A blow reveals him for revealSeconds. spawnDist: tiles from the fire where he appears. units: the seven specialist soldiers the legacy may open (doc/UPDATE_di_san_mo_khoa.md; unlocks.json lists the keys). Each is trained in the camp `camp` like a core soldier of the same Nhà chung level (his rank is that level, from 4 to 10), wears one fixed suit (`weapon`, `armor`, `mount`) taken from the stores (`hire`: it comes with him), and is worth the core of the same rank by trade-offs (`profile`: factor on each stat). costMult: the price of the core rank; rationAdd: more food a day than the core. stealth: unseen by the enemy beyond 3 tiles. siege: his blows on walls, gates and towers hit this much harder. ambush: his blows from behind hit this much harder. effects: what each specialist building that stands and each power of a tip does (src/sim/legacyfx.ts): elder_hall betrayMul (chance a tributary turns on us), tribute_post tributeMul, bodyguard_lodge wardSlots (more bodyguards for one villager; 1 without it), liaison_post aidDays (allies called to keep the village, once a season), twin_camp squadsAdd, conquest_beacon marchMul (pace of a squad on the march), memorial_shrine grudgeDamage (our blows on a hostile village), academy researchSlots (researches under way at once), hidden_forge gearCostMul (weapons and armour); powers: coalition allyMul (allied soldiers), eyes warnDays (raids told earlier), mercenary hireCostMul (hired specialists), reconcile relationLossMul (relation a tribute costs), refuge relationGainMul (relation gained).",
+  "bodyguard": {
+    "minRank": 7,
+    "share": 0.7,
+    "within": 3,
+    "stay": 2.5
+  },
+  "assassin": {
+    "strikeMult": 1.2,
+    "revealRadius": 3,
+    "towerRadius": 4.5,
+    "revealSeconds": 8,
+    "spawnDist": 26,
+    "fleeSeconds": 90,
+    "repath": 2,
+    "speedMul": 1.1,
+    "weapon": "bronze_sword"
+  },
+  "units": [
+    {
+      "id": "guard_patrol",
+      "key": "unit:guard_patrol",
+      "name": "Cấm quân tuần phòng",
+      "camp": "foot",
+      "weapon": "halberd",
+      "armor": "halberdier",
+      "profile": {
+        "hp": 1.3,
+        "atk": 0.8,
+        "defm": 1.25,
+        "defr": 1.25,
+        "move": 0.95
+      },
+      "costMult": 1.3,
+      "rationAdd": 1,
+      "about": "Bộ binh giữ đồn: máu và giáp dày, đánh yếu hơn bộ binh cùng hạng."
+    },
+    {
+      "id": "horse_archer",
+      "key": "unit:horse_archer",
+      "name": "Cung thủ ngựa",
+      "camp": "cavalry",
+      "weapon": "composite_bow",
+      "armor": "rider",
+      "mount": "horse",
+      "profile": {
+        "hp": 0.8,
+        "atk": 1.2,
+        "defm": 0.8,
+        "defr": 0.9,
+        "move": 1.25
+      },
+      "costMult": 1.3,
+      "rationAdd": 1,
+      "about": "Kỵ binh nhanh bắn từ xa: mong manh, khó đuổi kịp."
+    },
+    {
+      "id": "assassin",
+      "key": "unit:assassin",
+      "name": "Sát thủ",
+      "camp": "guard",
+      "weapon": "shortsword",
+      "armor": "archer",
+      "profile": {
+        "hp": 0.6,
+        "atk": 1.6,
+        "defm": 0.5,
+        "defr": 0.5,
+        "move": 1.3
+      },
+      "costMult": 1.3,
+      "rationAdd": 1,
+      "stealth": true,
+      "ambush": 2,
+      "about": "Ẩn khỏi mắt địch, đánh úp rất đau, chết rất nhanh. Dùng cho nhiệm vụ ám sát."
+    },
+    {
+      "id": "hired_guard",
+      "key": "unit:hired_guard",
+      "name": "Cận vệ thuê",
+      "camp": "guard",
+      "weapon": "ward_sword",
+      "armor": "warden",
+      "profile": {
+        "hp": 1.15,
+        "atk": 0.9,
+        "defm": 1.15,
+        "defr": 1.15,
+        "move": 1
+      },
+      "costMult": 2.6,
+      "rationAdd": 1,
+      "hire": true,
+      "about": "Lính chuyên nghiệp thuê bằng tiền: tới là dùng được, không phải luyện, không cần đồ trong kho."
+    },
+    {
+      "id": "turncoat_knight",
+      "key": "unit:turncoat_knight",
+      "name": "Hiệp sĩ đào ngũ",
+      "camp": "cavalry",
+      "weapon": "knight_lance",
+      "armor": "knight",
+      "mount": "warhorse",
+      "profile": {
+        "hp": 1.1,
+        "atk": 1.15,
+        "defm": 0.9,
+        "defr": 0.9,
+        "move": 1.05
+      },
+      "costMult": 1.3,
+      "rationAdd": 1,
+      "about": "Hiệp sĩ bỏ phe bên kia: xung kích mạnh, giáp nhẹ hơn kỵ binh cùng hạng."
+    },
+    {
+      "id": "guerrilla",
+      "key": "unit:guerrilla",
+      "name": "Du kích",
+      "camp": "archer",
+      "weapon": "composite_bow",
+      "armor": "hide",
+      "profile": {
+        "hp": 0.7,
+        "atk": 0.9,
+        "defm": 0.6,
+        "defr": 0.6,
+        "move": 1.35
+      },
+      "costMult": 0.5,
+      "rationAdd": 1,
+      "ambush": 1.5,
+      "about": "Rẻ, nhanh, đánh úp và trinh sát; yếu khi bị vây."
+    },
+    {
+      "id": "siege_engineer",
+      "key": "unit:siege_engineer",
+      "name": "Kỹ sư công thành",
+      "camp": "foot",
+      "weapon": "mace",
+      "armor": "footman",
+      "profile": {
+        "hp": 0.9,
+        "atk": 0.7,
+        "defm": 1,
+        "defr": 1,
+        "move": 0.9
+      },
+      "costMult": 1.3,
+      "rationAdd": 1,
+      "siege": 4,
+      "about": "Phá tường, cổng, chòi canh nhanh gấp nhiều lần; đánh người thì kém."
+    }
+  ],
+  "buildings": [
+    {
+      "id": "elder_hall",
+      "key": "building:elder_hall",
+      "name": "Hội Quán Trưởng Lão",
+      "base": "house",
+      "from": "fruit:TM1",
+      "does": "làng cống nạp ít phản lại hơn một nửa"
+    },
+    {
+      "id": "tribute_post",
+      "key": "building:tribute_post",
+      "name": "Đồn Thu Cống",
+      "base": "storage",
+      "from": "fruit:TM2",
+      "does": "cống nạp nhận được nhiều hơn 25%"
+    },
+    {
+      "id": "guild_exchange",
+      "key": "building:guild_exchange",
+      "name": "Sàn Thương Hội",
+      "base": "market",
+      "from": "fruit:TM3",
+      "does": "Chợ bày thêm một bản vẽ mỗi mùa"
+    },
+    {
+      "id": "bodyguard_lodge",
+      "key": "building:bodyguard_lodge",
+      "name": "Phòng Hộ Vệ",
+      "base": "guardpost",
+      "from": "fruit:TM4",
+      "does": "mỗi người được gán thêm một cận vệ"
+    },
+    {
+      "id": "liaison_post",
+      "key": "building:liaison_post",
+      "name": "Trạm Liên Lạc",
+      "base": "scouttent",
+      "from": "fruit:TM5",
+      "does": "mỗi mùa gọi một lần lính đồng minh tới giữ làng"
+    },
+    {
+      "id": "twin_camp",
+      "key": "building:twin_camp",
+      "name": "Trại Kép",
+      "base": "wartent",
+      "from": "fruit:TM6",
+      "does": "lập thêm được một đội quân"
+    },
+    {
+      "id": "conquest_beacon",
+      "key": "building:conquest_beacon",
+      "name": "Đài Chinh Phạt",
+      "base": "drill",
+      "from": "fruit:TM7",
+      "does": "các đội hành quân nhanh hơn 20%"
+    },
+    {
+      "id": "memorial_shrine",
+      "key": "building:memorial_shrine",
+      "name": "Đền Tưởng Niệm",
+      "base": "house",
+      "from": "fruit:TM8",
+      "does": "lính đánh làng đang thù mình mạnh hơn 10%"
+    },
+    {
+      "id": "academy",
+      "key": "building:academy",
+      "name": "Học Viện",
+      "base": "lab",
+      "from": "fruit:TM9",
+      "does": "nghiên cứu được hai thứ cùng lúc"
+    },
+    {
+      "id": "hidden_forge",
+      "key": "building:hidden_forge",
+      "name": "Xưởng Mật",
+      "base": "workshop",
+      "from": "fruit:TM10",
+      "does": "chế vũ khí và giáp rẻ hơn 20%"
+    }
+  ],
+  "effects": {
+    "elder_hall": {
+      "betrayMul": 0.5
+    },
+    "tribute_post": {
+      "tributeMul": 1.25
+    },
+    "bodyguard_lodge": {
+      "wardSlots": 1
+    },
+    "liaison_post": {
+      "aidDays": 2
+    },
+    "twin_camp": {
+      "squadsAdd": 1
+    },
+    "conquest_beacon": {
+      "marchMul": 1.2
+    },
+    "memorial_shrine": {
+      "grudgeDamage": 1.1
+    },
+    "academy": {
+      "researchSlots": 1
+    },
+    "hidden_forge": {
+      "gearCostMul": 0.8
+    },
+    "coalition": {
+      "allyMul": 2
+    },
+    "eyes": {
+      "warnDays": 1
+    },
+    "mercenary": {
+      "hireCostMul": 0.7
+    },
+    "reconcile": {
+      "relationLossMul": 0.5
+    },
+    "refuge": {
+      "relationGainMul": 2
+    }
+  }
+}

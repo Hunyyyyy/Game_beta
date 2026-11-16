@@ -1,5 +1,5 @@
 /** What the houses are working on: the research and crafting queues and the progress they make. */
-import { BuildingKind, levelDef } from './buildings';
+import { Building, BuildingKind, levelDef } from './buildings';
 import { WorkJob } from './jobs';
 import { Stock } from './resources';
 import { isGear, RECIPE_BY_ID, recipeName } from './tools';
@@ -28,7 +28,9 @@ export const craftMult = (sim: Sim): number => (1 + CRAFT_COST_PER_LEVEL * Math.
 /** A cost made m times as big (every good at least 1, rounded up). */
 export const scaleCost = (cost: Partial<Stock>, m: number): Partial<Stock> => Object.fromEntries(Object.entries(cost).map(([r, n]) => [r, Math.max(1, Math.ceil((n as number) * m - 1e-9))])) as Partial<Stock>;
 /** What ordering one of this recipe costs at the Nhà chế tạo as it stands. */
-export const craftCost = (sim: Sim, id: string): Partial<Stock> => scaleCost(RECIPE_BY_ID[id].cost, craftMult(sim));
+/** The same for one recipe: weapons and armour are cheaper with the Xưởng Mật. */
+export const recipeMult = (sim: Sim, id: string): number => craftMult(sim) * (RECIPE_BY_ID[id] && isGear(RECIPE_BY_ID[id].kind) ? sim.legacyFx('gearCostMul') : 1);
+export const craftCost = (sim: Sim, id: string): Partial<Stock> => scaleCost(RECIPE_BY_ID[id].cost, recipeMult(sim, id));
 
 /** Why a recipe cannot be made yet (the level of the crafting house), or null. */
 export function recipeLock(sim: Sim, id: string): string | null {
@@ -51,7 +53,7 @@ function lacksOf(sim: Sim, t: Tech): string[] {
 export function techState(sim: Sim, t: Tech): { state: 'done' | 'active' | 'queued' | 'ready' | 'locked'; why?: string; lacks?: string[] } {
   if (t.milestone) return reached(sim.researched, t.id) ? { state: 'done' } : { state: 'locked', why: 'Đang thiết kế: chưa có tác dụng', lacks: lacksOf(sim, t) };
   if (sim.researched.has(t.id)) return { state: 'done' };
-  if (sim.building('lab')?.active?.id === t.id) return { state: 'active' };
+  if (underWay(sim).includes(t.id)) return { state: 'active' };
   if (sim.researchQueue.includes(t.id)) return { state: 'queued' };
   // every condition that is not met yet, not only the first
   const free = sim.dev.freeWorks; // dev: no steps before it and no level of the house needed
@@ -70,8 +72,14 @@ export function researchBlock(sim: Sim, t: Tech): string | null {
   return null;
 }
 
-/** The research under way or waiting to start. Only one at a time: the next waits until it is done. */
-export function currentResearch(sim: Sim): string | null { return sim.building('lab')?.active?.id ?? sim.researchQueue[0] ?? null; }
+/** The second bench of research: the Học Viện (a specialist building) works on one more research at once, with the people of the Nhà nghiên cứu. */
+const academy = (sim: Sim): Building | undefined => sim.buildings.find((b) => (b.kind as string) === 'academy' && b.done);
+/** The researches being worked on now (one, or two with a Học Viện). */
+const underWay = (sim: Sim): string[] => [sim.building('lab')?.active?.id, academy(sim)?.active?.id].filter((x): x is string => !!x);
+/** The research under way or waiting to start (the first of them). */
+export function currentResearch(sim: Sim): string | null { return underWay(sim)[0] ?? sim.researchQueue[0] ?? null; }
+/** No more research can be taken on now: as many are under way or waiting as there are benches (one; two with a Học Viện). */
+export const researchBusy = (sim: Sim): boolean => underWay(sim).length + sim.researchQueue.length >= sim.legacyFx('researchSlots');
 
 /** Queue a research; materials and coins are paid when it starts. */
 export function queueResearch(sim: Sim, id: string): string | null {
@@ -82,7 +90,7 @@ export function queueResearch(sim: Sim, id: string): string | null {
   if (st.state === 'done') return 'Đã nghiên cứu rồi';
   if (st.state === 'active' || st.state === 'queued') return 'Đang nghiên cứu';
   const cur = currentResearch(sim);
-  if (cur) return `Đang nghiên cứu ${TECH_BY_ID[cur]?.name ?? cur}: xong rồi mới nghiên cứu tiếp`;
+  if (cur && researchBusy(sim)) return `Đang nghiên cứu ${TECH_BY_ID[cur]?.name ?? cur}: xong rồi mới nghiên cứu tiếp`;
   if (st.state === 'locked') return st.why ?? 'Chưa nghiên cứu được';
   const short = researchShort(sim, t);
   if (short) return short;
@@ -138,7 +146,7 @@ export function queueCraft(sim: Sim, id: string): string | null {
   const full = craftStoreBlock(sim, id);
   if (full) return full;
   if (sim.craftQueue.length >= craftQueueMax(sim)) return 'Hàng đợi đã đầy';
-  const mult = craftMult(sim);
+  const mult = recipeMult(sim, id);
   if (!sim.dev.freeWorks) {
     const cost = scaleCost(r.cost, mult), short = sim.missing(cost);
     if (short) return short;
@@ -199,12 +207,25 @@ export function tickWorks(sim: Sim, dt: number): void {
     const job = kind as WorkJob;
     let rate = 0;
     for (const v of staff) { rate += sim.workFactor(v, job); sim.gainXp(v, job, dt); }
+    if (kind === 'research') { // the Học Viện: the same people work on a second research at the same pace
+      const ac = academy(sim);
+      if (ac) {
+        if (!ac.active && queue.length) ac.active = { id: queue.shift()!, progress: 0 };
+        const d2 = ac.active ? orderDef(sim, kind, ac.active.id) : undefined;
+        if (ac.active && !d2) ac.active = null;
+        else if (ac.active && d2) {
+          ac.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, ac.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim.researched, 'researchSpeed') / 100) * sim.storyMod('researchSpeed')) / d2.time);
+          if (ac.active.progress >= 1) { const done = ac.active.id; sim.researched.add(done); ac.active = null; sim.say(`Học Viện đã hoàn thành "${TECH_BY_ID[done].name}".`); }
+        }
+      }
+    }
     b.active.progress = sim.dev.fastWorks ? 1 : Math.min(1, b.active.progress + (dt * sim.paceWork * rate * levelDef(b).craftSpeed * (1 + perkPct(sim.researched, kind === 'craft' ? 'craftSpeed' : 'researchSpeed') / 100)) / d.time); // dev: done at once
     if (b.active.progress < 1) continue;
     const id = b.active.id;
     if (kind === 'research') {
       sim.researched.add(id); b.active = null;
       sim.say(`Nhà nghiên cứu đã hoàn thành "${TECH_BY_ID[id].name}".`);
+      continue;
     } else {
       const r = RECIPE_BY_ID[id], cat = isGear(r.kind) ? 'gear' : 'tool';
       if (storeUsed(sim, cat) >= storeCap(sim, cat)) { // finished but nowhere to put it

@@ -4,6 +4,7 @@
  * What the visitor really is (honest, a cheat, a thief...) is drawn once from their seed and saved; the player reads clues. A village system: it reaches the rest of the game only through `sim.method(...)`.
  */
 import { footOf } from './buildings';
+import { characterOf, suitOf } from './characters';
 import { relationLabel } from './combat';
 import {
   ENC, SCRIPTS, evalCond, fillText, initialEncounters, linesOf, revealClue, scriptOf, seedRoll, shortOf, truthOf,
@@ -23,11 +24,11 @@ const visitorOf = (sim: Sim, id: number): Visitor | undefined => sim.encounters.
 /** What the village is worth in shells: its stores at the barter rates of the Chợ, and its shells. The richer it is, the likelier it draws thieves. */
 const wealthOf = (sim: Sim): number => sim.stock.coin + (Object.keys(BARTER) as Array<keyof typeof BARTER>).reduce((a, r) => a + sim.stock[r] / BARTER[r], 0);
 
-/** Write a deed to the ledger (the newest 300 are kept). */
+/** Write a deed to the ledger (the newest 600 are kept). */
 export function addDeed(sim: Sim, key: string, tribe?: string): void {
   const st = sim.encounters;
   st.deeds.push({ key, tribe, day: sim.day });
-  if (st.deeds.length > 300) st.deeds.splice(0, st.deeds.length - 300);
+  if (st.deeds.length > 600) st.deeds.splice(0, st.deeds.length - 600);
 }
 
 /** How many of the refugees taken in are still with us. */
@@ -39,7 +40,14 @@ function refugeesAlive(sim: Sim): number {
 
 /** What a condition of a script may ask about, for this visitor (or for no one yet). */
 function ctxOf(sim: Sim, v?: Visitor): CondCtx {
-  return { stock: sim.stock, day: sim.day, fireLevel: sim.fireLevel(), rel: (v && tribeOf(sim, v.tribe)?.relation) || 0, truth: v?.truth ?? 'honest', refugees: refugeesAlive(sim), soldiers: sim.villagers.filter((s) => s.job === 'fight' && s.health > 0).length, captives: sim.encounters.captives.length, room: Math.max(0, sim.popCap() - sim.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim.encounters.deeds, tribe: v?.tribe };
+  return { stock: sim.stock, day: sim.day, fireLevel: sim.fireLevel(), rel: (v && tribeOf(sim, v.tribe)?.relation) || 0, truth: v?.truth ?? 'honest', refugees: refugeesAlive(sim), soldiers: sim.villagers.filter((s) => s.job === 'fight' && s.health > 0).length, captives: sim.encounters.captives.length, room: Math.max(0, sim.popCap() - sim.villagers.length), party: v ? 1 + v.members.length : 0, flags: v?.flags ?? [], mood: v?.mood ?? 0, deeds: sim.encounters.deeds, tribe: v?.tribe, story: sim.storyCond(), specs: sim.villagers.reduce<Record<string, number>>((m, s) => { if (s.spec && s.health > 0) m[s.spec] = (m[s.spec] ?? 0) + 1; return m; }, {}) };
+}
+
+/** What a condition may ask about now, with no visitor (for the story tree). */
+export const condNow = (sim: Sim): CondCtx => ctxOf(sim);
+/** A script is sent to the gate in `days` (the story tree sends its scenes so): it comes as a due script of the queue, from any village that may send it. */
+export function queueScript(sim: Sim, script: string, days: number, priority = 5, maxDelay = ENC.maxDelay, tribe?: string): void {
+  if (scriptOf(script)) sim.encounters.queue.push({ script, day: sim.day + Math.max(0, days), priority, maxDelay, tribe });
 }
 
 // ---------------------------------------------------------------- the visits
@@ -150,13 +158,16 @@ function spawnVisitor(sim: Sim, due?: QueueItem): void {
   const id = st.nextId++, seed = Math.floor(sim.frnd() * 2147483647), truth = truthOf(script, seed, wealthOf(sim));
   const f = sim.makeVillager(sp[0], sp[1], sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
   f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
+  const who = characterOf(script.cast);
+  if (who) { const suit = suitOf(who, sim.era); f.look = { ...who.look }; f.name = `${who.name} ${f.name}`; f.outfit = suit.armor ?? undefined; if (suit.weapon) sim.armFoe(f, suit.weapon, false, 1); } // a named character: his own look and clothes (only a drawing), his title before his name
   f.ai = { role: 'civ', camp: t.camp, wander: 0, goal: null, raid: 0, guest: id };
   sim.addFoe(f); // not in the tribe's list of units: the village's own bookkeeping (sleep, rescale) leaves a guest alone
   st.last = script.id;
   // the party: the visitor speaks for them; the others walk behind and stand about the meeting point
   const members: number[] = [], spots: Array<[number, number]> = [], P = script.party, N = sim.world.size;
   if (P) {
-    const n = P.size[0] + Math.floor(seedRoll(seed, 'party') * (P.size[1] - P.size[0] + 1)), takenS = new Set([sp[1] * N + sp[0]]), takenM = new Set([mp[1] * N + mp[0]]);
+    const n = Math.max(1, Math.round((P.size[0] + Math.floor(seedRoll(seed, 'party') * (P.size[1] - P.size[0] + 1))) * (script.id === 'newcomers' ? sim.storyMod('arrivals') : 1))), takenS // (the Ngọn Cố Đô Mở: more come to the gate)
+    = new Set([sp[1] * N + sp[0]]), takenM = new Set([mp[1] * N + mp[0]]);
     sim.armFoe(f, P.weapons?.[0] ?? null, !!P.armor, 1);
     for (let i = 1; i < n; i++) {
       const s = sim.nearestFree(sp[0], sp[1], takenS) ?? sp, m = sim.nearestFree(mp[0], mp[1], takenM) ?? mp;
@@ -456,7 +467,7 @@ export function chooseEncounter(sim: Sim, index: number): string | null {
     return 'Bạn không nhận ra điều gì khác thường.';
   }
   if (c.stay) { a.line = 9999; return c.note ?? null; } // stays here (the shop: another piece), the payment is told
-  let next = c.by?.[v.truth] ?? c.branch?.find((b) => evalCond(b.cond, ctxOf(sim, v)))?.then ?? (c.roll ? (seedRoll(v.seed, key) < Math.max(0.05, Math.min(0.95, c.roll.p + (c.roll.mood ?? 0) * (v.mood ?? 0))) ? c.roll.yes : c.roll.no) : c.then);
+  let next = c.by?.[v.truth] ?? c.branch?.find((b) => evalCond(b.cond, ctxOf(sim, v)))?.then ?? (c.roll ? (seedRoll(v.seed, key) < Math.max(0.05, Math.min(0.95, c.roll.p + (c.roll.mood ?? 0) * (v.mood ?? 0) + (c.roll.bonus ?? []).reduce((a, b) => a + (evalCond(b.cond, ctxOf(sim, v)) ? b.add : 0), 0))) ? c.roll.yes : c.roll.no) : c.then);
   const T = s.talk;
   if (T && next === '@round') { // an exchange is over: on to the next, or to the visitor's terms when they are done
     a.round = (a.round ?? 0) + 1;
@@ -515,6 +526,9 @@ function applyEffect(sim: Sim, v: Visitor, e: Effect): void {
   }
   if (e.host) v.host = true; // settled now, done when the talk ends
   if (e.flag && !(v.flags ?? []).includes(e.flag)) v.flags = [...(v.flags ?? []), e.flag];
+  if (e.sflag) sim.setStoryFlag(e.sflag); // a flag of the story tree: it stays for the whole game
+  if (e.journal) sim.say(e.journal);
+  if (e.quest) sim.sideQuestChoice(e.quest, v.tribe); // an answer of a side quest talk
   if (e.welcome !== undefined) v.welcome = e.welcome;
   if (e.buy) { // the price is paid; what arrives depends on the merchant: a cheat gives nothing, and even an honest one may sell a fake as a bargain
     const sc = scriptOf(v.scriptId), item = sc ? shopItems(sim, v, sc).find((i) => i.id === e.buy) : undefined;
@@ -732,4 +746,22 @@ function stayWithUs(sim: Sim, v: Visitor): void {
   }
   sim.say(v.join === 'all' ? `${n} người tị nạn ở lại làng.` : `${sim.get(v.unitId)?.name ?? 'Người lạ'} ở lại làm dân của làng.`);
   st.visitors = st.visitors.filter((x) => x.id !== v.id);
+}
+
+/** A talk that opens at once, in the middle of a war (story.warEvent): the visitor stands by the fire, already waiting, and the dialogue opens. The battle stands still while it is answered (time does not run in a dialogue). Returns an error or null. */
+export function openAtOnce(sim: Sim, scriptId: string, tribeId: string): string | null {
+  const s = scriptOf(scriptId), t = tribeOf(sim, tribeId);
+  if (!s || !t || sim.encounters.active) return 'Không mở được cuộc gặp';
+  const st = sim.encounters, fire = sim.campfire(), fx = fire ? fire.x + 1 : sim.world.start.x, fy = fire ? fire.y + 3 : sim.world.start.y;
+  const at = sim.nearestFree(Math.floor(fx), Math.floor(fy), new Set());
+  if (!at) return 'Không có chỗ cho người tới';
+  const id = st.nextId++, seed = Math.floor(sim.frnd() * 2147483647);
+  const f = sim.makeVillager(at[0], at[1], sim.frnd() < 0.5 ? 'm' : 'f', t.id, sim.frnd);
+  f.look.hide = t.def.look.hide; f.look.pants = t.def.look.pants;
+  const who = characterOf(s.cast);
+  if (who) { const suit = suitOf(who, sim.era); f.look = { ...who.look }; f.name = `${who.name} ${f.name}`; f.outfit = suit.armor ?? undefined; }
+  f.ai = { role: 'civ', camp: t.camp, wander: 0, goal: null, raid: 0, guest: id };
+  sim.addFoe(f);
+  st.visitors.push({ id, scriptId, tribe: t.id, unitId: f.id, truth: 'honest', seed, state: 'waiting', mx: at[0] + 0.5, my: at[1] + 0.5, hx: at[0] + 0.5, hy: at[1] + 0.5, arrivedAt: sim.time, expiresAt: sim.time + 1e6, stuck: 0, notes: [], used: [], members: [], spots: [], join: '', agents: [], escort: [], placed: false, provoked: false, watch: [fx, fy] });
+  return openEncounter(sim, id);
 }

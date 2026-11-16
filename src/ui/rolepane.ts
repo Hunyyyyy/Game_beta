@@ -15,6 +15,7 @@ import { describe, SHIFT_LABEL } from './describe';
 
 import { WEAPONS } from '../sim/combat';
 import { isRankRole, rankName, ranksOf, trainBill } from '../sim/ranks';
+import { specialistDef, specialistsOf } from '../sim/specialdata';
 
 /** What a role leans on: the stat that says who is good at it (scouts are rated by their own score). */
 const STAT_OF: Record<RoleId, keyof typeof STAT_NAME | 'scout'> = {
@@ -51,6 +52,8 @@ export class RolePane {
   private ore: Res = ORE_RES[0];
   /** The rank the camps of soldiers train now (ranks.json). */
   private rank = 1;
+  /** A specialist chosen instead of a rank (data/specialists.json), when the legacy has opened one for this camp. */
+  private spec: string | null = null;
 
   /** `changed` asks whoever shows this pane to draw it again. */
   constructor(private readonly c: Ctx, readonly role: RoleId, private readonly changed: () => void = () => this.update()) { this.roster = new Roster(c); }
@@ -64,7 +67,7 @@ export class RolePane {
 
   stateKey(): string {
     const { sim } = this.c;
-    return [this.role, this.watch, this.ore, this.recruit, this.rank, isRankRole(this.role) ? sim.trainCheck(this.role, this.rank).missing.join('|') : '', sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
+    return [this.role, this.watch, this.ore, this.recruit, this.rank, this.spec ?? '', isRankRole(this.role) ? specialistsOf(this.role).map((s) => sim.isUnlocked(s.key) + sim.specialistCheck(s).missing.join('|')).join(';') : '', isRankRole(this.role) ? sim.trainCheck(this.role, this.rank).missing.join('|') : '', sim.roleCapacity(this.role), sim.villagers.map((v) => `${v.id}${v.job}${v.arm}${v.post}${v.inside === null ? '' : 'i'}${v.shift}${v.out ? 'o' : ''}${v.housed ? 'H' : ''}${v.phase === 'sleep' ? 'z' : ''}${Math.round(v.energy / 20)}${Math.round(v.health / 20)}${v.armor ? Math.round(v.gear.ad / 25) : ''}${v.stats.str}${v.stats.agi}${v.stats.sta}`).join(),
       sim.scouts.map((m) => m.ids.join('.')).join('|'), sim.buildings.filter((b) => b.kind === ROLES[this.role].building).map((b) => `${b.level}${b.done}`).join(), this.role === 'mine' ? sim.villagers.filter((v) => v.job === 'mine').map((v) => `${v.id}:${v.ores?.join('.') ?? '*'}`).join() : ''].join('|');
   }
 
@@ -121,9 +124,19 @@ export class RolePane {
       out.push(h('div', { class: 'rankbar' }, ...ranks.map((d) => {
         const c1 = sim.trainCheck(train, d.rank);
         return h('button', { type: 'button', class: `rankcard${d.rank === this.rank ? ' on' : ''}${c1.ok ? ' ready' : ''}${d.soon ? ' soon' : ''}`, title: c1.ok ? `Luyện ${d.name.toLowerCase()}: ${trainBill(d, sim.rankCost(train, d.rank))}` : c1.missing.join('\n'),
-          onclick: () => { this.rank = d.rank; this.again(); } }, h('b', { text: d.name }), h('small', { text: d.soon ? 'chưa có' : trainBill(d, sim.rankCost(train, d.rank)) }));
+          onclick: () => { this.rank = d.rank; this.spec = null; this.again(); } }, h('b', { text: d.name }), h('small', { text: d.soon ? 'chưa có' : trainBill(d, sim.rankCost(train, d.rank)) }));
       })));
-      out.push(h('small', { class: `dsub rwhy${chk && chk.ok ? ' okline' : ''}`, text: chk && chk.ok ? `Mỗi lính tốn ${trainBill(chk.def!, sim.rankCost(train, this.rank))} và một ${WEAPONS[chk.def!.weapon].name.toLowerCase()} lấy từ kho.` : `Thiếu: ${chk?.missing.join(' · ')}` }));
+      // the specialists the legacy has opened for this camp (the ones not opened are not shown): a card each, the same bill as the rank they are worth, a factor more
+      const open = specialistsOf(train).filter((s) => sim.isUnlocked(s.key));
+      if (this.spec && !open.some((s) => s.id === this.spec)) this.spec = null;
+      if (open.length) out.push(h('div', { class: 'rankbar specbar' }, ...open.map((s) => {
+        const c2 = sim.specialistCheck(s), bill = trainBill({ ...ranks[0], cost: sim.specialistCost(s) }, sim.specialistCost(s));
+        return h('button', { type: 'button', class: `rankcard spec${this.spec === s.id ? ' on' : ''}${c2.ok ? ' ready' : ''}`, title: `${s.about}\n${c2.ok ? `${s.hire ? 'Thuê' : 'Luyện'}: ${bill}` : c2.missing.join('\n')}`,
+          onclick: () => { this.spec = this.spec === s.id ? null : s.id; this.again(); } }, h('b', { text: s.name }), h('small', { text: s.hire ? `thuê · ${bill}` : bill }));
+      })));
+      const sdef = this.spec ? specialistDef(this.spec) : undefined;
+      if (sdef) { const c2 = sim.specialistCheck(sdef); out.push(h('small', { class: `dsub rwhy${c2.ok ? ' okline' : ''}`, text: c2.ok ? `${sdef.name}: ${sdef.about}` : `Thiếu: ${c2.missing.join(' · ')}` })); }
+      else out.push(h('small', { class: `dsub rwhy${chk && chk.ok ? ' okline' : ''}`, text: chk && chk.ok ? `Mỗi lính tốn ${trainBill(chk.def!, sim.rankCost(train, this.rank))} và một ${WEAPONS[chk.def!.weapon].name.toLowerCase()} lấy từ kho.` : `Thiếu: ${chk?.missing.join(' · ')}` }));
     }
     const ore = this.ore, oreName = RES_NAME[ore].toLowerCase();
     out.push(...this.roster.render(mining ? {
@@ -153,9 +166,9 @@ export class RolePane {
       again: () => this.again(),
     } : {
       assigned: have, cap, statIds: roleStats(role), stat: key, pool,
-      addBlock: train && chk && !chk.ok ? block ?? chk.missing[0] : block,
-      add: (v) => (train ? sim.trainSoldier([v.id], train, this.rank) : sim.assignRole([v.id], role)),
-      ...(train ? { titles: { pool: 'Dân có thể luyện', in: 'Lính trong trại' }, chipIn: (v: Villager) => rankName(train, v.rank ?? 1) ?? undefined } : {}),
+      addBlock: train && this.spec && specialistDef(this.spec) ? block ?? sim.specialistCheck(specialistDef(this.spec)!).missing[0] ?? null : train && chk && !chk.ok ? block ?? chk.missing[0] : block,
+      add: (v) => (train ? (this.spec && specialistDef(this.spec) ? sim.trainSpecialist([v.id], specialistDef(this.spec)!) : sim.trainSoldier([v.id], train, this.rank)) : sim.assignRole([v.id], role)),
+      ...(train ? { titles: { pool: 'Dân có thể luyện', in: 'Lính trong trại' }, chipIn: (v: Villager) => (v.spec ? specialistDef(v.spec)?.name : rankName(train, v.rank ?? 1)) ?? undefined } : {}),
       remove: (v) => sim.releaseRole([v.id]),
       removeBlock: (v) => lock ?? (sim.scouts.some((m) => m.ids.includes(v.id)) ? 'Đang đi trinh sát' : null),
       extra: (v) => [callOut(v)],

@@ -1,0 +1,29 @@
+{
+  "id": "bodyguard",
+  "name": "Cận vệ",
+  "role": "bodyguard",
+  "look": {
+    "sex": "m",
+    "skin": "#e0ac69",
+    "hair": "#1f1611",
+    "hide": "#4a5560",
+    "pants": "#2f3840"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": "spear",
+    "handtool": {
+      "kind": "spear",
+      "tier": 2
+    }
+  },
+  "ancient": {
+    "armor": "warden",
+    "weapon": "ward_sword",
+    "handtool": {
+      "kind": "arming_sword",
+      "tier": 5
+    }
+  },
+  "shape": "Người cao lớn, giáp kín, đứng sau lưng người mình giữ nửa bước."
+}

@@ -12,6 +12,7 @@ import { armOf, hurt, tickProjectiles } from './battle';
 import { Animal, populateChunk, restock, restoreWarAnimals, tickAnimals } from './fauna';
 import * as tribeLod from './tribelod';
 import { tickFoe } from './brainfoe';
+import { rebelTributary } from './tribes';
 import { addRelation, adoptTribe, guestsToRaid, launchRaid, EventState, foeBonus, dismissAllies, giftTribe, killFoe, resetTribes, setTribute, spawnTribes, summonAllies, tickTribes, Tribe, tribeAttacked, tribeHostile, tribeSeen, tribesFeud, tribeWilling, tributeTribe } from './tribes';
 import { Tech } from './research';
 import { questViews, QuestUi, QuestView } from './quests';
@@ -21,6 +22,18 @@ import * as construction from './construction';
 import * as economy from './economy';
 import * as market from './market';
 import * as encounters from './encounters';
+import * as story from './story';
+import * as sidequests from './sidequests';
+import * as legacyfx from './legacyfx';
+import * as missions from './missions';
+import type { SideRun, StageField } from './sidequestdata';
+import { initialSide, type SideState } from './sidequestdata';
+import * as specialists from './specialists';
+import * as walltop from './walltop';
+import type { SpecialistDef } from './specialdata';
+import { initialStory, isUnlocked, type StoryState } from './storydata';
+import type { StoryMode } from './storyscenes';
+import type { CondCtx, StoryCond } from './encounterdata';
 import { applyStats } from './statsys';
 import * as processing from './processing';
 import * as ranch from './ranch';
@@ -124,6 +137,16 @@ export class Sim {
   frontier: { next: number; late: number; day: number; bandit: Record<string, number> } = { next: 0, late: 0, day: -1, bandit: {} };
   /** Visitors at the gate and the dialogue with them (encounters.ts); time stands still while `encounters.active` is set. */
   encounters: encounters.EncounterState = encounters.initialEncounters();
+  /** The story tree (story.ts): the lasting flags, the knots fired and their leaves, the fruits, the tips. The hidden marks are not kept: they come from `encounters.deeds`. */
+  story: StoryState = initialStory();
+  /** The tops of the walls worked out from the buildings (walltop.ts): derived, not saved. */
+  wallCache: walltop.Tops | null = null;
+  /** What the legacy keeps (legacyfx.ts, story.ts): allies called to keep the village, a ban on war, the vote of the council, free blueprints. */
+  legacy: legacyfx.LegacyState = legacyfx.initialLegacy();
+  /** Side quests offered or under way (sidequests.ts): apart from the story tree. */
+  side: SideState = initialSide();
+  /** The keys of unlocks.json bought (a blueprint at the Chợ, the Thư Viện Di Sản): they stay open for good. */
+  unlocksBought: string[] = [];
   /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
   conquests: Conquest[] = [];
   /** The percent every stroke of work gains from the villages taken, by their strength (difficulty.json capture.yieldPerVillage). */
@@ -158,7 +181,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */ };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */, story: false /* the story tree runs though data/story/index.json has it off */, unlockAll: false /* every specialist is open */, side: false /* side quests are offered and the Chợ sells blueprints though the data has them off */ };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -339,6 +362,10 @@ export class Sim {
   roleCapacity(role: RoleId): number { return roles.roleCapacity(this, role); }
   /** → barracks.trainCheck: what stands between the village and a soldier of this rank of a branch */
   trainCheck(role: RankRole, rank: number): barracks.TrainCheck { return barracks.trainCheck(this, role, rank); }
+  /** → barracks.specialistCheck / trainSpecialist / specialistCost: the specialist soldiers of the legacy */
+  specialistCheck(def: SpecialistDef): { missing: string[]; ok: boolean } { return barracks.specialistCheck(this, def); }
+  trainSpecialist(ids: readonly number[], def: SpecialistDef): string | null { return barracks.trainSpecialist(this, ids, def); }
+  specialistCost(def: SpecialistDef): Partial<Stock> { return barracks.specialistCost(this, def); }
   /** → barracks.trainSoldier: train villagers as soldiers of a rank of a branch (the camp's "＋") */
   trainSoldier(ids: readonly number[], role: RankRole, rank: number): string | null { return barracks.trainSoldier(this, ids, role, rank); }
   /** → roles.roleCount */
@@ -448,6 +475,78 @@ export class Sim {
   guestAttacked(unitId: number): void { return encounters.guestAttacked(this, unitId); }
   /** → tribes.guestsToRaid */
   guestsToRaid(id: string, unitIds: number[]): void { return guestsToRaid(this, id as TribeId, unitIds); }
+  /** → encounters.condNow */
+  encounterCond(): CondCtx { return encounters.condNow(this); }
+  /** → encounters.queueScript */
+  queueEncounter(script: string, days: number, priority?: number, maxDelay?: number, tribe?: string): void { return encounters.queueScript(this, script, days, priority, maxDelay, tribe); }
+  /** → sidequests.sideChoice */
+  sideQuestChoice(code: string, tribe?: string): void { return sidequests.sideChoice(this, code, tribe); }
+  /** → missions: a step of a side quest played on the map (stageBlock: why it cannot be, stageStart, stageCheck, stageKills, stageClear, stageSweep) */
+  stageBlock(field: StageField): string | null { return missions.stageBlock(this, field); }
+  stageStart(run: SideRun, field: StageField, step: number, opt: number): boolean { return missions.stageStart(this, run, field, step, opt); }
+  stageCheck(run: SideRun, field: StageField): 'run' | 'won' | 'lost' { return missions.stageCheck(this, run, field); }
+  stageKills(run: SideRun): number { return missions.stageKills(this, run); }
+  stageClear(run: SideRun): void { return missions.stageClear(this, run); }
+  stageSweep(): void { return missions.stageSweep(this); }
+  /** → sidequests.sideQuestViews */
+  sideQuests(): sidequests.SideQuestView[] { return sidequests.sideQuestViews(this); }
+  /** → sidequests.dropSideQuest */
+  dropSideQuest(id: string): string | null { return sidequests.dropSideQuest(this, id); }
+  /** → sidequests.startSideQuest (dev) */
+  startSideQuest(id: string): string { return sidequests.startSideQuest(this, id); }
+  /** → sidequests.sideQuestList */
+  sideQuestList(): Array<{ id: string; name: string; kind: string }> { return sidequests.sideQuestList(); }
+  /** → encounters.addDeed */
+  addDeed(key: string, tribe?: string): void { return encounters.addDeed(this, key, tribe); }
+  /** → specialists.setBodyguard */
+  setBodyguard(guardId: number, wardId: number | null): string | null { return specialists.setBodyguard(this, guardId, wardId); }
+  /** → specialists.bodyguardOf */
+  bodyguardOf(v: Villager): Villager | null { return specialists.bodyguardOf(this, v); }
+  /** → specialists.bodyguardShare */
+  bodyguardShare(): number { return specialists.bodyguardShare(); }
+  /** → specialists.sendAssassin */
+  sendAssassin(tribeId: string, targetId?: number): Villager | null { return specialists.sendAssassin(this, tribeId, targetId); }
+  /** → specialists.tickAssassin */
+  tickAssassin(f: Villager, dt: number): void { return specialists.tickAssassin(this, f, dt); }
+  /** Whether a specialist (a key of data/story/unlocks.json) may be used now; core things are always open. */
+  isUnlocked(key: string): boolean { return this.dev.unlockAll || isUnlocked(this.story, this.unlocksBought, key, this.fireLevel()); }
+  /** → walltop.onWall: is he standing on the top of a wall (fence, gate or tower of level 6 and up)? */
+  onWall(v: Pick<Villager, 'x' | 'y'>): boolean { return walltop.onWall(this, v); }
+  /** → walltop.wallLift / wallArcher: how high a soldier on a wall is drawn, and the bonus of an archer there */
+  wallLift(): number { return walltop.wallLift(); }
+  wallArcher(): { damage: number; range: number } { return walltop.wallArcher(); }
+  /** → walltop.topAt */
+  topAt(x: number, y: number): boolean { return walltop.topAt(this, x, y); }
+  /** → walltop.wallPath: the way up, along and down the walls (null when neither end is on a top) */
+  wallPath(v: Pick<Villager, 'x' | 'y'>, gx: number, gy: number, ground: (sx: number, sy: number, tx: number, ty: number) => Step[]): Step[] | null { return walltop.wallPath(this, v, gx, gy, ground); }
+  /** → story.storyCond */
+  storyCond(): StoryCond { return story.storyCond(this); }
+  /** → story.setFlag */
+  setStoryFlag(name: string): void { return story.setFlag(this, name); }
+  /** → story.setMode */
+  setStoryMode(mode: StoryMode): void { return story.setMode(this, mode); }
+  /** → legacyfx.fx: one number of the legacy (a specialist building that stands, a power of a tip) */
+  legacyFx(key: legacyfx.FxKey): number { return legacyfx.fx(this, key); }
+  /** → legacyfx.grudgeEdge */
+  grudgeEdge(from: Villager | undefined, to: Villager): number { return legacyfx.grudgeEdge(this, from, to); }
+  /** → legacyfx.aidBlock / callAid: the allies called to keep the village (Trạm Liên Lạc) */
+  aidBlock(): string | null { return legacyfx.aidBlock(this); }
+  callAid(): string | null { return legacyfx.callAid(this); }
+  /** → story.warBlock: why a war may not be begun now (Ngai rỗng, the vote of the council), or null */
+  warBlock(tribe: string | null): string | null { return story.warBlock(this, tribe); }
+  /** → tribes.rebelTributary: the tributary that likes us least turns on us (a leaf of the story) */
+  rebelTributary(): string | null { return rebelTributary(this); }
+  /** → story.warEvent / warBegan / warLeaderDown / warOver / tickWarStory: trunk V of the story tree plays in the war */
+  warBegan(tribe: string): void { return story.warBegan(this, tribe); }
+  warLeaderDown(tribe: string): void { return story.warLeaderDown(this, tribe); }
+  warOver(): void { return story.warOver(this); }
+  tickWarStory(dt: number): void { return story.tickWarStory(this, dt); }
+  /** → story.stoneTip: a Ngọn of the stone age stands */
+  stoneTip(id: string): boolean { return story.stoneTip(this, id); }
+  /** → story.legacyView */
+  legacyView(): story.LegacyItem[] { return story.legacyView(this); }
+  /** → story.mod */
+  storyMod(key: string): number { return story.mod(this, key); }
   /** → encounters.guestSlain */
   guestSlain(unitId: number): void { return encounters.guestSlain(this, unitId); }
   /** → tribes.addRelation */
@@ -554,6 +653,8 @@ export class Sim {
   /** → works.researchBlock */
   researchBlock(t: Tech): string | null { return works.researchBlock(this, t); }
 
+  /** → works.researchBusy */
+  researchBusy(): boolean { return works.researchBusy(this); }
   /** → works.currentResearch */
   currentResearch(): string | null { return works.currentResearch(this); }
 
@@ -608,7 +709,7 @@ export class Sim {
   /** → defense.tickTowers */
   tickTowers(dt: number): void { return defense.tickTowers(this, dt); }
   /** → tribes.summonAllies */
-  summonAllies(target: Tribe): number { return summonAllies(this, target); }
+  summonAllies(target?: Tribe): number { return summonAllies(this, target); }
   /** → tribes.dismissAllies */
   dismissAllies(): void { return dismissAllies(this); }
   /** A person is gone from the village without a trace (an ally who has left): not a death. */
@@ -747,6 +848,14 @@ export class Sim {
   marketTerms(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin'): { price: number; per: number; left: number } { return market.marketTerms(this, give, get); }
   /** → market.marketBuyTerms */
   marketBuyTerms(get: Exclude<Res, 'coin'>): { per: number; left: number } { return market.marketBuyTerms(this, get); }
+  /** → market.plansOpen */
+  blueprintsOpen(): boolean { return market.plansOpen(this); }
+  /** → market.blueprintShelf */
+  blueprintShelf(): market.PlanOffer[] { return market.blueprintShelf(this); }
+  /** → market.buyBlueprint */
+  buyBlueprint(key: string): string | null { return market.buyBlueprint(this, key); }
+  /** → market.plansRoll: draw the shelf of blueprints anew (dev) */
+  blueprintsRoll(): void { return market.plansRoll(this, true); }
   /** → market.marketRoll */
   marketRoll(): void { return market.marketRoll(this); }
   /** → legion.inZone */
@@ -889,7 +998,7 @@ export class Sim {
       return;
     }
     // the war is over: whoever lay out of sight (in a field tent, or with no bed) gets up and goes to bed in the right place
-    if (this.warSince >= 0) { warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); this.skirmishCleanup(); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
+    if (this.warSince >= 0) { this.addDeed('war_fought'); this.warOver(); warsupply.settle(this); warlog.finish(this, this.warMeals); warharass.clearHarass(this); economy.eatWar(this, (this.time - this.warSince) / this.dayLen); this.warSince = -1; restoreWarAnimals(this); this.sendBack([...this.warIds]); /* orders in the war took the army out of its camps: back in they go */ this.warIds = new Set(); warquick.cleanup(this); this.skirmishCleanup(); for (const v of this.villagers) if (v.inTent) { v.inTent = false; if (v.inside === null) { v.phase = 'idle'; v.path = []; v.slide = null; v.bed = -1; } } this.march = warmarch.PEACE; this.warMeals = 0; this.warSeenIds.clear(); this.warFresh = 0; this.warStings = 0; this.warCheckAt = 0; }
     tickAnimals(this, dt); tickProjectiles(this, dt);
     for (const v of [...this.villagers]) this.tickVillager(v, dt);
     this.tickWorks(dt); processing.tickProcessing(this, dt); ranch.tickRanch(this, dt); this.tickTame(dt); this.tickFarms(dt); this.tickTowers(dt); this.tickTraps(dt); army.tickTraining(this, dt); army.tickBattle(this, dt); scouting.tickScouts(this, dt); legion.tickLegion(this, dt); warplan.tickPlans(this, dt);
@@ -897,8 +1006,10 @@ export class Sim {
     for (const f of [...this.foes]) tickFoe(this, f, dt);
     tickTribes(this, dt);
     encounters.tickEncounters(this, dt);
+    story.tickStory(this, dt);
+    sidequests.tickSideQuests(this, dt);
     this.leaderClock += dt;
-    if (this.leaderClock >= 1) { this.leaderClock = 0; this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
+    if (this.leaderClock >= 1) { this.leaderClock = 0; specialists.tickBodyguards(this); legacyfx.tickLegacy(this); this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
     this.tickFog();
   }
 

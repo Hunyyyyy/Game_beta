@@ -549,5 +549,161 @@
     ]
    }
   }
+ },
+ "horse_barded": {
+  "name": "Chiến mã phủ giáp",
+  "body": "horse",
+  "size": [
+   66,
+   58
+  ],
+  "palette": {
+   "base": "#6a4a30",
+   "light": "#8e6a46",
+   "dark": "#3a2616",
+   "accent": "#efe6cc",
+   "eye": "#1a1210"
+  },
+  "shape": {
+   "bodyL": 23,
+   "bodyH": 11,
+   "legL": 15,
+   "neck": 14,
+   "neckA": 46,
+   "headR": 3.5,
+   "snout": 6,
+   "tail": 11,
+   "feature": "horse",
+   "ear": 3,
+   "legW": 2
+  },
+  "gear": {
+   "blanket": "#3a3f4a",
+   "saddle": "#2a1c10",
+   "chest": "#8e9aa4",
+   "stud": "#e6edf2",
+   "bridle": "#3a2410",
+   "plate": "#8e9aa4",
+   "plateH": "#d4dde3",
+   "plateD": "#4a555e"
+  },
+  "views": {
+   "front": {
+    "size": [
+     36,
+     62
+    ]
+   },
+   "back": {
+    "size": [
+     36,
+     62
+    ]
+   }
+  }
+ },
+ "horse_caparison": {
+  "name": "Chiến mã hiệp sĩ",
+  "body": "horse",
+  "size": [
+   66,
+   58
+  ],
+  "palette": {
+   "base": "#d9d5ca",
+   "light": "#f3f1ea",
+   "dark": "#8a867b",
+   "accent": "#b9b4a6",
+   "eye": "#1a1210"
+  },
+  "shape": {
+   "bodyL": 23,
+   "bodyH": 11,
+   "legL": 15,
+   "neck": 14,
+   "neckA": 46,
+   "headR": 3.5,
+   "snout": 6,
+   "tail": 11,
+   "feature": "horse",
+   "ear": 3,
+   "legW": 2
+  },
+  "gear": {
+   "blanket": "#2f56a6",
+   "saddle": "#3a2410",
+   "chest": "#e6edf2",
+   "stud": "#e0b84e",
+   "bridle": "#2a1c10",
+   "plate": "#cfd6dc",
+   "plateH": "#ffffff",
+   "plateD": "#8a939b"
+  },
+  "views": {
+   "front": {
+    "size": [
+     36,
+     62
+    ]
+   },
+   "back": {
+    "size": [
+     36,
+     62
+    ]
+   }
+  }
+ },
+ "horse_royal": {
+  "name": "Chiến mã vương giả",
+  "body": "horse",
+  "size": [
+   66,
+   58
+  ],
+  "palette": {
+   "base": "#2a2a30",
+   "light": "#4a4a54",
+   "dark": "#15151a",
+   "accent": "#d8b04a",
+   "eye": "#1a1210"
+  },
+  "shape": {
+   "bodyL": 23,
+   "bodyH": 11,
+   "legL": 15,
+   "neck": 14,
+   "neckA": 46,
+   "headR": 3.5,
+   "snout": 6,
+   "tail": 11,
+   "feature": "horse",
+   "ear": 3,
+   "legW": 2
+  },
+  "gear": {
+   "blanket": "#5a2a8a",
+   "saddle": "#3a2410",
+   "chest": "#e0b84e",
+   "stud": "#f6d56a",
+   "bridle": "#e0b84e",
+   "plate": "#e0b84e",
+   "plateH": "#f6e08a",
+   "plateD": "#a8802a"
+  },
+  "views": {
+   "front": {
+    "size": [
+     36,
+     62
+    ]
+   },
+   "back": {
+    "size": [
+     36,
+     62
+    ]
+   }
+  }
  }
 }

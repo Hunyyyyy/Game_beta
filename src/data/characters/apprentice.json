@@ -1,0 +1,29 @@
+{
+  "id": "apprentice",
+  "name": "Đứa học việc",
+  "role": "apprentice",
+  "look": {
+    "sex": "f",
+    "skin": "#e0ac69",
+    "hair": "#7a3516",
+    "hide": "#7fa35a",
+    "pants": "#4d6b38"
+  },
+  "stone": {
+    "armor": "grass",
+    "weapon": null,
+    "handtool": {
+      "kind": "hammer",
+      "tier": 1
+    }
+  },
+  "ancient": {
+    "armor": "peasant_straw_brown",
+    "weapon": null,
+    "handtool": {
+      "kind": "hammer",
+      "tier": 3
+    }
+  },
+  "shape": "Cô bé tóc hung, áo xanh lá, tay lúc nào cũng dính than."
+}

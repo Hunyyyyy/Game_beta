@@ -1,0 +1,203 @@
+{
+ "_note": "Cấm vệ (Lính gác bậc 8): giáp tấm 3/4, mào tím. (Bậc 8; tạo bởi tools/gen-ranks.mjs từ warden.)",
+ "name": "Giáp cấm vệ",
+ "palette": {
+  "plate": "#a2b1c8",
+  "plateH": "#e2ecfe",
+  "plateD": "#67768c",
+  "plateQ": "#465366",
+  "slit": "#12161a",
+  "gold": "#d8b04a",
+  "belt": "#3a2a1c",
+  "boot": "#6c7a88",
+  "bootD": "#4a5663",
+  "glove": "#6c7a88",
+  "hose": "#6c7a88",
+  "hoseD": "#4a5663",
+  "crest": "#6b2a8a",
+  "crestD": "#45195e"
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "p": "plate",
+    "H": "plateH",
+    "D": "plateD",
+    "q": "plateQ",
+    "V": "slit",
+    "C": "crest"
+   },
+   "rows": [
+    ".....CCCC....",
+    "...ppHHHpp...",
+    "..ppHHHppppD.",
+    ".ppHHpppppppD",
+    ".pppppppppppD",
+    "pppppVVVVVVpD",
+    "qqqqqpppppppD",
+    "ppqpqp.pppppD",
+    "qpqpqp..ppqpD",
+    "pqpqpq...pqD.",
+    ".qpqpq.......",
+    "..pqp........",
+    "............."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "p": "plate",
+    "H": "plateH",
+    "D": "plateD",
+    "q": "plateQ",
+    "G": "gold",
+    "B": "belt"
+   },
+   "rows": [
+    "pHppppp",
+    "ppHpppp",
+    "qqqqqqq",
+    "ppHpppp",
+    "pHppppp",
+    "qqqqqqq",
+    "qqqqGqq",
+    "ppppppq",
+    "ppppppq",
+    "pqpqpqp",
+    "qpqpqpq"
+   ]
+  }
+ },
+ "wraps": {
+  "leg": {
+   "dy": 3,
+   "w": 3,
+   "h": 5,
+   "color": "boot",
+   "edge": "bootD"
+  },
+  "arm": {
+   "full": true,
+   "color": "plate",
+   "far": "plateD",
+   "hand": "glove",
+   "w": 3,
+   "h": 3
+  }
+ },
+ "legs": {
+  "near": "hose",
+  "far": "hoseD"
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "p": "plate",
+    "H": "plateH",
+    "D": "plateD",
+    "q": "plateQ",
+    "V": "slit",
+    "C": "crest"
+   },
+   "rows": [
+    "....CCCC....",
+    "..ppHHHppp..",
+    ".ppHHHHpppD.",
+    "ppHHHpppppD.",
+    "pppppppppppD",
+    "ppVVVVVVVVpD",
+    "pppppqqpppD.",
+    "qpqppppppqpD",
+    "pqpq....qpqp",
+    "qpqp....pqpq",
+    ".qpqpqpqpqp.",
+    "..pqpqpqpq..",
+    "...pqpqpq..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "p": "plate",
+    "H": "plateH",
+    "D": "plateD",
+    "q": "plateQ",
+    "G": "gold",
+    "B": "belt"
+   },
+   "rows": [
+    "pHpppppppp",
+    "ppHppppppp",
+    "qqqqqqqqqq",
+    "ppHppppppp",
+    "pHpppppppp",
+    "qqqqqqqqqq",
+    "qqqqGGqqqq",
+    "pppppppppq",
+    "pppppppppq",
+    "pqpqpqpqpq",
+    "qpqpqpqpqp"
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {
+    "p": "plate",
+    "H": "plateH",
+    "D": "plateD",
+    "q": "plateQ",
+    "V": "slit",
+    "C": "crest"
+   },
+   "rows": [
+    "....CCCC....",
+    "..ppHHHppp..",
+    ".ppHHHHpppD.",
+    "ppHHHpppppD.",
+    "pppppppppppD",
+    "pppppppppppD",
+    "qqqqqqqqqqqq",
+    "pqpqpqpqpqpq",
+    "qpqpqpqpqpqp",
+    "pqpqpqpqpqpq",
+    "qpqpqpqpqpqp",
+    ".pqpqpqpqpq.",
+    "..qpqpqpqp.."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "p": "plate",
+    "H": "plateH",
+    "D": "plateD",
+    "q": "plateQ",
+    "G": "gold",
+    "B": "belt"
+   },
+   "rows": [
+    "pHpppppppp",
+    "ppHppppppp",
+    "qqqqqqqqqq",
+    "ppHppppppp",
+    "pHpppppppp",
+    "qqqqqqqqqq",
+    "qqqqGGqqqq",
+    "pppppppppq",
+    "pppppppppq",
+    "pqpqpqpqpq",
+    "qpqpqpqpqp"
+   ]
+  }
+ }
+}

@@ -176,3 +176,7 @@ export const canGrow = (kind: BuildingKind): boolean => BUILDINGS[kind].buildabl
 export const POP_BY_FIRE: number[] = (BUILDING_FILES.campfire as BuildingFile).popByFire!;
 /** Highest level any other house may have for a campfire level: the Nhà chung is the axis the whole village turns on (data/progression.json). */
 export const levelCapByFire = (fireLevel: number): number => fireBuildingMax(fireLevel);
+/** How many levels a kind's numbering starts after the Nhà chung's: the houses of the medieval age only (Mỏ, Lò luyện...) have no stone levels, so their level 1 is the one of Nhà chung level 4. */
+export const levelOffset = (kind: BuildingKind): number => (kind !== 'campfire' && !BUILDINGS[kind].levels.stone?.length ? BUILDINGS.campfire.levels.stone!.length : 0);
+/** The highest level a house of this kind may have under a Nhà chung of that level (at least 1). */
+export const levelCapOf = (kind: BuildingKind, fireLevel: number): number => Math.max(1, levelCapByFire(fireLevel) - levelOffset(kind));

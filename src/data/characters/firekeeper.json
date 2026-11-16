@@ -1,0 +1,23 @@
+{
+  "id": "firekeeper",
+  "name": "Người giữ lửa",
+  "role": "keeper",
+  "look": {
+    "sex": "f",
+    "skin": "#c68642",
+    "hair": "#e4e0d4",
+    "hide": "#a0522d",
+    "pants": "#6b4a2a"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "peasant_hood_grey",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Bà lão lưng còng, tóc bạc, áo choàng nâu đỏ, luôn ám mùi khói."
+}

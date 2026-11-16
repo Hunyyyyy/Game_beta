@@ -1,0 +1,36 @@
+{
+ "kind": "twin_camp",
+ "name": "Trại Kép",
+ "group": "war",
+ "size": [
+  2,
+  2
+ ],
+ "buildable": true,
+ "unlockFire": 5,
+ "requires": [
+  "builder"
+ ],
+ "levels": {
+  "stone": [],
+  "ancient": [
+   {
+    "name": "Trại Kép",
+    "cost": {
+     "wood": 224,
+     "stone": 288,
+     "hide": 72,
+     "iron": 40,
+     "hardwood": 24,
+     "leather": 20
+    },
+    "buildTime": 644,
+    "cap": 0,
+    "craftSpeed": 1.25,
+    "slots": 0,
+    "hp": 878,
+    "sight": 0
+   }
+  ]
+ }
+}

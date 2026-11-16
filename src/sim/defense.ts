@@ -165,7 +165,7 @@ export function tickTraps(sim: Sim, _dt: number): void {
     if (b.kind !== 'trap' || !b.done) continue;
     for (const f of sim.foes) {
       // b.staff remembers who has already fallen in: a man is wounded once by each pit, however long he stands in it
-      if (f.health <= 0 || f.ai?.guest !== undefined || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
+      if (f.health <= 0 || f.ai?.guest !== undefined || f.team === 'ward' || b.staff.includes(f.id) || Math.hypot(f.x - (b.x + 0.5), f.y - (b.y + 0.5)) > 0.8) continue;
       b.staff.push(f.id);
       hurt(sim, { kind: 'unit', id: f.id }, 14 * b.level * (1 + statBonus(sim.researched, 'trap', 'atk') / 100), 'pierce', { x: b.x, y: b.y }, {});
       sim.noteBattle('note', 'Một hố chông đã làm địch bị thương.');

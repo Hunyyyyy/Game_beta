@@ -1,0 +1,247 @@
+{
+ "_note": "Kỵ binh nặng giáo dài (Kỵ binh bậc 8): giáp tấm xám than, lông mào đỏ. (Bậc 8; tạo bởi tools/gen-ranks.mjs từ paladin.)",
+ "name": "Giáp kỵ binh nặng",
+ "palette": {
+  "steel": "#c4ccd8",
+  "steelH": "#e0e6f0",
+  "steelD": "#86919f",
+  "steelDD": "#545e69",
+  "slit": "#15181c",
+  "gold": "#e0b84e",
+  "cloth": "#3a3f4a",
+  "clothD": "#262a32",
+  "cross": "#e0b84e",
+  "belt": "#2a1c10",
+  "scab": "#33200f",
+  "hilt": "#9aa2a8",
+  "plume": "#a8372c",
+  "plumeD": "#6e2018"
+ },
+ "legs": {
+  "near": "steelD",
+  "far": "steelDD"
+ },
+ "wraps": {
+  "arm": {
+   "full": true,
+   "color": "steel",
+   "far": "steelD",
+   "hand": "gold",
+   "w": 3,
+   "h": 3
+  },
+  "leg": {
+   "dy": 4,
+   "w": 3,
+   "h": 6,
+   "color": "steel",
+   "edge": "gold"
+  }
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "plume",
+    "R": "plumeD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit"
+   },
+   "rows": [
+    ".....rrr.....",
+    "....rrRRr....",
+    "...ssHHsss...",
+    "..sHHHssssD..",
+    ".sHHsssssssD.",
+    ".sssssssssssD",
+    ".ssssssssssDD",
+    ".sssssdddddsD",
+    ".sssssdkkkdsD",
+    ".ssssssddddsD",
+    ".sssssssssssD",
+    ".DsssssssssDD",
+    "..DDsssssDDD.",
+    "...DDDDDDD..."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "X": "cross",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "ssHHssD",
+    "sHHHssD",
+    "ssHgssD",
+    "ssgggsD",
+    "ssHgssD",
+    "ssssssD",
+    "bbbbgbb",
+    "TTTTTTt",
+    "TTTXTTt",
+    "TTXXXTt",
+    ".TTXTt."
+   ]
+  },
+  "over": {
+   "ox": -3,
+   "oy": 6,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "X": "cross",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "gg...",
+    "gk...",
+    ".kk..",
+    ".kk..",
+    "..kk.",
+    "...k."
+   ]
+  }
+ },
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "plume",
+    "R": "plumeD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit"
+   },
+   "rows": [
+    ".....rrr....",
+    "....rrRRr...",
+    "...ssHHsss..",
+    "..sHHHssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssdddddddsD",
+    ".ssdkkdkkdsD",
+    ".ssdddddddsD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "X": "cross",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHTTTTHHs",
+    "ssHTTXTHss",
+    "ssssXXXsss",
+    "sssTTXTsss",
+    "ssssssssss",
+    "bbbbggbbbb",
+    "TTTTTXTTTt",
+    "TTTTTXTTTt",
+    ".TXXXXXTt.",
+    "..TTXTTt.."
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -3,
+   "legend": {
+    "r": "plume",
+    "R": "plumeD",
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "k": "slit"
+   },
+   "rows": [
+    ".....rrr....",
+    "....rrRRr...",
+    "...ssHHsss..",
+    "..sHHHssssD.",
+    ".sHHsssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    ".sssssdsssdD",
+    ".ssssssssssD",
+    ".ssssssssssD",
+    "..sssssssssD",
+    "...DDsssDDD."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {
+    "s": "steel",
+    "H": "steelH",
+    "D": "steelD",
+    "d": "steelDD",
+    "g": "gold",
+    "T": "cloth",
+    "t": "clothD",
+    "X": "cross",
+    "b": "belt",
+    "k": "scab",
+    "h": "hilt"
+   },
+   "rows": [
+    "sHHssssHHs",
+    "sHHHssHHHs",
+    "ssHHssHHss",
+    "ssssssssss",
+    "ssssdsdsss",
+    "dddddddddd",
+    "bbbbbbbbbb",
+    "TTTTTTTTTt",
+    "TTTTTTTTTt",
+    ".TTTTTTTt.",
+    "..TTTTTt.."
+   ]
+  }
+ }
+}

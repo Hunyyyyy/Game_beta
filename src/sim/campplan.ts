@@ -1,4 +1,4 @@
-import { BUILDINGS, BuildingKind, Era, eraLocked, fireUnlockLevel, levelCapByFire, levelsOf, maxLevel } from './buildings';
+import { BUILDINGS, BuildingKind, Era, eraLocked, fireUnlockLevel, levelCapOf, levelsOf, maxLevel } from './buildings';
 
 /**
  * The shape of a camp of a given campfire level, as a list of pieces (no world, no Sim): the dev menu builds it for the player's village and the tribes
@@ -33,7 +33,7 @@ export function slotsAt(kinds: BuildingKind[], fireLevel: number, era: Era, adva
   let n = 0;
   for (const k of kinds) {
     if (!BUILDINGS[k].buildable || fireUnlockLevel(k) > fireLevel || eraLocked(k, { era: advanced ? 'ancient' : 'stone' })) continue;
-    const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapByFire(fireLevel)));
+    const lv = Math.max(1, Math.min(maxLevel(k, era), levelCapOf(k, fireLevel)));
     n += limitAt(k, fireLevel) * (levelsOf(k, era)[lv - 1]?.slots ?? 0);
   }
   return n;
@@ -54,11 +54,11 @@ export function planCamp(fx: number, fy: number, fireLevel: number, era: Era, ad
   const fire = { x: fx, y: fy }, cx = fx + 1, cy = fy + 1, half = fenceHalf(fireLevel), fenced = half > 0;
   const out: Piece[] = [], used: Rect[] = [{ x: fx, y: fy, w: 2, h: 2 }, ...taken];
   const open = (k: BuildingKind) => BUILDINGS[k].buildable && fireUnlockLevel(k) <= fireLevel && !eraLocked(k, { era: advanced ? 'ancient' : 'stone' });
-  const cap = levelCapByFire(fireLevel);
+  const capOf = (k: BuildingKind): number => levelCapOf(k, fireLevel);
   const put = (kind: BuildingKind, x: number, y: number): boolean => {
     const d = BUILDINGS[kind], r = { x, y, w: d.w, h: d.h };
     if (used.some((u) => hits(u, r)) || blocked(r)) return false;
-    used.push(r); out.push({ kind, x, y, w: d.w, h: d.h, level: Math.max(1, Math.min(maxLevel(kind, era), cap)) });
+    used.push(r); out.push({ kind, x, y, w: d.w, h: d.h, level: Math.max(1, Math.min(maxLevel(kind, era), capOf(kind))) });
     return true;
   };
   const spot = (kind: BuildingKind, spots: Array<[number, number]>): boolean => {

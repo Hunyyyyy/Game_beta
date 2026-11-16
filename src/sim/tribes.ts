@@ -274,7 +274,7 @@ export function killFoe(sim: Sim, v: Villager, killer?: Villager): void {
     t.angryUntil = sim.time + 120;
   }
   if (v.ai?.guest !== undefined && killer?.team === 'player') sim.guestSlain(v.id); // a guest killed at the gate: the deeds and what follows (encounters.ts)
-  if (v.id === t.leaderId) { t.leaderDead = true; sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`); }
+  if (v.id === t.leaderId) { sim.warLeaderDown(v.team); t.leaderDead = true; sim.say(`Thủ lĩnh ${t.def.name} đã gục ngã.`); }
   sim.onKill?.();
 }
 
@@ -289,6 +289,7 @@ export function giftOf(t: Pick<Tribe, 'campLevel' | 'boss'>, era: Era): Partial<
 export function addRelation(sim: Sim, id: TribeId, n: number): void {
   const t = tribeOf(sim, id);
   if (!t || t.state !== 'free') return;
+  if (n > 0) n *= sim.legacyFx('relationGainMul'); // (the power Nơi ẩn náu)
   t.relation = Math.max(-100, Math.min(100, Math.round((t.relation + n) * 10) / 10));
   if (n > 0 && t.relation >= HOSTILE_BELOW) t.angryUntil = Math.min(t.angryUntil, sim.time);
 }
@@ -400,12 +401,21 @@ function payTribute(sim: Sim, t: Tribe): void {
     sim.say(`${t.def.name} được nghỉ cống nạp kỳ này, quan hệ tốt lên.`);
     return;
   }
-  for (const [k, n] of Object.entries(spoilsOf(t, sim.era))) sim.stock[k as keyof Stock] = Math.min(sim.capacity(), sim.stock[k as keyof Stock] + Math.round((n ?? 0) * share));
-  t.relation = Math.max(-100, t.relation - c.relationLoss * (1 + steps));
+  for (const [k, n] of Object.entries(spoilsOf(t, sim.era))) sim.stock[k as keyof Stock] = Math.min(sim.capacity(), sim.stock[k as keyof Stock] + Math.round((n ?? 0) * share * sim.legacyFx('tributeMul'))); // (Đồn Thu Cống)
+  t.relation = Math.max(-100, t.relation - c.relationLoss * (1 + steps) * sim.legacyFx('relationLossMul')); // (the power Hòa giải)
   sim.say(`${t.def.name} gửi cống nạp (${Math.round(share * 100)}% túi).`);
   const room = sim.tribes.filter((q) => q.rebel).length < DIFF.capture.rebel.maxRebels;
-  if (room && (t.relation <= c.betrayBelow || (steps > 0 && sim.frnd() < steps * c.greedChancePerStep))) betray(sim, t);
+  if (room && (t.relation <= c.betrayBelow || (steps > 0 && sim.frnd() < steps * c.greedChancePerStep * sim.legacyFx('betrayMul')))) betray(sim, t); // (Hội Quán Trưởng Lão)
   else if (t.relation < c.betrayBelow) t.relation = c.betrayBelow; // no more rebels may rise: it sulks at the bottom
+}
+
+/** A leaf of the story (a rising of the villages held down): the tributary that likes us least turns on us, if there is room for one more rebel. Returns its name, or null. */
+export function rebelTributary(sim: Sim): string | null {
+  if (sim.tribes.filter((q) => q.rebel).length >= DIFF.capture.rebel.maxRebels) return null;
+  const t = sim.tribes.filter((q) => q.state === 'tribute').sort((a, b) => a.relation - b.relation)[0];
+  if (!t) return null;
+  betray(sim, t);
+  return t.def.name;
 }
 
 /** The tributary turns on us: a free village again, hostile, a chief of its own (weaker than the first boss). */
@@ -432,14 +442,14 @@ export function adoptTribe(sim: Sim, id: TribeId): string | null {
  * take what they wear from our Kho vũ khí like our own soldiers, fight with the research of ours, and go when the war is over (dismissAllies). Each pays for it in relation.
  * Returns how many came.
  */
-export function summonAllies(sim: Sim, target: Tribe): number {
-  const c = DIFF.capture.allies, fire = sim.campfire(), s = sim.world.start;
+export function summonAllies(sim: Sim, target?: Tribe): number {
+  const mul = sim.legacyFx('allyMul') /* the power Liên quân: more of them */, c = DIFF.capture.allies, fire = sim.campfire(), s = sim.world.start;
   let total = 0;
   for (const a of sim.tribes) {
     if (a === target || a.boss || a.rebel || a.tier === 'boss' || a.tier === 'rebel') continue;
     const gift = a.state === 'free' && a.relation >= 100 && a.tier !== 'medium';
     if (a.state !== 'tribute' && !gift) continue;
-    const n = Math.min(Math.round(((c as unknown as Record<string, number>)[a.tier] ?? 0) * Math.max(0, Math.min(100, a.relation)) / 100), c.max - total); // the allies of all the villages together are at most `max` (33)
+    const n = Math.min(Math.round(((c as unknown as Record<string, number>)[a.tier] ?? 0) * mul * Math.max(0, Math.min(100, a.relation)) / 100), Math.round(c.max * mul) - total); // the allies of all the villages together are at most `max` (33)
     if (n <= 0) continue;
     const arms = (['foot', 'archer', 'cavalry'] as const).map((_, i) => Math.floor(n / 3) + (i < n % 3 ? 1 : 0));
     (['foot', 'archer', 'cavalry'] as const).forEach((arm, i) => {
@@ -453,7 +463,7 @@ export function summonAllies(sim: Sim, target: Tribe): number {
       }
     });
     a.relation = Math.max(-100, a.relation - (gift ? c.giftLoss : c.battleLoss));
-    sim.say(`${a.def.name} gửi ${n} lính giúp ta đánh ${target.def.name}.`);
+    sim.say(target ? `${a.def.name} gửi ${n} lính giúp ta đánh ${target.def.name}.` : `${a.def.name} gửi ${n} lính tới giữ làng.`);
   }
   return total;
 }
@@ -715,7 +725,7 @@ function tickEvents(sim: Sim): void {
     }
     if (e.fired) continue;
     if (e.kind === 'raid' && e.power !== undefined && e.tribe && e.sizeDay !== sim.day) { const t = tribeOf(sim, e.tribe); if (t && t.state === 'free') { e.size = raidSizeFor(sim, t, e.power); e.sizeDay = sim.day; } }
-    if (!e.warned && sim.day >= e.warnDay && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); sim.addAlert('notice', `Sắp có biến cố: ${e.warn}`); if (e.kind === 'raid') sim.raidWarned(e.id, e.tribe); }
+    if (!e.warned && sim.day >= e.warnDay - sim.legacyFx('warnDays') && sim.tod >= 0.3) { e.warned = true; sim.say(e.warn); sim.addAlert('notice', `Sắp có biến cố: ${e.warn}`); if (e.kind === 'raid') sim.raidWarned(e.id, e.tribe); }
     if (sim.day < e.fireDay) continue;
     const ready = e.night ? sim.restTime : sim.tod >= 0.28 && !sim.restTime;
     if (!ready) continue;
