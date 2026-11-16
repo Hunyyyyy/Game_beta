@@ -61,6 +61,8 @@ export class BuildingPanel {
   private swapRows: MarketRow[] = [];
   private swapKey = '';
   private marketKeepOn = true;
+  private readonly planBox = h('div', { class: 'barter' });
+  private planKey = '#';
   private readonly marketHead = h('p', { class: 'sub' });
   private marketMake: ((give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin') => MarketRow) | null = null;
   private readonly swapBox = h('div', { class: 'barter' });
@@ -215,7 +217,7 @@ export class BuildingPanel {
       this.resRows.push({ res, num, bar, row }); stockRows.push(row);
     }
     this.tabs.storage = [{ label: 'Tài nguyên', page: page(...stockRows) }];
-    this.tabs.market = [{ label: 'Giao thương', page: page(market()) }];
+    this.tabs.market = [{ label: 'Giao thương', page: page(market()) }, { label: 'Bản vẽ', page: page(hint('Bản vẽ', 'Mỗi mùa Chợ bày vài bản vẽ của các đơn vị và công trình chuyên chưa mở. Mua một bản vẽ là mở hẳn thứ đó: đơn vị thì huấn luyện ở trại của nó, công trình thì dựng ở mục Di sản. Giá cao: đây là đường bù cho thứ cốt truyện chưa mở.'), this.planBox), show: () => sim.blueprintsOpen() }];
     // the processing houses: the order at work with its bar above the tabs, and a forge bench (recipes, slots in and out, queue) in the tab
     for (const k of ['smelter', 'carpentry', 'tannery'] as const) {
       this.forges[k] = new ForgePane(c, k);
@@ -443,6 +445,17 @@ export class BuildingPanel {
   /** Draw the Chợ again: the swaps that are open (the rows are made again when research opens one), and for each row the price now, how many steps can be had at most, and what the steps wanted would cost and give. */
   private updateMarket(): void {
     const { sim } = this.c, lv = sim.marketLevel(), coin = RES_NAME.coin.toLowerCase();
+    // the shelf of blueprints: drawn again only when the shelf or what can be paid changes
+    const shelf = sim.blueprintShelf(), pkey = shelf.map((o) => `${o.key}|${o.why ?? ''}`).join(';');
+    if (pkey !== this.planKey) {
+      this.planKey = pkey;
+      this.planBox.replaceChildren(...(shelf.length ? shelf.map((o) => {
+        const buy = h('button', { class: 'sm', type: 'button', text: o.owned ? 'Đã có' : 'Mua', title: o.why ?? '' }) as HTMLButtonElement;
+        buy.disabled = !!o.why;
+        buy.addEventListener('click', () => { const e = sim.buyBlueprint(o.key); if (e) this.c.toast(e); this.c.ctl.onChange(); });
+        return h('p', { class: 'bline' }, h('span', {}, h('b', { text: o.name }), ` (${o.kind === 'building' ? 'công trình' : 'đơn vị'}) · giá `, ...o.cost.flatMap((c) => [resIcon(c.res), ` ${c.n} `]), o.why && !o.owned ? h('small', { class: 'lock', text: ` ${o.why}` }) : null), buy);
+      }) : [h('p', { class: 'sub', text: 'Mùa này Chợ không có bản vẽ nào (hoặc mọi thứ chuyên đã mở). Kệ đổi vào đầu mỗi mùa.' })]));
+    }
     const t = MARKET.levels[Math.max(1, lv) - 1];
     this.marketHead.textContent = lv < 1 ? 'Chưa có Chợ.' : `Chợ cấp ${lv}: tỉ lệ ×${t.rate.toLocaleString('vi')} · phí đổi hàng ${Math.round(t.fee * 100)}% · mỗi ngày nhận ${t.quotaMin} đến ${t.quotaMax} vỏ giá trị mỗi loại ở giá gốc (hôm nay mỗi loại một con số khác nhau).${sim.market.bargain ? (sim.market.bargain.good === '*' ? ` Đoàn thương nhân đang ở chợ: thu mua mọi hàng giá cao hơn ${sim.market.bargain.pct}%.` : ` Món hời hôm nay: ${sim.market.bargain.kind === 'sell' ? 'thu mua' : 'bán'} ${RES_NAME[sim.market.bargain.good as Res].toLowerCase()} ${sim.market.bargain.kind === 'sell' ? 'giá cao hơn' : 'rẻ hơn'} ${sim.market.bargain.pct}%.`) : ''}`;
     const routes = sim.marketRoutes(), key = routes.map((r) => `${r.give}>${r.get}`).join();

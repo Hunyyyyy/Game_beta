@@ -1,0 +1,29 @@
+{
+  "id": "smith",
+  "name": "Thợ rèn",
+  "role": "smith",
+  "look": {
+    "sex": "m",
+    "skin": "#8d5524",
+    "hair": "#1f1611",
+    "hide": "#4a3a2e",
+    "pants": "#2e241c"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": null,
+    "handtool": {
+      "kind": "hammer",
+      "tier": 2
+    }
+  },
+  "ancient": {
+    "armor": "peasant_hood_brown",
+    "weapon": null,
+    "handtool": {
+      "kind": "hammer",
+      "tier": 5
+    }
+  },
+  "shape": "Thợ rèn vai u, tạp dề da cháy sém, cánh tay to như bắp chân."
+}

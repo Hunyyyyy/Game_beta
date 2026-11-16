@@ -45,9 +45,10 @@ for (const r of spec.rows) {
   let cw = art.FW, ch = art.FH;
   const m = r.mount;
   const clip = m ? ((art.clips[art.bodies[m.species].body] ?? art.quad)[m.clip] ?? art.quad.idle) : null;
-  const n = r.frames ?? (m ? Math.max(an.frames.length, clip.frames.length) : an.frames.length);
+  const n = r.cells?.length ?? r.frames ?? (m ? Math.max(an.frames.length, clip.frames.length) : an.frames.length);
   for (let i = 0; i < n; i++) {
-    const person = art.renderFrame(art.anims, name, i % an.frames.length, r.view ?? 'right', look, 'wood', r.tool ?? { tier: 0 }, r.armor, r.extra);
+    const o = r.cells?.[i] ?? r; // a row of `cells`: one person a cell, each with a look, armour and tool of his own (the first frame of the action)
+    const person = art.renderFrame(art.anims, name, r.cells ? 0 : i % an.frames.length, r.view ?? 'right', o.look ? { ...look, ...o.look } : look, 'wood', o.tool ?? r.tool ?? { tier: 0 }, o.armor ?? r.armor, r.extra);
     if (!m) { cells.push({ w: cw, h: ch, px: person }); continue; }
     const def = { ...art.bodies[m.species], gear: m.gear ?? art.bodies[m.species].gear }, beast = art.renderAnimal(def, clip, i % clip.frames.length, m.view);
     cw = 110; ch = 100;

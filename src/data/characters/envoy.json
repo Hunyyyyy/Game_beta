@@ -1,0 +1,23 @@
+{
+  "id": "envoy",
+  "name": "Sứ giả",
+  "role": "envoy",
+  "look": {
+    "sex": "f",
+    "skin": "#e0ac69",
+    "hair": "#1f1611",
+    "hide": "#3f63a8",
+    "pants": "#2c3e6b"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "archer",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Người đưa tin dáng cao, áo xanh của làng bạn, đi nhẹ và nhanh."
+}

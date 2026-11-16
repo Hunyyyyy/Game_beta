@@ -53,7 +53,7 @@ export class Journal {
     this.views = views; this.notes = notes;
     const cur = views.find((v) => v.open);
     if (this.open === 'quests') {
-      const key = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('') + (cur ? `#${cur.progress}` : '#all');
+      const key = views.map((v) => (v.done ? 'd' : v.open ? 'o' : 'l')).join('') + (cur ? `#${cur.progress}` : '#all') + this.c.sim.sideQuests().map((s) => `|${s.id}${s.step}${s.daysLeft}${s.atGate ? 'g' : ''}`).join('');
       if (key !== this.questKey) { this.questKey = key; this.drawQuests(views, cur); }
       if (cur) this.questSeen = cur.quest.id;
     }
@@ -83,8 +83,19 @@ export class Journal {
     });
     this.win.quests.show(dlg.card({ wide: true, label: 'Nhiệm vụ' },
       dlg.head({ pic: '📜', title: 'Nhiệm vụ', sub: CHAPTERS.find((x) => x.id === chap)?.name, bar: cur ? { value: done, max: mine.length, label: `${done}/${mine.length}` } : undefined, onClose: () => this.close() }),
-      dlg.list(...(cur ? tiles : [dlg.empty('Đã hoàn thành kế hoạch tới Nhà chung cấp 3.')]))));
+      dlg.list(...(cur ? tiles : [dlg.empty('Đã hoàn thành kế hoạch tới Nhà chung cấp 3.')]), ...this.sideTiles())));
     this.win.quests.root.querySelector('.now')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  /** The side quests offered or under way (sidequests.ts): not part of the plan above, reward only; each may be given up. */
+  private sideTiles(): HTMLElement[] {
+    const { sim, toast } = this.c, side = sim.sideQuests();
+    if (!side.length) return [];
+    const drop = (id: string) => { const e = sim.dropSideQuest(id); if (e) toast(e); this.questKey = ''; this.update(this.views, this.notes); };
+    return [h('h3', { class: 'dsub', text: 'Việc nhận thêm (không bắt buộc, chỉ có thưởng)' }), ...side.map((s) => dlg.tile(
+      { state: s.daysLeft < 0 ? 'next' : 'now', pic: '✉', name: s.name, chip: dlg.chip(s.daysLeft < 0 ? 'đang mời' : s.daysLeft === 0 ? 'hạn hôm nay' : `còn ${s.daysLeft} ngày`) },
+      [dlg.text(`${s.kind} · ${s.giver} · bước ${s.step + 1}/${s.steps}${s.atGate ? ' · có người đang chờ ở cổng' : s.daysLeft < 0 ? ' · người nhờ đang trên đường tới cổng' : ' · người tiếp theo sẽ tới cổng'}`)],
+      s.daysLeft < 0 ? null : dlg.button('Bỏ việc', () => drop(s.id), { small: true, tone: 'bad', title: 'Bỏ việc này: không bị phạt, chỉ mất phần thưởng' })))];
   }
 
   // ---------------------------------------------------------------- notices

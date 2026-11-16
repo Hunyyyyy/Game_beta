@@ -1,0 +1,29 @@
+{
+  "id": "boss_chief",
+  "name": "Thủ lĩnh",
+  "role": "chief",
+  "look": {
+    "sex": "m",
+    "skin": "#8d5524",
+    "hair": "#1f1611",
+    "hide": "#6e1f1f",
+    "pants": "#2a1a12"
+  },
+  "stone": {
+    "armor": "bone",
+    "weapon": "mace",
+    "handtool": {
+      "kind": "mace",
+      "tier": 2
+    }
+  },
+  "ancient": {
+    "armor": "templar",
+    "weapon": "knight_sword",
+    "handtool": {
+      "kind": "knight_sword",
+      "tier": 5
+    }
+  },
+  "shape": "Thủ lĩnh làng mạnh nhất: vai rộng, giáp nặng, áo choàng đỏ sẫm."
+}

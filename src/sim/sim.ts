@@ -22,6 +22,8 @@ import * as economy from './economy';
 import * as market from './market';
 import * as encounters from './encounters';
 import * as story from './story';
+import * as sidequests from './sidequests';
+import { initialSide, type SideState } from './sidequestdata';
 import * as specialists from './specialists';
 import * as walltop from './walltop';
 import type { SpecialistDef } from './specialdata';
@@ -135,6 +137,8 @@ export class Sim {
   story: StoryState = initialStory();
   /** The tops of the walls worked out from the buildings (walltop.ts): derived, not saved. */
   wallCache: walltop.Tops | null = null;
+  /** Side quests offered or under way (sidequests.ts): apart from the story tree. */
+  side: SideState = initialSide();
   /** The keys of unlocks.json bought (a blueprint at the Chợ, the Thư Viện Di Sản): they stay open for good. */
   unlocksBought: string[] = [];
   /** Each village we took and what it gave for good (people, places in the camps, yield): taking it back takes that away again. */
@@ -171,7 +175,7 @@ export class Sim {
   readonly battleReports: Array<{ at: number; lines: string[] }> = [];
   nextAid = 1;
   /** Test switches driven by the dev menu; all off in a normal game. */
-  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */, story: false /* the story tree runs though data/story/index.json has it off */, unlockAll: false /* every specialist is open */ };
+  readonly dev = { freeBuild: false, instantBuild: false, god: false, fastWorks: false, freeWorks: false, noTire: false, noArrivals: false, palace: false /* the Nhà chính drawn as the level 7 palace for a look, with the land round it bare (renderer only) */, story: false /* the story tree runs though data/story/index.json has it off */, unlockAll: false /* every specialist is open */, side: false /* side quests are offered and the Chợ sells blueprints though the data has them off */ };
   /** A tribe that has just surrendered and waits for the player to choose: adopt or tribute. */
   pendingTribe: TribeId | null = null;
   /** Called when something dies (UI refresh hook). */
@@ -468,7 +472,17 @@ export class Sim {
   /** → encounters.condNow */
   encounterCond(): CondCtx { return encounters.condNow(this); }
   /** → encounters.queueScript */
-  queueEncounter(script: string, days: number, priority?: number, maxDelay?: number): void { return encounters.queueScript(this, script, days, priority, maxDelay); }
+  queueEncounter(script: string, days: number, priority?: number, maxDelay?: number, tribe?: string): void { return encounters.queueScript(this, script, days, priority, maxDelay, tribe); }
+  /** → sidequests.sideChoice */
+  sideQuestChoice(code: string, tribe?: string): void { return sidequests.sideChoice(this, code, tribe); }
+  /** → sidequests.sideQuestViews */
+  sideQuests(): sidequests.SideQuestView[] { return sidequests.sideQuestViews(this); }
+  /** → sidequests.dropSideQuest */
+  dropSideQuest(id: string): string | null { return sidequests.dropSideQuest(this, id); }
+  /** → sidequests.startSideQuest (dev) */
+  startSideQuest(id: string): string { return sidequests.startSideQuest(this, id); }
+  /** → sidequests.sideQuestList */
+  sideQuestList(): Array<{ id: string; name: string; kind: string }> { return sidequests.sideQuestList(); }
   /** → encounters.addDeed */
   addDeed(key: string, tribe?: string): void { return encounters.addDeed(this, key, tribe); }
   /** → specialists.setBodyguard */
@@ -799,6 +813,14 @@ export class Sim {
   marketTerms(give: Exclude<Res, 'coin'>, get: Exclude<Res, 'coin'> | 'coin'): { price: number; per: number; left: number } { return market.marketTerms(this, give, get); }
   /** → market.marketBuyTerms */
   marketBuyTerms(get: Exclude<Res, 'coin'>): { per: number; left: number } { return market.marketBuyTerms(this, get); }
+  /** → market.plansOpen */
+  blueprintsOpen(): boolean { return market.plansOpen(this); }
+  /** → market.blueprintShelf */
+  blueprintShelf(): market.PlanOffer[] { return market.blueprintShelf(this); }
+  /** → market.buyBlueprint */
+  buyBlueprint(key: string): string | null { return market.buyBlueprint(this, key); }
+  /** → market.plansRoll: draw the shelf of blueprints anew (dev) */
+  blueprintsRoll(): void { return market.plansRoll(this, true); }
   /** → market.marketRoll */
   marketRoll(): void { return market.marketRoll(this); }
   /** → legion.inZone */
@@ -950,6 +972,7 @@ export class Sim {
     tickTribes(this, dt);
     encounters.tickEncounters(this, dt);
     story.tickStory(this, dt);
+    sidequests.tickSideQuests(this, dt);
     this.leaderClock += dt;
     if (this.leaderClock >= 1) { this.leaderClock = 0; specialists.tickBodyguards(this); this.pickLeaders(); houses.bootCrew(this); defense.tickResearch(this); defense.tickGates(this); inventory.restock(this); mounts.fitScouts(this); }
     this.tickFog();

@@ -1,0 +1,26 @@
+{
+  "id": "sleuth",
+  "name": "Thám tử",
+  "role": "sleuth",
+  "look": {
+    "sex": "m",
+    "skin": "#f0c8a0",
+    "hair": "#1f1611",
+    "hide": "#5c5c58",
+    "pants": "#33332f"
+  },
+  "stone": {
+    "armor": "grass",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "watchman",
+    "weapon": "bronze_sword",
+    "handtool": {
+      "kind": "bronze_sword",
+      "tier": 3
+    }
+  },
+  "shape": "Người gầy, áo xám tro, mắt không bao giờ nhìn một chỗ lâu."
+}

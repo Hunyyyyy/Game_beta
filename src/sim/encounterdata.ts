@@ -3,6 +3,7 @@ import CONFIG from '../data/encounters.json';
 import STONE from '../data/encounters/stone.json';
 import type { Res, Stock } from './resources';
 import { STORY_SCRIPTS } from './storyscenes';
+import { SIDE_SCRIPTS } from './sidequestdata';
 
 export type Cost = Partial<Record<Res, number>>;
 /** What a choice or a node does. `join`: the visitor stays as a villager, `takeIn`: the whole party stays (and is remembered as refugees) - both when the talk ends, so the answer is heard first; `handOver`: the refugees are given away; `raid`: a raid of that size from the visitor's village; `schedule`: another script comes later. */
@@ -23,6 +24,8 @@ export interface Effect {
   eventMod?: { powerMul?: number; shiftDays?: number; cancel?: boolean };
   /** The story tree (story.ts): `sflag` sets a flag that stays for the whole game (`sflag.<name>` in a condition), `journal` writes a line in the Nhật ký. */
   sflag?: string; journal?: string;
+  /** An answer of a side quest talk (sidequests.sideChoice): the code of sidequestdata.sideCode. */
+  quest?: string;
 }
 /** `by`: the next node by what the visitor really is; `roll`: by chance, drawn from the visitor's seed; `reveals`: ask closely (adds a clue, once); `cond`: the choice shows only when it holds. */
 export interface Choice { text: string; /** Choices with the same group are folded under one button on the screen ("Hỏi họ"), opened by a click. */ group?: string; /** What the player says when he takes it, shown as his own line before the answer ("Các bạn từ đâu tới?"); without it nothing is said aloud. */ say?: string;
@@ -63,6 +66,8 @@ export interface Script {
   talk?: { hub: string; final: string; /** The node he says when he ends the talk himself (no choice). Without `walkout` and `below` he never does. */ walkout?: string; below?: number; rounds: [number, number] };
   /** Who comes with the visitor: how many (the visitor is one of them), what they carry (weapons of weapons.json, in turn), whether they wear armour, and what share of health the others have (the wounded). */
   party?: { size: [number, number]; weapons?: string[]; armor?: boolean; hurt?: number };
+  /** The named character (data/characters) who comes as the visitor: his look, his clothes of the age and his title before his name. */
+  cast?: string;
 }
 
 export const ENC = CONFIG as unknown as {
@@ -79,8 +84,8 @@ export const ENC = CONFIG as unknown as {
   /** `restSeconds`: how long a party let in sits about the fire; `actSeconds`: how long one who came to do harm tries before he gives up. */
   visit: { restSeconds: number; actSeconds: number };
 };
-/** The visitor scripts, then the scenes of the story tree (never drawn by chance: the tree sends them). */
-export const SCRIPTS: Script[] = [...(STONE as unknown as { scripts: Script[] }).scripts, ...STORY_SCRIPTS];
+/** The visitor scripts, then the scenes of the story tree and the steps of the side quests (never drawn by chance: the tree and the quest tracker send them). */
+export const SCRIPTS: Script[] = [...(STONE as unknown as { scripts: Script[] }).scripts, ...STORY_SCRIPTS, ...SIDE_SCRIPTS];
 export const scriptOf = (id: string): Script | undefined => SCRIPTS.find((s) => s.id === id);
 
 /** A visitor met: where they are in the walk, and their place in the dialogue. */

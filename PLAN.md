@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 2 done; Phase 3 starts on "tiếp"**.
+Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 4 done; Phase 5 starts on "tiếp"**.
 
 ## Survey facts (what the code has today)
 
@@ -129,6 +129,7 @@ Content size: stone 6 threads, 6 knots, 24 leaves + 6 wild, 10 fruits, 10 tips; 
 | 1 | done | engine + sample data; tree asleep in the game (`index.json` `enabled: false`, dev switch "Chạy cây cốt truyện"); save v49 |
 | 2 | done | ranks 6-10 of 4 branches (`tools/gen-ranks.mjs`), `specialists.ts` (bodyguard, assassin) |
 | 3 | done | levels 4-10 for every kind, per-level footprint, art for every level with moving parts, specialist buildings, walkable walls (see Phase 3 notes for what is left) |
+| 4 | done | 14 characters (`tools/gen-characters.mjs`), 12 side quests on the talk engine (`sidequests.ts`), blueprint shelf at the Chợ, save v50; quests and shelf asleep in the game (`enabled: false`, dev switch) until Phase 5 |
 
 ## Added by the user after Phase 0 (2026-11-15), for Phase 3
 
@@ -205,3 +206,19 @@ Rule: story never locks the core (4 arms rank 4-10, all buildings of the table, 
 | Orders | `orderMove` to a top tile sends a soldier up (ground to stair, up, along); to the ground sends him down; guards and posts follow because `movement.pathTo` plans the climb |
 | Not done | picking a unit on a wall by clicking (the sprite is lifted 26 px, the hit area is not); gates and fences do not grow their footprint (a gate's growth along a rotated row needs `growRect` to turn); walls under fire do not drop the soldiers on them (they are put on the ground by the unstick rule within a second); stairs cannot be drawn or shut; towers keep their own "inside" archers |
 | Check | headless: climb, walk, descend, an assassin climbing after a unit on the wall, save/load |
+
+## Phase 4 notes
+
+| Point | Note |
+|---|---|
+| Characters | 14 presets in `src/data/characters/` (edit the table in `tools/gen-characters.mjs`, rerun). Each: look + per age `armor` (rig armour as clothes), `weapon`, `handtool`. Sheet: `node tools/gen-characters.mjs --spec s.json` then `node tools/art-preview.mjs s.json out.png` (art-preview rows now take `cells`) |
+| Cast | a visitor script with `cast: <character>` sends that character: look, title before the name, `Villager.outfit` (drawing only, no armour stats). Phase 5 scenes can use it (`Scene` has no `cast` yet: add it in `sceneScript`) |
+| Not used yet | firekeeper, mole (only a step), boss_chief, bodyguard are not quest givers: they wait for the story (Phase 5). `boss_chief` is not yet put on the real leader of the boss village |
+| Side quests | `src/data/story/quests/side_quests.json` (format in its `_note`): 12 quests, 2-3 steps, each step a talk at the gate; step 0 is the offer (a refusal is added). Tags of the answers pick the reward; goods times `rewardByFire[level]`; costs times `costMulMedieval` in the medieval age. **Rewards are not balanced** |
+| Simplified | escort, guard, rescue, raid on bandits are told in the talk (a seeded `roll`), nobody walks the map and no fight is staged; "temporary soldiers", "open a fog tile", "black merchant" rewards are goods for now |
+| Assassination | `quiet_knife` is the quest way to use an assassin: a seeded roll (0.6 fast, 0.9 slow). Odds do not yet read the mark Lộ, the target's guards or an owned `unit:assassin` (Phase 5) |
+| Blueprints | Chợ tab "Bản vẽ" (medieval, Chợ level 1+): `show` 2 keys of `unlocks.json` not yet open, new each season by seed, price = `blueprintCost`. Quests `buy_plan` and `lost_relic` give a random blueprint (goods instead when none is left or in the stone age). Tip M7 discount, TM3 wider shelf, Easy-mode free blueprint: Phase 5 |
+| Switches | `side_quests.json config.enabled` and `market.json blueprints.enabled` are false: turn both on in Phase 5. Dev menu: "Nhiệm vụ phụ tự đến + bản vẽ ở Chợ", "Đổi kệ bản vẽ", one button per quest (steps come at once) |
+| UI | Nhiệm vụ window lists side quests under the tutorial plan (step, days left, "Bỏ việc"). Nhật ký > Di sản screen is Phase 5 |
+| Old logic touched | `encounterdata.ts`: `Effect.quest`, `Script.cast`, `SCRIPTS` + side scripts; `encounters.ts`: `queueScript(..., tribe)`, cast in `spawnVisitor`, `quest` in `applyEffect`; `market.ts`: `MarketState.plans`, `plansRoll` called in `marketRoll` (uses `seedRoll`, the market RNG stream is unchanged); `sprites.ts`: `outfitOf` + cache key; `save.ts`: v50, record `side`, `MIGRATIONS[49]`; `sim.ts`: field `side`, `dev.side`, tick hook after `tickStory`; `tools/art-preview.mjs`: `cells` rows. `quests.ts` untouched |
+| Check | headless (scratchpad): every quest played to its end by two ways of answering in both ages (42 paid, 2 lost to a roll, 2 refused for lack of soldiers), shelf buy, save round trip, v49 -> v50, offers coming by themselves with the switch on |

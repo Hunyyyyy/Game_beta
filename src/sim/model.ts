@@ -88,6 +88,8 @@ export interface Villager {
   wardOf?: number;
   name: string;
   look: Look;
+  /** The clothes of a named character (an armour of the rig, data/characters): only a drawing, no armour in a fight. */
+  outfit?: string;
   /** Vị trí theo đơn vị ô (tâm ô (i,j) là (i+0.5, j+0.5)). */
   x: number;
   y: number;

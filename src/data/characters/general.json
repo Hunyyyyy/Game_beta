@@ -1,0 +1,29 @@
+{
+  "id": "general",
+  "name": "Tướng",
+  "role": "general",
+  "look": {
+    "sex": "m",
+    "skin": "#c68642",
+    "hair": "#3b2a1a",
+    "hide": "#3f63a8",
+    "pants": "#2c3e6b"
+  },
+  "stone": {
+    "armor": "bone",
+    "weapon": "spear",
+    "handtool": {
+      "kind": "spear",
+      "tier": 2
+    }
+  },
+  "ancient": {
+    "armor": "sergeant",
+    "weapon": "arming_sword",
+    "handtool": {
+      "kind": "arming_sword",
+      "tier": 4
+    }
+  },
+  "shape": "Tướng của làng: mặt sẹo, giáp gọn, giọng ra lệnh quen miệng."
+}

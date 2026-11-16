@@ -2,6 +2,7 @@
 import SPEC from '../data/specialists.json';
 import type { StatId } from './research';
 import type { RankRole } from './ranks';
+import { buildingName, type BuildingKind } from './buildings';
 
 export interface SpecialistDef {
   id: string; key: string; name: string; camp: RankRole; weapon: string; armor: string; mount?: string;
@@ -18,3 +19,5 @@ export const specialistsOf = (camp: string): SpecialistDef[] => SPECIALISTS.filt
 export const specStat = (id: string | undefined, stat: StatId): number => specialistDef(id)?.profile[stat] ?? 1;
 export const specRation = (id: string | undefined): number => specialistDef(id)?.rationAdd ?? 0;
 export const specSiege = (id: string | undefined): number => specialistDef(id)?.siege ?? 1;
+/** The name of a specialist by its key of unlocks.json (`unit:<id>`, `building:<kind>`). */
+export const unlockName = (key: string): string => { const [kind, id] = key.split(':'); return kind === 'unit' ? specialistDef(id)?.name ?? id : kind === 'building' ? buildingName(id as BuildingKind, 'ancient') : id; };

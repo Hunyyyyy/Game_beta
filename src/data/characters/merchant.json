@@ -1,0 +1,23 @@
+{
+  "id": "merchant",
+  "name": "Thương lái",
+  "role": "merchant",
+  "look": {
+    "sex": "m",
+    "skin": "#e0ac69",
+    "hair": "#3b2a1a",
+    "hide": "#b8893c",
+    "pants": "#5a3d7a"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "peasant_hood_brown",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Người buôn béo tốt, áo vàng đất, quần tím, túi da bên hông."
+}

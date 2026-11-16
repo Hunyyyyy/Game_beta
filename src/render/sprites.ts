@@ -336,6 +336,7 @@ export class Sprites {
    * wool hood in the other seasons. Soldiers have their own gear and the villages of the land keep their own look. Only a drawing.
    */
   outfitOf(v: Villager): string | null {
+    if (v.outfit && !v.armor) return v.outfit; // a named character
     if (this.era !== 'ancient' || v.team !== 'player' || v.armor || v.job === 'fight' || v.guard) return null;
     return `peasant_${this.summer ? 'straw' : 'hood'}_${(v.id * 2654435761 >>> 0) % 2 ? 'grey' : 'brown'}`;
   }
@@ -351,7 +352,7 @@ export class Sprites {
     const armor = v.armor ?? this.outfitOf(v);
     const flick = v.lit ? Math.floor(v.animClock * 6) % 3 : undefined; // a lit torch flickers through three drawings
     const facing = face ?? v.facing; // a rider is always drawn from the side, the way his beast faces
-    const key = `${name}|${frame}|${facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier + (v.hold.shield ?? '') : '-'}|${armor ?? '-'}|${flick ?? '-'}`;
+    const key = `${name}|${frame}|${facing}|${v.look.sex}|${v.look.skin}|${v.look.hair}|${kind}|${v.hold ? v.hold.kind + v.hold.tier + (v.hold.shield ?? '') : '-'}|${armor ?? '-'}|${flick ?? '-'}${v.outfit ? `|${v.look.hide}${v.look.pants}` : ''}`;
     let c = this.vcache.get(key);
     if (!c) {
       const [cv, g] = canvas(FW, FH);

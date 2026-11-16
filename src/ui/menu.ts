@@ -93,6 +93,11 @@ export class Menu {
     page.append(h('div', { class: 'devrow' }, btn('Sát thủ tới (thử)', () => { const t = sim.tribes.find((x) => x.state === 'free' && !x.boss && !x.bandit); const f = t ? sim.sendAssassin(t.id) : null; toast(f ? `Sát thủ của ${t!.def.name} đã lẻn vào, nhắm vào ${sim.get(f.ai!.assassin!.target)?.name ?? 'ai đó'}` : 'Không có làng nào để gửi sát thủ'); ctl.onChange(); }, 'Gửi một sát thủ ẩn của một làng tới ám sát một dân làng (ưu tiên người có cận vệ). Lính ở gần mới thấy hắn')));
     page.append(h('div', { class: 'devrow' }, toggle('Mở mọi đơn vị và công trình chuyên', 'Bỏ khóa di sản: dùng thử các chuyên (data/story/unlocks.json) dù truyện chưa mở', () => sim.dev.unlockAll, (on) => { sim.dev.unlockAll = on; })));
     page.append(h('div', { class: 'devrow' }, toggle('Chạy cây cốt truyện (bản mẫu)', 'Bật máy cốt truyện dù dữ liệu còn tắt (data/story/index.json): nút thắt, lá, trái, ngọn ghi vào Nhật ký; cảnh của truyện tới cổng như khách', () => sim.dev.story, (on) => { sim.dev.story = on; })));
+    page.append(h('div', { class: 'devrow' },
+      toggle('Nhiệm vụ phụ tự đến + bản vẽ ở Chợ', 'Bật nhiệm vụ phụ (data/story/quests/side_quests.json) và kệ bản vẽ của Chợ thời Trung cổ dù dữ liệu còn tắt', () => sim.dev.side, (on) => { sim.dev.side = on; if (on) sim.blueprintsRoll(); }),
+      btn('Đổi kệ bản vẽ', () => { sim.blueprintsRoll(); toast(sim.blueprintsOpen() ? `Kệ bản vẽ: ${sim.blueprintShelf().map((o) => o.name).join(', ') || 'trống (đã mở hết)'}` : 'Kệ bản vẽ cần: công tắc bên cạnh, thời Trung cổ và một Chợ'); }, 'Rút lại các bản vẽ Chợ đang bán')));
+    page.append(h('div', { class: 'devrow' }, h('small', { text: 'Thử nhiệm vụ phụ:' }),
+      ...sim.sideQuestList().map((q) => btn(q.name, () => toast(sim.startSideQuest(q.id)), `${q.kind}: người giao tới cổng ngay, các bước sau tới liền nhau (khách chỉ tới ban ngày, khi không có chiến sự)`))));
     page.append(h('div', { class: 'devrow' }, h('small', { text: 'Nghiên cứu xong:' }),
       ...dev.RESEARCH_GROUPS.map((g) => btn(g.label, () => toast(dev.researchGroup(sim, g.key)), `Nghiên cứu xong mọi mục của nhóm ${g.label}, không tốn gì`)),
       btn('Tất cả', () => toast(dev.researchGroup(sim, 'all')), 'Nghiên cứu xong cả cây')));

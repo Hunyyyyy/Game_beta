@@ -1,0 +1,23 @@
+{
+  "id": "mole",
+  "name": "Nội gián",
+  "role": "mole",
+  "look": {
+    "sex": "f",
+    "skin": "#e0ac69",
+    "hair": "#3b2a1a",
+    "hide": "#8b6a45",
+    "pants": "#3f63a8"
+  },
+  "stone": {
+    "armor": "grass",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "peasant_hood_brown",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Trông như mọi người dân khác: đó chính là cái nghề của cô ta."
+}

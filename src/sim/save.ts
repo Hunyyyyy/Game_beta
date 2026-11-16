@@ -14,18 +14,19 @@ import { SCREEN_QUESTS } from './progression';
 import { decode, encode, packRuns, unpackRuns } from './codec';
 import { initialEncounters } from './encounterdata';
 import { initialStory } from './storydata';
+import { initialSide } from './sidequestdata';
 import type { Season } from './calendar';
 import type { ResourceNode } from './world';
 import type { Sim } from './sim';
 
-export const SAVE_VERSION = 49;
+export const SAVE_VERSION = 50;
 
 /** Saved state by kind. Every own property of Sim must be named in exactly one list here (the tests check this). */
 export const SAVED = {
   /** Single values. */
   scalars: ['era', 'time', 'dayBase', 'timeBase', 'acc', 'coinFrac', 'sawCoin', 'nextRaid', 'nextAid', 'nextVid', 'nextBid', 'nextSquad', 'nextMission', 'nextPlan', 'alarmUntil', 'tribeClock', 'foodPot', 'foodPenalty', 'popBonus', 'campBonus', 'yieldBonus', 'newcomersOpen', 'nextEventDay', 'conquered', 'foodIncome', 'foodSeen', 'lastFullWarn', 'lastMatWarn', 'weather', 'nextWeather', 'dayWeather', 'weatherAt', 'weatherEnd', 'lastDay', 'signalled', 'resting', 'lastVision', 'pendingTribe', 'fogDirty'],
   /** Objects whose keys are filled in place. */
-  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier', 'encounters', 'story'],
+  records: ['stock', 'toolStock', 'battle', 'yieldNow', 'yieldPrev', 'ruins', 'drafts', 'market', 'smoke', 'gatherFocus', 'legion', 'frontier', 'encounters', 'story', 'side'],
   /** Lists of plain data. */
   lists: ['warLog', 'battleLog', 'scoutLosses', 'wornTools', 'craftQueue', 'craftPaid', 'tameQueue', 'researchQueue', 'log', 'foodDays', 'villagers', 'buildings', 'foes', 'events', 'animals', 'projectiles', 'squads', 'maps', 'scouts', 'sightings', 'plans', 'battleReports', 'zones', 'cells', 'conquests', 'unlocksBought'],
   /** Handled by hand below. */
@@ -463,4 +464,8 @@ MIGRATIONS[48] = (d) => {
   d.lists.unlocksBought ??= [];
   return { ...d, version: 49 };
 };
-
+MIGRATIONS[49] = (d) => {
+  // 49 -> 50: side quests (sidequests.ts): none offered yet. (The blueprint shelf of the Chợ and the clothes of a named character are optional fields: nothing to do.)
+  d.records.side ??= initialSide();
+  return { ...d, version: 50 };
+};
