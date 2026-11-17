@@ -28,6 +28,7 @@ const C = [
   ['monk', 'Nhà sư lang thang', 'monk', 'm', 'tan', 'bald', '#c9722a', '#8a4a1c', ['grass', null, null], ['peasant_straw_grey', null, null], 'Đầu trọc, áo vải màu nghệ, chân trần, một cái bát gỗ.'],
   ['apprentice', 'Đứa học việc', 'apprentice', 'f', 'fair', 'red', '#7fa35a', '#4d6b38', ['grass', null, ['hammer', 1]], ['peasant_straw_brown', null, ['hammer', 3]], 'Cô bé tóc hung, áo xanh lá, tay lúc nào cũng dính than.'],
   ['smith', 'Thợ rèn', 'smith', 'm', 'dark', 'black', '#4a3a2e', '#2e241c', ['hide', null, ['hammer', 2]], ['peasant_hood_brown', null, ['hammer', 5]], 'Thợ rèn vai u, tạp dề da cháy sém, cánh tay to như bắp chân.'],
+  ['ba_muc', 'Bà Mực', 'scribe', 'f', 'tan', 'grey', '#5a4a6a', '#3a3040', ['hide', null, null], ['peasant_hood_grey', null, null], 'Bà lão ghi sổ của làng, tóc muối tiêu, tay dính mực, cuốn sổ da mòn góc không rời tay.'],
 ];
 
 const suit = ([armor, weapon, tool]) => ({ armor, weapon, handtool: tool ? { kind: tool[0], tier: tool[1] } : null });

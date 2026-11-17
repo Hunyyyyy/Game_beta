@@ -448,8 +448,7 @@ export class Sim {
   /** → encounters.guestsWaiting */
   guestsWaiting(): encounters.Guest[] { return encounters.guestsWaiting(this); }
   /** → encounters.openEncounter */
-  encounterOpen(visitorId: number): string | null { return encounters.openEncounter(this, visitorId); }
-  /** → encounters.encounterView */
+  encounterOpen(visitorId: number): string | null { return encounters.openEncounter(this, visitorId); }  /** → encounters.encounterView */
   encounterView(): encounters.EncounterView | null { return encounters.encounterView(this); }
   /** → encounters.advanceEncounter */
   encounterAdvance(): void { return encounters.advanceEncounter(this); }
@@ -506,6 +505,12 @@ export class Sim {
   bodyguardShare(): number { return specialists.bodyguardShare(); }
   /** → specialists.sendAssassin */
   sendAssassin(tribeId: string, targetId?: number): Villager | null { return specialists.sendAssassin(this, tribeId, targetId); }
+  /** → specialists.assassinPair: the dev test of the assassin's movement (one of ours, one enemy) */
+  assassinPair(): { mine: Villager; foe: Villager } | string { return specialists.assassinPair(this); }
+  /** → specialists.assassinTest: the dev pair (a shown killer and his target) */
+  assassinTest(): { f: Villager; target: Villager } | string { return specialists.assassinTest(this); }
+  /** → specialists.tickFinisher: the assassin of ours finishing a nearly dead enemy */
+  tickFinisher(v: Villager, dt: number): void { return specialists.tickFinisher(this, v, dt); }
   /** → specialists.tickAssassin */
   tickAssassin(f: Villager, dt: number): void { return specialists.tickAssassin(this, f, dt); }
   /** Whether a specialist (a key of data/story/unlocks.json) may be used now; core things are always open. */
@@ -515,6 +520,13 @@ export class Sim {
   /** → walltop.wallLift / wallArcher: how high a soldier on a wall is drawn, and the bonus of an archer there */
   wallLift(): number { return walltop.wallLift(); }
   wallArcher(): { damage: number; range: number } { return walltop.wallArcher(); }
+  /** → walltop.vaultAt: a fence tile this unit (the assassin) may jump or climb */
+  vaultAt(v: Pick<Villager, 'spec'>, x: number, y: number): boolean { return walltop.vaultAt(this, v, x, y); }
+  /** → walltop.vaultCosts: the fence tiles and their cost for his path search (null: he cannot cross) */
+  vaultCosts(v: Pick<Villager, 'spec'>): Map<number, number> | null { return walltop.vaultCosts(this, v); }
+  /** → walltop.vaultPose / vaultSpeed: the leap or climb pose while he crosses, and his speed then */
+  vaultPose(v: Pick<Villager, 'spec' | 'x' | 'y' | 'path'>): 'dagger_leap' | 'dagger_climb' | null { return walltop.vaultPose(this, v); }
+  vaultSpeed(v: Pick<Villager, 'spec' | 'x' | 'y' | 'path'>): number { return walltop.vaultSpeed(this, v); }
   /** → walltop.topAt */
   topAt(x: number, y: number): boolean { return walltop.topAt(this, x, y); }
   /** → walltop.wallPath: the way up, along and down the walls (null when neither end is on a top) */

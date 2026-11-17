@@ -52,10 +52,10 @@ const progress = new WeakMap<Villager, { x: number; y: number; t: number }>();
 function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (v.inside !== null) return;
   const w = sim.world, ours = passOf(v);
-  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim.onWall(v)) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
+  if ((v.phase === 'idle' || v.phase === 'wait') && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim.onWall(v) && !sim.vaultAt(v, v.x, v.y)) { const spot = freeSpotNear(sim, v.x, v.y); if (spot) { v.x = spot[0]; v.y = spot[1]; v.slide = null; } }
   if (!v.path.length) { progress.delete(v); return; }
   const goal = v.path[v.path.length - 1];
-  const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours) && !sim.topAt(v.path[0][0], v.path[0][1]); // (a step on the top of a wall is a free one) the last step may be a work spot that overlaps what is worked on
+  const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours) && !sim.topAt(v.path[0][0], v.path[0][1]) && !sim.vaultAt(v, v.path[0][0], v.path[0][1]); // (a step on the top of a wall is a free one, and a fence is for the assassin who jumps or climbs it) the last step may be a work spot that overlaps what is worked on
   // a window of 2.5 seconds: a walker with a path who has got less than a tile and a quarter from where the window began is pacing, not walking
   const p = progress.get(v);
   if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
@@ -64,7 +64,7 @@ function unstickWalker(sim: Sim, v: Villager, dt: number): void {
   if (!blocked && !stuck) return;
   progress.delete(v);
   // the way is shut or the walker is jammed: find the way again once, and if there is none stop and let the brain decide what next
-  const [gx, gy] = goal, standing = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim.onWall(v) ? freeSpotNear(sim, v.x, v.y) : null;
+  const [gx, gy] = goal, standing = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim.onWall(v) && !sim.vaultAt(v, v.x, v.y) ? freeSpotNear(sim, v.x, v.y) : null;
   if (standing) { v.x = standing[0]; v.y = standing[1]; }
   let again: Step[] = [];
   if (v.team !== 'player') again = sim.pathTo(v, gx, gy, 6000);
@@ -76,7 +76,7 @@ function unstickWalker(sim: Sim, v: Villager, dt: number): void {
 /** Follow the path and the final slide step; shared by villagers and tribal people. */
 export function moveUnit(sim: Sim, v: Villager, dt: number): void {
   unstickWalker(sim, v, dt);
-  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * sim.mountSpeed(v) * (sim.warIds.has(v.id) ? sim.march.speed * (v.hurry ? 2.5 : v.job === 'supply' ? 1.25 : 1) : 1); // the supply soldiers walk a little faster than the army, and much faster when left behind, so that they keep up // a rider on his beast walks faster; an army on the march is slowed (warmarch.ts)
+  const walk = v.speed * WEATHER[sim.weather].speed * (v.phase === 'flee' ? 1.3 : 1) * sim.mountSpeed(v) * sim.vaultSpeed(v) * (sim.warIds.has(v.id) ? sim.march.speed * (v.hurry ? 2.5 : v.job === 'supply' ? 1.25 : 1) : 1); // the supply soldiers walk a little faster than the army, and much faster when left behind, so that they keep up // a rider on his beast walks faster; an army on the march is slowed (warmarch.ts)
   if (v.swing) return; // a blow in progress plants the feet
   let left = walk * dt;
   while (left > 0 && v.path.length) {
@@ -107,7 +107,14 @@ export function animate(sim: Sim, v: Villager, dt: number): void {
   const ready = v.phase === 'fight' || (v.fight.mode !== 'none' && !post);
   // soldiers and hunters keep their weapon in hand between tasks, so they can be told apart from civilians
   const carrying = !!v.weapon && (v.job === 'fight' || v.job === 'hunt' || (!!v.ai && v.ai.role !== 'civ')); // the soldiers of the other villages always have theirs in hand
+  const kill = v.ai?.assassin; // the hired killer of a village (specialists.ts) has poses of his own: vanishing, the stab, the dash and the run
   if (v.down > 0) anim = 'down';
+  else if (kill?.vanishAt !== undefined) { anim = 'dagger_vanish'; hold = armed(); }
+  else if ((v.dodgeUntil ?? 0) > sim.time) { anim = 'dagger_dodge'; hold = armed(); }
+  else if (v.exec) { anim = 'dagger_dash'; hold = armed(); } // the finishing dash
+  else if (sim.vaultPose(v)) { anim = sim.vaultPose(v)!; hold = armed(); } // over a fence: a leap, or a climb up a high wall
+  else if (kill && (kill.strikeUntil ?? 0) > sim.time) { anim = 'dagger_stab'; hold = armed(); }
+  else if (kill && walking) { anim = kill.dash ? 'dagger_dash' : 'dagger_run'; hold = armed(); }
   else if (v.swing) { anim = poseOf(v.weapon, 'attack', post); hold = armed(); }
   else if (v.flinch > 0) anim = 'hit';
   else if (v.phase === 'flee') anim = 'run';
@@ -147,7 +154,7 @@ export function ringTiles(sim: Sim, v: Villager, x: number, y: number, w: number
  */
 export function standTile(sim: Sim, v: Villager): [number, number] {
   const fx = Math.floor(v.x), fy = Math.floor(v.y);
-  if (!sim.world.isBlockedFor(fx, fy, passOf(v))) return [fx, fy];
+  if (!sim.world.isBlockedFor(fx, fy, passOf(v)) || sim.vaultAt(v, fx, fy)) return [fx, fy]; // (the assassin may stand on a fence he is crossing)
   let best: [number, number] = [fx, fy], bd = Infinity;
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
     const x = fx + dx, y = fy + dy;
@@ -160,10 +167,11 @@ export function standTile(sim: Sim, v: Villager): [number, number] {
 
 /** Path from where the villager stands to (gx, gy); may end at the closest tile if unreachable. */
 export function pathTo(sim: Sim, v: Villager, gx: number, gy: number, maxNodes = 14000, fresh = false): Step[] {
-  const up = sim.wallPath(v, gx, gy, (a, b, c, d) => findPath(sim.world, a, b, c, d, maxNodes, passOf(v), fresh)); // from or to the top of a wall: up the stairs, along the top, down (walltop.ts)
+  const leap = sim.vaultCosts(v); // the assassin: fences are ground he can cross, at a cost
+  const up = sim.wallPath(v, gx, gy, (a, b, c, d) => findPath(sim.world, a, b, c, d, maxNodes, passOf(v), fresh, leap)); // from or to the top of a wall: up the stairs, along the top, down (walltop.ts)
   if (up) return up;
   const [sx, sy] = standTile(sim, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh);
+  const p = gx === sx && gy === sy ? [] : findPath(sim.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh, leap);
   return off ? [[sx, sy] as Step, ...p] : p;
 }
 

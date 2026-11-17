@@ -9,6 +9,7 @@ import restJson from '../data/rest.json';
 import { Building, levelDef } from './buildings';
 import { SEASONS, sunTimes, TWILIGHT } from './calendar';
 import { isStaffJob } from './jobs';
+import { specialistDef } from './specialdata';
 import { homeKind } from './idle';
 import { awayScout } from './scouting';
 import type { BuildingKind } from './buildings';
@@ -159,6 +160,7 @@ export function torchCount(sim: Sim): number { return (sim.toolStock.torch1 ?? 0
 
 /** Put a torch in the villager's hand from the store. Returns whether they have one. */
 export function ensureTorch(sim: Sim, v: Villager): boolean {
+  if (specialistDef(v.spec)?.stealth) return false; // an assassin carries no torch: a light would show him from afar
   if (v.torch) return true;
   if ((sim.toolStock.torch1 ?? 0) > 0) { sim.toolStock.torch1--; v.torch = { dur: torchLife(sim) }; return true; }
   let best = -1;

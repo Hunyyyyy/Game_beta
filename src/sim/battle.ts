@@ -12,12 +12,12 @@ import type { Sim, Target, Villager } from './sim';
 import { armPerk, critChance, critMult, guardCut, swingCycle, weaponDamage } from './statsys';
 import { perkPct } from './research';
 
-const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number }>;
+const ANIM = animsJson as unknown as Record<string, { fps: number; frames: unknown[]; hit?: number; hits?: number[] }>;
 /** When, inside an attack animation, the blow lands and when it ends (seconds). */
 const CHASE = chaseJson;
-export function swingTimes(anim: string): { hitAt: number; end: number } {
+export function swingTimes(anim: string): { hitAt: number; end: number; more?: number[] } {
   const a = ANIM[anim];
-  return { hitAt: (a?.hit ?? 2) / (a?.fps ?? 10), end: (a?.frames.length ?? 6) / (a?.fps ?? 10) };
+  return { hitAt: (a?.hit ?? 2) / (a?.fps ?? 10), end: (a?.frames.length ?? 6) / (a?.fps ?? 10), ...(a?.hits ? { more: a.hits.map((i) => i / (a.fps ?? 10)) } : {}) }; // (hits: further frames that land a blow too)
 }
 
 // ---------------------------------------------------------------- entities
@@ -136,6 +136,8 @@ export function hurt(sim: Sim, target: Target, dmg: number, type: DmgType, from:
   const v = sim.get(target.id);
   if (!v || v.health <= 0) return;
   if (sim.dev.god && v.team === 'player') return;
+  const slip = specialistDef(v.spec); // the assassin slips a share of the melee blows (never a missile), then needs a moment before he can again
+  if (slip?.dodge && src.unit && weaponOf(src.unit).ranged !== true && sim.time >= (v.dodgeAt ?? 0) && sim.frnd() < slip.dodge) { v.dodgeAt = sim.time + (slip.dodgeCd ?? 2.5); v.dodgeUntil = sim.time + 0.35; return; }
   const keeper = sim.bodyguardOf(v); // a bodyguard stands between him and the blow: he takes his share of it (as a blow of his own, armour and all)
   if (keeper) { const part = dmg * sim.bodyguardShare(); dmg -= part; hurt(sim, { kind: 'unit', id: keeper.id }, part, type, from, src); }
   const missile = !!src.unit && weaponOf(src.unit).ranged === true;
@@ -179,8 +181,8 @@ function fallUnit(sim: Sim, v: Villager): void {
 
 // ---------------------------------------------------------------- swinging and shooting
 export function startSwing(sim: Sim, v: Villager, target: Target): void {
-  const w = weaponOf(v), { hitAt, end } = swingTimes(w.anim);
-  v.swing = { t: 0, hitAt, end, target };
+  const w = weaponOf(v), { hitAt, end, more } = swingTimes(w.anim);
+  v.swing = { t: 0, hitAt, end, target, ...(more ? { more } : {}) };
   v.atkCd = swingCycle(sim, v, w);
   v.anim = w.anim; v.animClock = 0;
   const e = resolve(sim, target);
@@ -239,6 +241,7 @@ export function tickProjectiles(sim: Sim, dt: number): void {
 
 // ---------------------------------------------------------------- per-tick upkeep shared by everyone
 export function tickCommon(sim: Sim, v: Villager, dt: number): void {
+  if (v.spec === 'assassin' && v.team === 'player') sim.tickFinisher(v, dt); // (the dash that finishes a nearly dead enemy)
   v.atkCd = Math.max(0, v.atkCd - dt);
   v.calm += dt;
   if (v.flinch > 0) v.flinch -= dt;
@@ -246,6 +249,7 @@ export function tickCommon(sim: Sim, v: Villager, dt: number): void {
     const s = v.swing, before = s.t;
     s.t += dt;
     if (before < s.hitAt && s.t >= s.hitAt) resolveSwing(sim, v, s.target);
+    if (s.more) for (const m of s.more) if (before < m && s.t >= m) resolveSwing(sim, v, s.target); // the later blows of a combo
     if (s.t >= s.end) v.swing = null;
   }
 }

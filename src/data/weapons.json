@@ -121,6 +121,14 @@
       "charge": "shield_charge",
       "attack": "shield_attack"
     },
+    "dagger": {
+      "name": "Sát thủ (hai dao găm cầm ngược, chạy cúi người, combo ba nhát)",
+      "idle": "dagger_idle",
+      "walk": "dagger_walk",
+      "guard": "dagger_guard",
+      "charge": "dagger_run",
+      "attack": "dagger_combo"
+    },
     "post_mace": {
       "name": "Lính canh (chùy nâng trước vai, khiên gỗ)",
       "idle": "post_mace_idle",
@@ -284,18 +292,15 @@
       "tier": 3,
       "rank": 4
     },
-    "shortsword": {
+    "dagger": {
       "cost": {"iron": 3, "hardwood": 1, "leather": 1},
       "time": 90,
-      "name": "Kiếm ngắn",
+      "name": "Cặp dao găm",
       "type": "slash",
       "range": 1.0,
       "damage": 14,
       "cycle": 0.9,
-      "style": "swing",
-      "anims": {
-        "attack": "slash"
-      },
+      "style": "dagger",
       "tier": 4,
       "rank": 5
     },
@@ -771,6 +776,14 @@
       "name": "Giáp da cung thủ",
       "defm": 60,
       "defr": 65,
+      "tier": 4
+    },
+    "assassin": {
+      "cost": {"cloth": 3, "leather": 1},
+      "time": 110,
+      "name": "Áo vải sát thủ",
+      "defm": 15,
+      "defr": 15,
       "tier": 4
     },
     "rider": {

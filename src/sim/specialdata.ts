@@ -8,6 +8,10 @@ export interface SpecialistDef {
   id: string; key: string; name: string; camp: RankRole; weapon: string; armor: string; mount?: string;
   profile: Partial<Record<StatId, number>>; costMult: number; rationAdd: number; about: string;
   hire?: boolean; stealth?: boolean; ambush?: number; siege?: number;
+  /** Chance (0..1) to slip a melee blow, and the seconds before he can do it again (the assassin). */
+  dodge?: number; dodgeCd?: number;
+  /** Jumps over a fence, or climbs a high wall (walltop.ts, data/walls.json `vault`). */
+  vault?: boolean;
 }
 export const SPECIALISTS = SPEC.units as unknown as SpecialistDef[];
 /** The specialist buildings (data/specialists.json `buildings`): locked until the legacy opens them (isUnlocked('building:<kind>')). */

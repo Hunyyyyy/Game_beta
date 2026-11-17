@@ -58,13 +58,13 @@ function memory(total: number): typeof mem {
  * A* 8 hướng, không cắt góc. Nếu không tới được đích, trả về đường tới ô gần đích nhất.
  * Trả về các ô cần đi qua (không gồm ô xuất phát); mảng rỗng nếu không có đường.
  */
-export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours: boolean | 'foe' = false, fresh = false): Step[] {
+export function findPath(world: World, sx: number, sy: number, gx: number, gy: number, maxNodes = 30000, ours: boolean | 'foe' = false, fresh = false, leap: ReadonlyMap<number, number> | null = null): Step[] {
   const N = world.size;
   // a search that did not reach its goal (it is shut in, or too far for the limit) comes out the same when asked again from the same tile a moment later, and walkers who stand at a wall ask every half second: the answer is kept for
   // two seconds. `fresh` (an order of the player, which is absolute and must see the map as it is now) never uses it.
-  const key = fresh ? '' : `${ours === true ? 1 : ours === 'foe' ? 2 : 0}:${sy * N + sx}:${gy * N + gx}`;
+  const key = fresh ? '' : `${leap ? 'L' : ''}${ours === true ? 1 : ours === 'foe' ? 2 : 0}:${sy * N + sx}:${gy * N + gx}`;
   if (key) { const hit = world.pathFails.get(key); if (hit && hit.until > world.age) { pathStats.hits++; return hit.path.slice(); } }
-  const blocked = (x: number, y: number) => (ours && (ours === 'foe' ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y)); // our people pass the shut gates
+  const blocked = (x: number, y: number) => (leap && leap.has(y * N + x)) ? false : (ours && (ours === 'foe' ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y)); // our people pass the shut gates
   if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
   const { g, f, parent, seen, closed, gen } = memory(N * N);
   const heap = new MinHeap(f), nb = new Uint8Array(9);
@@ -93,7 +93,7 @@ export function findPath(world: World, sx: number, sy: number, gx: number, gy: n
       if (dx && dy && (nb[4 + dx] || nb[4 + dy * 3])) continue;
       const ni = (cy + dy) * N + cx + dx;
       if (closed[ni] === gen) continue;
-      const ng = gc + (dx && dy ? SQ2 : 1);
+      const ng = gc + (dx && dy ? SQ2 : 1) + (leap ? leap.get(ni) ?? 0 : 0); // (a fence he jumps or climbs costs more than the ground)
       if (seen[ni] !== gen || ng < g[ni]) { seen[ni] = gen; g[ni] = ng; f[ni] = ng + h(cx + dx, cy + dy); parent[ni] = cur; heap.push(ni); }
     }
   }

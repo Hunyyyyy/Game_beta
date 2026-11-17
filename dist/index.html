@@ -5907,6 +5907,138 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     opacity: 0.2;
   }
 }
+#stagescene {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: #000;
+  cursor: pointer;
+  user-select: none;
+}
+#stagescene[hidden] {
+  display: none;
+}
+#stagescene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#stagescene .st-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#stagescene .st-ui > * {
+  pointer-events: auto;
+}
+#stagescene .st-skip {
+  position: absolute;
+  top: calc(10px + var(--sat));
+  right: calc(10px + var(--sar));
+  opacity: 0.75;
+}
+#stagescene .st-bust {
+  position: absolute;
+  left: calc(1.5vw + var(--sal));
+  bottom: 0;
+  height: min(32vh, 300px);
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+#stagescene .st-bust[hidden] {
+  display: none;
+}
+#stagescene .st-bust canvas {
+  position: static;
+  height: 100%;
+  width: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+}
+#stagescene .st-panel {
+  position: absolute;
+  bottom: calc(10px + var(--sab));
+  left: calc(1.5vw + min(19vh, 180px) + var(--sal));
+  width: min(620px, 97vw - min(19vh, 180px) - var(--sal) - var(--sar));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: default;
+}
+#stagescene .st-panel[hidden] {
+  display: none;
+}
+#stagescene .st-plate {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #f3e6c8;
+}
+#stagescene .st-plate b {
+  letter-spacing: 0.06em;
+}
+#stagescene .st-plate i {
+  font-size: 12px;
+  opacity: 0.8;
+}
+#stagescene .st-frame {
+  position: relative;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(12, 8, 4, 0.82);
+  border: 1px solid rgba(255, 230, 170, 0.22);
+  color: #f6ecd2;
+}
+#stagescene .st-text {
+  margin: 0;
+  font-size: clamp(14px, 1.9vw, 18px);
+  line-height: 1.45;
+  min-height: 2.9em;
+}
+#stagescene .st-more {
+  position: absolute;
+  right: 16px;
+  bottom: 6px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+#stagescene .st-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 5px;
+}
+#stagescene .st-card {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(12, 8, 4, 0.86);
+  border: 1px solid rgba(255, 230, 170, 0.3);
+  color: #f6ecd2;
+  cursor: pointer;
+}
+#stagescene .st-card:hover {
+  background: rgba(60, 40, 18, 0.92);
+}
+#stagescene .st-num {
+  font-weight: 700;
+  color: #e8c06a;
+}
+#stagescene .st-timer {
+  font-size: 11px;
+  color: #e8d9b0;
+  opacity: 0.7;
+  text-align: right;
+}
+#stagescene .st-timer:empty {
+  display: none;
+}
+
 @media (max-height: 480px) {
   body {
     font-size: 12px;
@@ -6003,6 +6135,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   <canvas id="mini" hidden aria-label="Bản đồ nhỏ" title="Bản đồ nhỏ"></canvas>
   <button class="buildfab" id="btnBuild" title="Xây dựng (B)" aria-label="Xây dựng"></button>
   <div id="dlgscene" hidden></div>
+  <div id="stagescene" hidden></div>
   <div class="toast" id="toast" role="status"></div>
 
   <div class="bbar" id="bbar" hidden></div>
@@ -6519,6 +6652,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         charge: "shield_charge",
         attack: "shield_attack"
       },
+      dagger: {
+        name: "S\xE1t th\u1EE7 (hai dao g\u0103m c\u1EA7m ng\u01B0\u1EE3c, ch\u1EA1y c\xFAi ng\u01B0\u1EDDi, combo ba nh\xE1t)",
+        idle: "dagger_idle",
+        walk: "dagger_walk",
+        guard: "dagger_guard",
+        charge: "dagger_run",
+        attack: "dagger_combo"
+      },
       post_mace: {
         name: "L\xEDnh canh (ch\xF9y n\xE2ng tr\u01B0\u1EDBc vai, khi\xEAn g\u1ED7)",
         idle: "post_mace_idle",
@@ -6682,18 +6823,15 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         tier: 3,
         rank: 4
       },
-      shortsword: {
+      dagger: {
         cost: { iron: 3, hardwood: 1, leather: 1 },
         time: 90,
-        name: "Ki\u1EBFm ng\u1EAFn",
+        name: "C\u1EB7p dao g\u0103m",
         type: "slash",
         range: 1,
         damage: 14,
         cycle: 0.9,
-        style: "swing",
-        anims: {
-          attack: "slash"
-        },
+        style: "dagger",
         tier: 4,
         rank: 5
       },
@@ -7169,6 +7307,14 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         name: "Gi\xE1p da cung th\u1EE7",
         defm: 60,
         defr: 65,
+        tier: 4
+      },
+      assassin: {
+        cost: { cloth: 3, leather: 1 },
+        time: 110,
+        name: "\xC1o v\u1EA3i s\xE1t th\u1EE7",
+        defm: 15,
+        defr: 15,
         tier: 4
       },
       rider: {
@@ -23682,8 +23828,24 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       spawnDist: 26,
       fleeSeconds: 90,
       repath: 2,
-      speedMul: 1.1,
-      weapon: "bronze_sword"
+      speedMul: 1.7,
+      hpMul: 0.5,
+      vanishSeconds: 0.75,
+      strikeSeconds: 0.6,
+      dashRange: 1.5,
+      crowd: 3,
+      crowdRadius: 3,
+      lurkDist: 6,
+      backDist: 1,
+      followMult: 0.6,
+      passes: 2,
+      passBeyond: 1.5,
+      passMul: 5,
+      executeBelow: 0.15,
+      executeRange: 1.5,
+      passPause: 0.05,
+      giveUpSeconds: 150,
+      weapon: "dagger"
     },
     units: [
       {
@@ -23728,19 +23890,22 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         key: "unit:assassin",
         name: "S\xE1t th\u1EE7",
         camp: "guard",
-        weapon: "shortsword",
-        armor: "archer",
+        weapon: "dagger",
+        armor: "assassin",
         profile: {
-          hp: 0.6,
-          atk: 1.6,
-          defm: 0.5,
-          defr: 0.5,
-          move: 1.3
+          hp: 0.35,
+          atk: 9,
+          defm: 0.15,
+          defr: 0.15,
+          move: 1.7
         },
         costMult: 1.3,
         rationAdd: 1,
         stealth: true,
-        ambush: 2,
+        ambush: 3,
+        vault: true,
+        dodge: 0.4,
+        dodgeCd: 2.5,
         about: "\u1EA8n kh\u1ECFi m\u1EAFt \u0111\u1ECBch, \u0111\xE1nh \xFAp r\u1EA5t \u0111au, ch\u1EBFt r\u1EA5t nhanh. D\xF9ng cho nhi\u1EC7m v\u1EE5 \xE1m s\xE1t."
       },
       {
@@ -38600,6 +38765,193 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   };
 
+  // src/data/handtools/dagger.json
+  var dagger_default = {
+    name: "Dagger",
+    _note: 'Dao g\u0103m c\u1EE7a s\xE1t th\u1EE7: l\u01B0\u1EE1i ng\u1EAFn, m\u1ED9t v\u1EC7t s\xE1ng ch\u1EA1y d\u1ECDc l\u01B0\u1EE1i (ch\u1EC9 l\u01B0\u1EE1i dao l\xE0 s\xE1ng). C\u1EA7m ng\u01B0\u1EE3c tay: frame \u0111\u1EB7t tool.a quay l\u01B0\u1EE1i v\u1EC1 ph\xEDa khu\u1EF7u. Pose "hip" v\xE0 "hip2": hai dao n\u1EB1m trong v\u1ECF nh\u1ECF \u1EDF th\u1EAFt l\u01B0ng sau (c\u1EAFm ch\xE9o h\xECnh ch\u1EEF X), v\u1EBD l\xFAc kh\xF4ng \u0111\xE1nh.',
+    handle: {
+      length: 2,
+      width: 1,
+      color: "wood"
+    },
+    head: [
+      { x: -1, y: -1, w: 3, h: 1, color: "dark" },
+      { x: 0, y: -8, w: 2, h: 7, color: "head" },
+      { x: 0, y: -9, w: 1, h: 1, color: "light" },
+      { x: 0, y: -8, w: 1, h: 7, color: "light" },
+      { x: 1, y: -6, w: 1, h: 5, color: "dark" }
+    ],
+    poses: {
+      hip: [
+        { x: 0, y: -3, w: 1, h: 3, color: "#2a1c10" },
+        { x: 0, y: -4, w: 1, h: 1, color: "#8a8f96" },
+        { x: -1, y: 0, w: 3, h: 1, color: "#5d6870" },
+        { x: -1, y: 1, w: 2, h: 2, color: "#2f2015" },
+        { x: -2, y: 3, w: 2, h: 2, color: "#2f2015" },
+        { x: -3, y: 5, w: 2, h: 1, color: "#2f2015" }
+      ],
+      hip2: [
+        { x: 1, y: -2, w: 1, h: 3, color: "#2a1c10" },
+        { x: 1, y: -3, w: 1, h: 1, color: "#8a8f96" },
+        { x: 0, y: 1, w: 3, h: 1, color: "#5d6870" },
+        { x: 1, y: 2, w: 2, h: 2, color: "#2f2015" },
+        { x: 1, y: 4, w: 2, h: 2, color: "#2f2015" },
+        { x: 2, y: 6, w: 2, h: 1, color: "#2f2015" }
+      ]
+    }
+  };
+
+  // src/data/armors/assassin.json
+  var assassin_default = {
+    _note: "Assassin (S\xE1t th\u1EE7): th\xE2n m\u1EA3nh, v\u1EA3i \u0111en x\xE1m than qu\u1EA5n ch\u1EB7t tay ch\xE2n, m\u0169 tr\xF9m v\xE0 kh\u0103n che m\u1EB7t (ch\u1EC9 h\u1EDF m\u1ED9t d\u1EA3i m\u1EAFt), kh\xF4ng c\xF3 m\u1EA3nh kim lo\u1EA1i n\xE0o. Hai dao g\u0103m kh\xF4ng n\u1EB1m trong gi\xE1p: rig v\u1EBD ch\xFAng b\u1EB1ng tool/tool2 (pose hip, hip2 khi kh\xF4ng \u0111\xE1nh).",
+    name: "\xC1o s\xE1t th\u1EE7",
+    palette: {
+      cloth: "#3a3a42",
+      clothL: "#55555f",
+      clothD: "#232329",
+      wrap: "#2b2b31",
+      belt: "#17171b",
+      sash: "#5b2b2b",
+      glove: "#1d1d22",
+      scarf: "#2e2e36"
+    },
+    side: {
+      head: {
+        ox: 0,
+        oy: -2,
+        legend: { h: "cloth", H: "clothL", D: "clothD", m: "wrap", b: "belt" },
+        rows: [
+          "....hhhh.....",
+          "..hhHHhhhh...",
+          ".hhHHhhhhhD..",
+          "hhHhhhhhhhhD.",
+          "hhhhhhhhhhhhD",
+          "DDDDDDDDDDDDD",
+          "hhhhhhh......",
+          "hhhhhhh......",
+          "hhhhhhhmmmmmD",
+          "hhhhhhhmmmmD.",
+          ".hhhhhhmmmD..",
+          "..DDDDDDDD...",
+          "............."
+        ]
+      },
+      torso: {
+        ox: 0,
+        oy: 0,
+        legend: { c: "cloth", L: "clothL", d: "clothD", B: "belt", S: "sash" },
+        rows: [
+          "ccccccd",
+          "LcLcccd",
+          "ccLLccd",
+          "cccccLd",
+          "ccccccd",
+          "ccSSScd",
+          "BBBBBBB",
+          "ddddddd",
+          ".ddddd.",
+          "..ddd.."
+        ]
+      },
+      over: {
+        ox: -4,
+        oy: 0,
+        legend: { s: "scarf", d: "clothD" },
+        rows: [
+          "ss....",
+          ".ss...",
+          "..sd..",
+          "...s.."
+        ]
+      }
+    },
+    wraps: {
+      leg: { dy: 4, w: 3, h: 6, color: "cloth", edge: "clothD" },
+      arm: { full: true, color: "cloth", far: "clothD", hand: "glove", w: 3, h: 2 }
+    },
+    legs: { near: "cloth", far: "clothD" },
+    front: {
+      head: {
+        ox: 0,
+        oy: -2,
+        legend: { h: "cloth", H: "clothL", D: "clothD", m: "wrap" },
+        rows: [
+          "....hhhh....",
+          "..hhHHhhhh..",
+          ".hhHHhhhhhD.",
+          "hhHhhhhhhhhD",
+          "hhhhhhhhhhhD",
+          "DDDDDDDDDDDD",
+          "hh........hh",
+          "hh........hh",
+          "hhmmmmmmmmhh",
+          "hhmmmmmmmmhh",
+          ".hhmmmmmmhh.",
+          "..DDDDDDDD..",
+          "............"
+        ]
+      },
+      torso: {
+        ox: 0,
+        oy: 0,
+        legend: { c: "cloth", L: "clothL", d: "clothD", B: "belt", S: "sash" },
+        rows: [
+          "cccccccccc",
+          "LcccccLccc",
+          "cLcccLcccc",
+          "ccLcLccccc",
+          "cccLcccccc",
+          "ccccLccccc",
+          "BBBBBBBBBB",
+          "SSSSSSSSSS",
+          "dddddddddd",
+          ".dddddddd.",
+          "..dddddd.."
+        ]
+      }
+    },
+    back: {
+      head: {
+        ox: 0,
+        oy: -2,
+        legend: { h: "cloth", H: "clothL", D: "clothD" },
+        rows: [
+          "....hhhh....",
+          "..hhHHhhhh..",
+          ".hhHHhhhhhD.",
+          "hhHhhhhhhhhD",
+          "hhhhhhhhhhhD",
+          "hhhhhhhhhhhD",
+          "hhhhhhhhhhhD",
+          "hhhhhhhhhhhD",
+          "hhhhhhhhhhhD",
+          ".hhhhhhhhhD.",
+          "..hhhhhhhD..",
+          "..DDDDDDDD..",
+          "............"
+        ]
+      },
+      torso: {
+        ox: 0,
+        oy: 0,
+        legend: { c: "cloth", L: "clothL", d: "clothD", B: "belt", S: "sash" },
+        rows: [
+          "cccccccccc",
+          "LcccccLccc",
+          "cLcccLcccc",
+          "ccLcLccccc",
+          "cccLcccccc",
+          "ccccLccccc",
+          "BBBBBBBBBB",
+          "SSSSSSSSSS",
+          "dddddddddd",
+          ".dddddddd.",
+          "..dddddd.."
+        ]
+      }
+    }
+  };
+
   // src/character/rig.js
   var handTools = {
     axe: axe_default,
@@ -38632,6 +38984,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     pike: pike_default,
     ward_sword: arming_sword_default,
     bronze_bow: bow_default,
+    dagger: dagger_default,
     /*gen-ranks*/
     halberd: halberd_default,
     bastard_sword: bastard_sword_default,
@@ -38667,6 +39020,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     peasant_hood_grey: peasant_hood_grey_default,
     peasant_straw_brown: peasant_straw_brown_default,
     peasant_straw_grey: peasant_straw_grey_default,
+    assassin: assassin_default,
     /*gen-ranks*/
     halberdier: halberdier_default,
     footknight: footknight_default,
@@ -38986,6 +39340,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const side = view2 === "side", back2 = view2 === "back", front = view2 === "front";
     const bob = f.bob || 0, lean = f.lean || 0;
     const tool = f.tool && f.tool.on ? f.tool : null;
+    const tool2 = f.tool2 && f.tool2.on ? f.tool2 : null;
     const carry = f.carry && f.carry.on ? f.carry : null;
     const hold = !!(tool || carry);
     const SH = ov && ov.shield && shields[ov.shield], shieldF = SH && f.shield && f.shield.on ? f.shield : null;
@@ -39045,6 +39400,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const hx0 = CX + 0.5;
       const pL2 = armPts(f.armL, hx0 + tDx), pR2 = armPts(f.armR, hx0 + tDx);
       arm(pL2, P2.skinD);
+      if (tool2) drawTool(b, side, pL2.hx, pL2.hy, tool2, ov, P2);
       leg(f.legL, hx0, P2.skinD);
       leg(f.legR, hx0, P2.skin);
       if (AD) drawArmorLayer(b, AD, AC, "side", "back", CX - 3 + tDx, TY);
@@ -39085,6 +39441,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         arm(pL, P2.skin);
       }
       if (!back2 && tool) drawToolFacing(b, false, pR.hx - 3, pR.hy, tool, ov, P2);
+      if (!back2 && tool2) drawToolFacing(b, false, pL.hx + 3, pL.hy, tool2, ov, P2);
     }
     if (extra && extra.torch !== void 0) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
   }
@@ -39120,6 +39477,55 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       }
     });
   }
+  function postFx(b, f, side) {
+    const src = new Uint8ClampedArray(b), gh = f.ghost;
+    if (gh && side) {
+      for (let k = gh.n; k >= 1; k--) {
+        const al = (gh.a === void 0 ? 0.5 : gh.a) * (1 - (k - 1) / gh.n);
+        for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+          const s = (y * BW + x) * 4;
+          if (!src[s + 3]) continue;
+          const X = x - k * gh.dx;
+          if (X < 0 || X >= BW) continue;
+          const d = (y * BW + X) * 4;
+          if (b[d + 3] > 0) continue;
+          const g = Math.round((src[s] + src[s + 1] + src[s + 2]) / 3 * 0.6 + 20);
+          b[d] = g;
+          b[d + 1] = g;
+          b[d + 2] = g + 8;
+          b[d + 3] = Math.round(255 * al);
+        }
+      }
+    }
+    if (f.fade !== void 0 && f.fade < 1) for (let i = 3; i < b.length; i += 4) b[i] = Math.round(b[i] * Math.max(0, f.fade));
+    if (f.smoke) {
+      const cut = Math.round(f.smoke * 40);
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+        const i = (y * BW + x) * 4;
+        if (!b[i + 3]) continue;
+        const dy = BH - 1 - y, keep = dy >= cut ? 1 : 0, hash5 = (x * 7 + y * 13 + Math.round(f.smoke * 10)) % 5;
+        if (!keep && hash5 > 1) {
+          b[i] = 70;
+          b[i + 1] = 70;
+          b[i + 2] = 76;
+          b[i + 3] = 150;
+        } else if (!keep) b[i + 3] = 0;
+      }
+    }
+  }
+  function spin(b, deg, bob) {
+    const o = new Uint8ClampedArray(b.length), cx = CX + OX, cy = 28 + OY + bob * 0.85, a = deg * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+    for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+      const dx = x - cx, dy = y - cy, sx = Math.round(cx + dx * co + dy * si), sy = Math.round(cy - dx * si + dy * co);
+      if (sx < 0 || sy < 0 || sx >= BW || sy >= BH) continue;
+      const s = (sy * BW + sx) * 4, d = (y * BW + x) * 4;
+      o[d] = b[s];
+      o[d + 1] = b[s + 1];
+      o[d + 2] = b[s + 2];
+      o[d + 3] = b[s + 3];
+    }
+    return o;
+  }
   function flipH(b) {
     const o = new Uint8ClampedArray(b.length);
     for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
@@ -39144,8 +39550,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const b = new Uint8ClampedArray(FW * FH * 4);
       const v = view2 === "left" || view2 === "right" ? "side" : view2;
       drawCharacter(b, v, f, P2, look.sex, toolOv, armorId, extra);
-      const o = outline(b, P2.line);
+      let o = outline(b, P2.line);
+      if (f.rot) o = spin(o, f.rot, f.bob || 0);
       shadow(o, v === "side" ? 1 : 0);
+      if (f.ghost || f.fade !== void 0) postFx(o, f, v === "side");
       return view2 === "left" ? flipH(o) : o;
     } finally {
       BW = W;
@@ -39374,18 +39782,18 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const fx2 = x + Math.sin(rad2(a)) * legL, fy = Math.min(gy, jy + Math.cos(rad2(a)) * legL - lift);
       if (has("horse") || S2.legJoints) {
         const front = x > cx, fold = Math.min(3, lift * 0.5);
-        const lerp2 = (t) => [x + (fx2 - x) * t, jy + (fy - jy) * t];
+        const lerp3 = (t) => [x + (fx2 - x) * t, jy + (fy - jy) * t];
         let j1, j2, j3;
         if (front) {
-          j1 = lerp2(0.4);
-          j2 = lerp2(0.62);
-          j3 = lerp2(0.86);
+          j1 = lerp3(0.4);
+          j2 = lerp3(0.62);
+          j3 = lerp3(0.86);
           j2 = [j2[0] + 0.5 + fold * 0.5, j2[1]];
           j3 = [j3[0] - 0.3 - fold, j3[1]];
         } else {
-          j1 = lerp2(0.32);
-          j2 = lerp2(0.62);
-          j3 = lerp2(0.86);
+          j1 = lerp3(0.32);
+          j2 = lerp3(0.62);
+          j3 = lerp3(0.86);
           j1 = [j1[0] + 0.6, j1[1]];
           j2 = [j2[0] - 1 - fold * 0.5, j2[1]];
           j3 = [j3[0] + 0.3 - fold, j3[1]];
@@ -174994,6 +175402,91 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       { bob: 0, lean: 1, legR: { a: -34, lift: 1 }, legL: { a: 34, lift: 0 }, armR: { a: 12, b: 28 }, armL: { a: -6, b: 22 }, tool: { on: true, a: 180, kind: "arming_sword", pose: "hip" } },
       { bob: 1, lean: 1, legR: { a: -22, lift: 2 }, legL: { a: 17, lift: 0 }, armR: { a: 12, b: 28 }, armL: { a: -6, b: 22 }, tool: { on: true, a: 180, kind: "arming_sword", pose: "hip" } },
       { bob: -1, lean: 1, legR: { a: 8, lift: 3 }, legL: { a: -2, lift: 0 }, armR: { a: 12, b: 28 }, armL: { a: -6, b: 22 }, tool: { on: true, a: 180, kind: "arming_sword", pose: "hip" } }
+    ] },
+    dagger_idle: { fps: 3, loop: true, frames: [
+      { bob: 1, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 1, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 2, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 2, lean: 1, legR: { a: 12, lift: 0 }, legL: { a: -12, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } }
+    ] },
+    dagger_walk: { fps: 9, loop: true, gait: true, frames: [
+      { bob: 1, lean: 3, legR: { a: 0, lift: 2 }, legL: { a: 0, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 1, lean: 3, legR: { a: 26, lift: 1 }, legL: { a: -26, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 1, lean: 3, legR: { a: 26, lift: 0 }, legL: { a: -26, lift: 1 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 1, lean: 3, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 2 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 1, lean: 3, legR: { a: -26, lift: 0 }, legL: { a: 26, lift: 1 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } },
+      { bob: 1, lean: 3, legR: { a: -26, lift: 1 }, legL: { a: 26, lift: 0 }, armR: { a: -6, b: 30 }, armL: { a: -8, b: 26 }, tool: { on: true, a: 180, kind: "dagger", pose: "hip" }, tool2: { on: true, a: 180, kind: "dagger", pose: "hip2" } }
+    ] },
+    dagger_guard: { fps: 6, loop: true, frames: [
+      { bob: 2, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 62, b: 50 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 2, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 64, b: 50 }, armL: { a: 48, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 3, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 65, b: 50 }, armL: { a: 47, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 2, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 64, b: 50 }, armL: { a: 48, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } }
+    ] },
+    dagger_run: { fps: 14, loop: true, gait: true, frames: [
+      { bob: -1, lean: 9, legR: { a: 0, lift: 4 }, legL: { a: 0, lift: 0 }, armR: { a: -74, b: 18 }, armL: { a: -68, b: 22 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" } },
+      { bob: 0, lean: 9, legR: { a: 50, lift: 2 }, legL: { a: -50, lift: 0 }, armR: { a: -69, b: 18 }, armL: { a: -73, b: 22 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" } },
+      { bob: 0, lean: 9, legR: { a: 50, lift: 0 }, legL: { a: -50, lift: 2 }, armR: { a: -69, b: 18 }, armL: { a: -73, b: 22 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" } },
+      { bob: -1, lean: 9, legR: { a: 0, lift: 0 }, legL: { a: 0, lift: 4 }, armR: { a: -74, b: 18 }, armL: { a: -68, b: 22 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" } },
+      { bob: 0, lean: 9, legR: { a: -50, lift: 0 }, legL: { a: 50, lift: 2 }, armR: { a: -79, b: 18 }, armL: { a: -63, b: 22 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" } },
+      { bob: 0, lean: 9, legR: { a: -50, lift: 2 }, legL: { a: 50, lift: 0 }, armR: { a: -79, b: 18 }, armL: { a: -63, b: 22 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" } }
+    ] },
+    dagger_combo: { fps: 18, loop: false, hit: 4, hits: [8, 12], frames: [
+      { bob: 2, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 62, b: 50 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 2, lean: 4, legR: { a: 27, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 97, b: 36 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 248, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 1, lean: 5, legR: { a: 26, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 132, b: 22 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 232, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 0, lean: 7, legR: { a: 31, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 99, b: 18 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 153, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 0, lean: 9, legR: { a: 36, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 66, b: 14 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 74, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } },
+      { bob: 0, lean: 8, legR: { a: 35, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 50, b: 17 }, armL: { a: 28, b: 50 }, tool: { on: true, a: 63, kind: "dagger" }, tool2: { on: true, a: 266, kind: "dagger" } },
+      { bob: 1, lean: 6, legR: { a: 34, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 34, b: 20 }, armL: { a: 6, b: 44 }, tool: { on: true, a: 52, kind: "dagger" }, tool2: { on: true, a: 276, kind: "dagger" } },
+      { bob: 0, lean: 8, legR: { a: 36, lift: 0 }, legL: { a: -31, lift: 0 }, armR: { a: 32, b: 22 }, armL: { a: 67, b: 26 }, tool: { on: true, a: 52, kind: "dagger" }, tool2: { on: true, a: 209, kind: "dagger" } },
+      { bob: 0, lean: 9, legR: { a: 38, lift: 0 }, legL: { a: -32, lift: 0 }, armR: { a: 30, b: 24 }, armL: { a: 128, b: 8 }, tool: { on: true, a: 52, kind: "dagger" }, tool2: { on: true, a: 142, kind: "dagger" } },
+      { bob: 0, lean: 7, legR: { a: 34, lift: 0 }, legL: { a: -31, lift: 0 }, armR: { a: 10, b: 41 }, armL: { a: 58, b: 33 }, tool: { on: true, a: -29, kind: "dagger" }, tool2: { on: true, a: 196, kind: "dagger" } },
+      { bob: 1, lean: 5, legR: { a: 30, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: -10, b: 58 }, armL: { a: -12, b: 58 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 250, kind: "dagger" } },
+      { bob: 0, lean: 8, legR: { a: 37, lift: 0 }, legL: { a: -31, lift: 0 }, armR: { a: 41, b: 32 }, armL: { a: 37, b: 32 }, tool: { on: true, a: 173, kind: "dagger" }, tool2: { on: true, a: 170, kind: "dagger" } },
+      { bob: 0, lean: 11, legR: { a: 44, lift: 0 }, legL: { a: -32, lift: 0 }, armR: { a: 92, b: 5 }, armL: { a: 86, b: 5 }, tool: { on: true, a: 96, kind: "dagger" }, tool2: { on: true, a: 90, kind: "dagger" } },
+      { bob: 1, lean: 8, legR: { a: 36, lift: 0 }, legL: { a: -31, lift: 0 }, armR: { a: 77, b: 28 }, armL: { a: 68, b: 30 }, tool: { on: true, a: 0, kind: "dagger" }, tool2: { on: true, a: -8, kind: "dagger" } },
+      { bob: 2, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 62, b: 50 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } }
+    ] },
+    dagger_dash: { fps: 16, loop: true, frames: [
+      { bob: 0, lean: 12, legR: { a: -22, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: -84, b: 6 }, armL: { a: -78, b: 8 }, tool: { on: true, a: 262, kind: "dagger" }, tool2: { on: true, a: 256, kind: "dagger" }, fade: 0.35, ghost: { dx: 6, n: 2, a: 0.25 } },
+      { bob: 0, lean: 12, legR: { a: -30, lift: 0 }, legL: { a: -26, lift: 0 }, armR: { a: -86, b: 4 }, armL: { a: -80, b: 6 }, tool: { on: true, a: 264, kind: "dagger" }, tool2: { on: true, a: 258, kind: "dagger" }, fade: 0.3, ghost: { dx: 7, n: 2, a: 0.25 } }
+    ] },
+    dagger_dodge: { fps: 8, loop: false, frames: [
+      { bob: 3, lean: -7, legR: { a: 24, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: -30, b: 40 }, armL: { a: -40, b: 36 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" }, ghost: { dx: -5, n: 2, a: 0.5 } },
+      { bob: 5, lean: -10, legR: { a: 14, lift: 0 }, legL: { a: -40, lift: 2 }, armR: { a: -50, b: 30 }, armL: { a: -56, b: 28 }, tool: { on: true, a: 252, kind: "dagger" }, tool2: { on: true, a: 250, kind: "dagger" }, ghost: { dx: -8, n: 3, a: 0.55 } }
+    ] },
+    dagger_stab: { fps: 14, loop: false, hit: 2, frames: [
+      { bob: 4, lean: 5, legR: { a: 30, lift: 0 }, legL: { a: -32, lift: 0 }, armR: { a: -30, b: 40 }, armL: { a: -30, b: 44 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 250, kind: "dagger" } },
+      { bob: 3, lean: 12, legR: { a: 54, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: 80, b: 20 }, armL: { a: 70, b: 24 }, tool: { on: true, a: 100, kind: "dagger" }, tool2: { on: true, a: 92, kind: "dagger" } },
+      { bob: 3, lean: 14, legR: { a: 58, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: 92, b: 4 }, armL: { a: 84, b: 6 }, tool: { on: true, a: 96, kind: "dagger" }, tool2: { on: true, a: 90, kind: "dagger" } },
+      { bob: 3, lean: 14, legR: { a: 58, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: 94, b: 2 }, armL: { a: 86, b: 4 }, tool: { on: true, a: 98, kind: "dagger" }, tool2: { on: true, a: 92, kind: "dagger" } },
+      { bob: 2, lean: 7, legR: { a: 36, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 30, b: 40 }, armL: { a: 24, b: 44 }, tool: { on: true, a: 230, kind: "dagger" }, tool2: { on: true, a: 230, kind: "dagger" } },
+      { bob: 2, lean: 5, legR: { a: 28, lift: 0 }, legL: { a: -28, lift: 0 }, armR: { a: 62, b: 50 }, armL: { a: 50, b: 56 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" } }
+    ] },
+    dagger_vanish: { fps: 8, loop: false, frames: [
+      { bob: 3, lean: 4, legR: { a: 28, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 60, b: 60 }, armL: { a: 52, b: 62 }, tool: { on: true, a: 265, kind: "dagger" }, tool2: { on: true, a: 255, kind: "dagger" }, fade: 0.85 },
+      { bob: 5, lean: 5, legR: { a: 30, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 66, b: 64 }, armL: { a: 56, b: 66 }, tool: { on: true, a: 268, kind: "dagger" }, tool2: { on: true, a: 258, kind: "dagger" }, fade: 0.6 },
+      { bob: 7, lean: 6, legR: { a: 30, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 70, b: 66 }, armL: { a: 60, b: 68 }, tool: { on: true, a: 270, kind: "dagger" }, tool2: { on: true, a: 260, kind: "dagger" }, fade: 0.4 },
+      { bob: 8, lean: 6, legR: { a: 30, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 70, b: 66 }, armL: { a: 60, b: 68 }, tool: { on: true, a: 270, kind: "dagger" }, tool2: { on: true, a: 260, kind: "dagger" }, fade: 0.3, smoke: 0.3 },
+      { bob: 8, lean: 6, legR: { a: 30, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 70, b: 66 }, armL: { a: 60, b: 68 }, tool: { on: true, a: 270, kind: "dagger" }, tool2: { on: true, a: 260, kind: "dagger" }, fade: 0.25, smoke: 0.6 },
+      { bob: 8, lean: 6, legR: { a: 30, lift: 0 }, legL: { a: -30, lift: 0 }, armR: { a: 70, b: 66 }, armL: { a: 60, b: 68 }, tool: { on: true, a: 270, kind: "dagger" }, tool2: { on: true, a: 260, kind: "dagger" }, fade: 0.12, smoke: 0.9 }
+    ] },
+    dagger_leap: { fps: 11, loop: false, frames: [
+      { bob: 3, lean: 7, legR: { a: 30, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: -40, b: 30 }, armL: { a: -36, b: 32 }, tool: { on: true, a: 258, kind: "dagger" }, tool2: { on: true, a: 252, kind: "dagger" } },
+      { bob: -5, lean: 8, legR: { a: 70, lift: 12 }, legL: { a: 55, lift: 12 }, armR: { a: 40, b: 80 }, armL: { a: 35, b: 84 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" }, rot: 45 },
+      { bob: -10, lean: 8, legR: { a: 70, lift: 12 }, legL: { a: 55, lift: 12 }, armR: { a: 40, b: 80 }, armL: { a: 35, b: 84 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" }, rot: 115 },
+      { bob: -13, lean: 8, legR: { a: 70, lift: 12 }, legL: { a: 55, lift: 12 }, armR: { a: 40, b: 80 }, armL: { a: 35, b: 84 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" }, rot: 185 },
+      { bob: -13, lean: 8, legR: { a: 70, lift: 12 }, legL: { a: 55, lift: 12 }, armR: { a: 40, b: 80 }, armL: { a: 35, b: 84 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" }, rot: 255 },
+      { bob: -9, lean: 8, legR: { a: 70, lift: 12 }, legL: { a: 55, lift: 12 }, armR: { a: 40, b: 80 }, armL: { a: 35, b: 84 }, tool: { on: true, a: 250, kind: "dagger" }, tool2: { on: true, a: 246, kind: "dagger" }, rot: 325 },
+      { bob: -2, lean: 8, legR: { a: 40, lift: 4 }, legL: { a: -30, lift: 6 }, armR: { a: -30, b: 40 }, armL: { a: -28, b: 42 }, tool: { on: true, a: 256, kind: "dagger" }, tool2: { on: true, a: 250, kind: "dagger" } },
+      { bob: 3, lean: 7, legR: { a: 30, lift: 0 }, legL: { a: -34, lift: 0 }, armR: { a: -40, b: 30 }, armL: { a: -36, b: 32 }, tool: { on: true, a: 258, kind: "dagger" }, tool2: { on: true, a: 252, kind: "dagger" } }
+    ] },
+    dagger_climb: { fps: 8, loop: true, frames: [
+      { bob: 0, lean: 1, legR: { a: 30, lift: 7 }, legL: { a: -10, lift: 0 }, armR: { a: 150, b: 10 }, armL: { a: 124, b: 18 }, tool: { on: true, a: 100, kind: "dagger" }, tool2: { on: true, a: 96, kind: "dagger" } },
+      { bob: 1, lean: 1, legR: { a: -10, lift: 0 }, legL: { a: 30, lift: 7 }, armR: { a: 122, b: 18 }, armL: { a: 150, b: 10 }, tool: { on: true, a: 100, kind: "dagger" }, tool2: { on: true, a: 96, kind: "dagger" } },
+      { bob: 0, lean: 1, legR: { a: 30, lift: 7 }, legL: { a: -10, lift: 0 }, armR: { a: 150, b: 10 }, armL: { a: 124, b: 18 }, tool: { on: true, a: 100, kind: "dagger" }, tool2: { on: true, a: 96, kind: "dagger" } },
+      { bob: 1, lean: 1, legR: { a: -10, lift: 0 }, legL: { a: 30, lift: 7 }, armR: { a: 122, b: 18 }, armL: { a: 150, b: 10 }, tool: { on: true, a: 100, kind: "dagger" }, tool2: { on: true, a: 96, kind: "dagger" } }
     ] }
   };
 
@@ -189921,9 +190414,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     return mem;
   }
-  function findPath(world, sx, sy, gx, gy, maxNodes = 3e4, ours = false, fresh = false) {
+  function findPath(world, sx, sy, gx, gy, maxNodes = 3e4, ours = false, fresh = false, leap = null) {
     const N = world.size;
-    const key = fresh ? "" : `${ours === true ? 1 : ours === "foe" ? 2 : 0}:${sy * N + sx}:${gy * N + gx}`;
+    const key = fresh ? "" : `${leap ? "L" : ""}${ours === true ? 1 : ours === "foe" ? 2 : 0}:${sy * N + sx}:${gy * N + gx}`;
     if (key) {
       const hit = world.pathFails.get(key);
       if (hit && hit.until > world.age) {
@@ -189931,7 +190424,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         return hit.path.slice();
       }
     }
-    const blocked = (x, y) => ours && (ours === "foe" ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y);
+    const blocked = (x, y) => leap && leap.has(y * N + x) ? false : ours && (ours === "foe" ? world.foeGates : world.gates).size > 0 ? world.isBlockedFor(x, y, ours) : world.isBlocked(x, y);
     if (!world.inBounds(sx, sy) || !world.inBounds(gx, gy)) return [];
     const { g, f, parent, seen, closed, gen } = memory(N * N);
     const heap = new MinHeap(f), nb = new Uint8Array(9);
@@ -189969,7 +190462,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         if (dx && dy && (nb[4 + dx] || nb[4 + dy * 3])) continue;
         const ni = (cy + dy) * N + cx + dx;
         if (closed[ni] === gen) continue;
-        const ng = gc + (dx && dy ? SQ2 : 1);
+        const ng = gc + (dx && dy ? SQ2 : 1) + (leap ? leap.get(ni) ?? 0 : 0);
         if (seen[ni] !== gen || ng < g[ni]) {
           seen[ni] = gen;
           g[ni] = ng;
@@ -190752,7 +191245,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
   var CHASE = chase_default;
   function swingTimes(anim) {
     const a = ANIM[anim];
-    return { hitAt: (a?.hit ?? 2) / (a?.fps ?? 10), end: (a?.frames.length ?? 6) / (a?.fps ?? 10) };
+    return { hitAt: (a?.hit ?? 2) / (a?.fps ?? 10), end: (a?.frames.length ?? 6) / (a?.fps ?? 10), ...a?.hits ? { more: a.hits.map((i) => i / (a.fps ?? 10)) } : {} };
   }
   var entX = (e) => e.kind === "unit" ? e.v.x : e.a.x;
   var entY = (e) => e.kind === "unit" ? e.v.y : e.a.y;
@@ -190862,6 +191355,12 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     const v = sim2.get(target.id);
     if (!v || v.health <= 0) return;
     if (sim2.dev.god && v.team === "player") return;
+    const slip = specialistDef(v.spec);
+    if (slip?.dodge && src.unit && weaponOf(src.unit).ranged !== true && sim2.time >= (v.dodgeAt ?? 0) && sim2.frnd() < slip.dodge) {
+      v.dodgeAt = sim2.time + (slip.dodgeCd ?? 2.5);
+      v.dodgeUntil = sim2.time + 0.35;
+      return;
+    }
     const keeper = sim2.bodyguardOf(v);
     if (keeper) {
       const part = dmg * sim2.bodyguardShare();
@@ -190920,8 +191419,8 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     sim2.killUnit(v, "t\u1EED tr\u1EADn");
   }
   function startSwing(sim2, v, target) {
-    const w = weaponOf(v), { hitAt, end: end3 } = swingTimes(w.anim);
-    v.swing = { t: 0, hitAt, end: end3, target };
+    const w = weaponOf(v), { hitAt, end: end3, more } = swingTimes(w.anim);
+    v.swing = { t: 0, hitAt, end: end3, target, ...more ? { more } : {} };
     v.atkCd = swingCycle(sim2, v, w);
     v.anim = w.anim;
     v.animClock = 0;
@@ -190978,6 +191477,7 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
   }
   function tickCommon(sim2, v, dt) {
+    if (v.spec === "assassin" && v.team === "player") sim2.tickFinisher(v, dt);
     v.atkCd = Math.max(0, v.atkCd - dt);
     v.calm += dt;
     if (v.flinch > 0) v.flinch -= dt;
@@ -190985,6 +191485,9 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
       const s = v.swing, before = s.t;
       s.t += dt;
       if (before < s.hitAt && s.t >= s.hitAt) resolveSwing(sim2, v, s.target);
+      if (s.more) {
+        for (const m of s.more) if (before < m && s.t >= m) resolveSwing(sim2, v, s.target);
+      }
       if (s.t >= s.end) v.swing = null;
     }
   }
@@ -192940,6 +193443,10 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
     }
     if (ai?.assassin) {
       sim2.tickAssassin(f, dt);
+      if (ai.assassin.state === "duel") {
+        const tg = sim2.get(ai.assassin.target);
+        if (tg && tg.health > 0) engage(sim2, f, { kind: "unit", v: tg }, dt);
+      }
       sim2.moveUnit(f, dt);
       sim2.animate(f, dt);
       return;
@@ -195124,6 +195631,7 @@ ${risk.lines.join("\n")}`);
     return (sim2.toolStock.torch1 ?? 0) + sim2.wornTools.filter((w) => w.id === "torch1" && w.dur > 0).length;
   }
   function ensureTorch(sim2, v) {
+    if (specialistDef(v.spec)?.stealth) return false;
     if (v.torch) return true;
     if ((sim2.toolStock.torch1 ?? 0) > 0) {
       sim2.toolStock.torch1--;
@@ -204579,7 +205087,7 @@ ${risk.lines.join("\n")}`);
   };
 
   // src/data/characters/assassin.json
-  var assassin_default = {
+  var assassin_default2 = {
     id: "assassin",
     name: "Ng\u01B0\u1EDDi b\xED \u1EA9n",
     role: "assassin",
@@ -204839,8 +205347,33 @@ ${risk.lines.join("\n")}`);
     shape: "Th\u1EE3 r\xE8n vai u, t\u1EA1p d\u1EC1 da ch\xE1y s\xE9m, c\xE1nh tay to nh\u01B0 b\u1EAFp ch\xE2n."
   };
 
+  // src/data/characters/ba_muc.json
+  var ba_muc_default = {
+    id: "ba_muc",
+    name: "B\xE0 M\u1EF1c",
+    role: "scribe",
+    look: {
+      sex: "f",
+      skin: "#c68642",
+      hair: "#9a968c",
+      hide: "#5a4a6a",
+      pants: "#3a3040"
+    },
+    stone: {
+      armor: "hide",
+      weapon: null,
+      handtool: null
+    },
+    ancient: {
+      armor: "peasant_hood_grey",
+      weapon: null,
+      handtool: null
+    },
+    shape: "B\xE0 l\xE3o ghi s\u1ED5 c\u1EE7a l\xE0ng, t\xF3c mu\u1ED1i ti\xEAu, tay d\xEDnh m\u1EF1c, cu\u1ED1n s\u1ED5 da m\xF2n g\xF3c kh\xF4ng r\u1EDDi tay."
+  };
+
   // src/sim/characters.ts
-  var CHARACTERS = [firekeeper_default, old_master_default, merchant_default, envoy_default, sleuth_default, assassin_default, mole_default, boss_chief_default, general_default, bodyguard_default, elder_default, monk_default, apprentice_default, smith_default];
+  var CHARACTERS = [firekeeper_default, old_master_default, merchant_default, envoy_default, sleuth_default, assassin_default2, mole_default, boss_chief_default, general_default, bodyguard_default, elder_default, monk_default, apprentice_default, smith_default, ba_muc_default];
   var characterOf = (id) => id ? CHARACTERS.find((c) => c.id === id) : void 0;
   var suitOf = (c, era) => era === "ancient" ? c.ancient : c.stone;
 
@@ -206572,29 +207105,61 @@ ${risk.lines.join("\n")}`);
     const pick3 = (l) => l[Math.floor(sim2.frnd() * l.length)];
     return pick3(alive3.filter((v) => sim2.villagers.some((g) => g.wardOf === v.id))) ?? pick3(alive3.filter((v) => v.job !== "fight")) ?? pick3(alive3);
   }
-  function sendAssassin(sim2, tribeId, targetId) {
+  function sendAssassin(sim2, tribeId, targetId, opts) {
     const t = sim2.tribes.find((x) => x.id === tribeId);
     const target = targetId !== void 0 ? sim2.get(targetId) : pickTarget(sim2);
     if (!t || !target || target.team !== "player") return null;
     const fire = sim2.campfire(), fx2 = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 1 : sim2.world.start.y;
     const dx = t.camp.x - fx2, dy = t.camp.y - fy, len = Math.max(1, Math.hypot(dx, dy)), d = Math.min(AS.spawnDist, len);
-    const gx = Math.floor(fx2 + dx / len * d), gy = Math.floor(fy + dy / len * d), spot2 = sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
+    const gx = Math.floor(fx2 + dx / len * d), gy = Math.floor(fy + dy / len * d), spot2 = opts?.at ?? sim2.nearestFree(gx, gy, /* @__PURE__ */ new Set()) ?? [gx, gy];
     const f = sim2.makeVillager(spot2[0], spot2[1], "m", t.id, sim2.frnd);
     f.look.hide = "#2a2a30";
     f.look.pants = "#1c1c22";
     f.weapon = AS.weapon;
-    f.armor = null;
+    f.armor = "assassin";
+    f.spec = "assassin";
     f.speed *= AS.speedMul;
-    f.ai = { role: "raider", camp: t.camp, wander: 0, goal: null, raid: 0, assassin: { target: target.id, state: "stalk", hidden: true, revealedUntil: 0, repath: 0, born: sim2.time } };
+    f.ai = { role: "raider", camp: t.camp, wander: 0, goal: null, raid: 0, assassin: { target: target.id, state: "stalk", hidden: true, revealedUntil: 0, repath: 0, born: sim2.time, ...opts?.shown ? { shown: true } : {} } };
     sim2.addFoe(f);
     t.unitIds.push(f.id);
     applyStats(sim2, f);
+    f.maxHealth = Math.max(1, Math.round(f.maxHealth * AS.hpMul));
     f.health = f.maxHealth;
     return f;
   }
   var walkTo2 = (sim2, u, x, y) => {
     if (dist(u, { x, y }) > 1.2 && !u.path.length) u.path = sim2.pathTo(u, Math.floor(x), Math.floor(y), 3e3);
   };
+  var DIR = { right: [1, 0], left: [-1, 0], front: [0, 1], back: [0, -1] };
+  var crowdAround = (sim2, t) => sim2.villagers.filter((v) => v.id !== t.id && v.team === "player" && v.health > 0 && v.job === "fight" && v.inside === null && dist(v, t) <= AS.crowdRadius).length;
+  var goHome = (f, a, sim2) => {
+    endPass(f, a);
+    a.state = "flee";
+    a.fledAt ?? (a.fledAt = sim2.time);
+  };
+  function endPass(f, a) {
+    if (a.baseSpeed !== void 0) {
+      f.speed = a.baseSpeed;
+      a.baseSpeed = void 0;
+    }
+    a.dash = false;
+  }
+  function startPass(sim2, f, a, target, finish3 = false) {
+    const d = Math.max(0.1, dist(f, target)), ux = (target.x - f.x) / d, uy = (target.y - f.y) / d;
+    const bx = target.x + ux * AS.passBeyond, by = target.y + uy * AS.passBeyond, spot2 = sim2.nearestFree(Math.floor(bx), Math.floor(by), /* @__PURE__ */ new Set()) ?? [Math.floor(bx), Math.floor(by)];
+    a.state = "pass";
+    a.passStart = sim2.time;
+    a.hitDone = false;
+    a.dash = true;
+    a.engaged = true;
+    a.passTarget = finish3 ? target.id : void 0;
+    if (!finish3) a.passes = (a.passes ?? 0) + 1;
+    if (a.baseSpeed === void 0) {
+      a.baseSpeed = f.speed;
+      f.speed *= AS.passMul;
+    }
+    f.path = sim2.pathTo(f, spot2[0], spot2[1], 3e3);
+  }
   function tickAssassin(sim2, f, dt) {
     const a = f.ai?.assassin;
     if (!a || !f.ai) return;
@@ -206605,45 +207170,187 @@ ${risk.lines.join("\n")}`);
       if (near2) a.revealedUntil = Math.max(a.revealedUntil, sim2.time + AS.revealSeconds);
       a.hidden = sim2.time >= a.revealedUntil;
     }
+    if (a.shown || a.engaged) a.hidden = false;
     const target = sim2.get(a.target);
-    if (a.state === "stalk" && (!target || target.health <= 0)) a.state = "flee";
+    const gone = !target || target.health <= 0;
+    if ((a.state === "stalk" || a.state === "pass" || a.state === "duel") && (gone || a.state === "stalk" && sim2.time - a.born > AS.giveUpSeconds)) goHome(f, a, sim2);
     if (a.state === "stalk" && target) {
-      if (dist(f, target) <= 1.3) {
-        const dmg = target.maxHealth * AS.strikeMult;
-        sim2.hurt({ kind: "unit", id: target.id }, dmg, "pierce", { x: f.x, y: f.y }, { unit: f });
-        a.revealedUntil = sim2.time + AS.revealSeconds;
-        a.hidden = false;
-        a.state = "flee";
-        a.fledAt = sim2.time;
-        f.path = [];
-        sim2.say(target.health > 0 ? `C\xF3 k\u1EBB \xE1m s\xE1t ${target.name}! ${target.name} c\xF2n s\u1ED1ng.` : `${target.name} \u0111\xE3 b\u1ECB \xE1m s\xE1t.`);
-      } else {
-        if (f.path.length === 0 || sim2.time - (a.pathAt ?? 0) > 2) {
-          a.pathAt = sim2.time;
-          f.path = [];
+      const d = dist(f, target), crowd2 = crowdAround(sim2, target) >= AS.crowd;
+      if (crowd2) {
+        a.dash = false;
+        if (d <= AS.lurkDist) f.path = [];
+        else if (!f.path.length) walkTo2(sim2, f, target.x, target.y);
+        return;
+      }
+      if (d <= AS.dashRange && sim2.time >= (a.nextPass ?? 0)) {
+        startPass(sim2, f, a, target);
+        return;
+      }
+      const dir = DIR[target.facing] ?? DIR.right, back2 = d > 6 ? 4 : AS.backDist, bx = target.x - dir[0] * back2, by = target.y - dir[1] * back2;
+      const gx = d <= 2.2 ? target.x : bx, gy = d <= 2.2 ? target.y : by;
+      if (!f.path.length || sim2.time - (a.pathAt ?? 0) > 0.5 && (!a.aim || Math.hypot(a.aim[0] - gx, a.aim[1] - gy) > 1.5)) {
+        a.pathAt = sim2.time;
+        a.aim = [gx, gy];
+        if (dist(f, { x: gx, y: gy }) > 0.8) {
+          const p = sim2.pathTo(f, Math.floor(gx), Math.floor(gy), 3e3);
+          if (p.length) f.path = p;
         }
-        walkTo2(sim2, f, target.x, target.y);
       }
-    }
-    if (a.state === "flee") {
+      a.dash = false;
+    } else if (a.state === "duel" && target) {
+      if (sim2.time >= (a.nextPass ?? 0)) {
+        a.nextPass = sim2.time + 0.3;
+        const weak = sim2.villagers.find((v) => v.team === "player" && v.health > 0 && v.maxHealth > 0 && v.health < v.maxHealth * AS.executeBelow && v.inside === null && dist(f, v) <= AS.executeRange && (v.id === a.target || v.fight.target?.id === f.id || dist(f, v) <= 2.5));
+        if (weak) startPass(sim2, f, a, weak, true);
+      }
+    } else if (a.state === "pass" && target) {
+      const vic = a.passTarget !== void 0 ? sim2.get(a.passTarget) ?? target : target, finish3 = a.passTarget !== void 0;
+      if (!a.hitDone && dist(f, vic) <= 1.2) {
+        a.hitDone = true;
+        a.revealedUntil = sim2.time + AS.revealSeconds;
+        const first = !finish3 && a.passes === 1;
+        sim2.hurt({ kind: "unit", id: vic.id }, finish3 ? vic.maxHealth * 10 : vic.maxHealth * AS.strikeMult * (first ? 1 : AS.followMult), "pierce", { x: f.x, y: f.y }, { unit: f });
+        if (first) sim2.say(vic.health > 0 ? `C\xF3 k\u1EBB \xE1m s\xE1t ${vic.name}! ${vic.name} c\xF2n s\u1ED1ng.` : `${vic.name} \u0111\xE3 b\u1ECB \xE1m s\xE1t.`);
+      }
+      if (!f.path.length || sim2.time - (a.passStart ?? 0) > 2.5) {
+        endPass(f, a);
+        f.path = [];
+        if (finish3) {
+          a.passTarget = void 0;
+          a.state = "duel";
+          a.nextPass = sim2.time + 0.3;
+          f.fight.target = { kind: "unit", id: target.id };
+        } else if (target.health <= 0) goHome(f, a, sim2);
+        else if ((a.passes ?? 0) < AS.passes) {
+          a.state = "stalk";
+          a.nextPass = sim2.time + AS.passPause;
+        } else {
+          a.state = "duel";
+          f.fight.target = { kind: "unit", id: target.id };
+        }
+      }
+    } else if (a.state === "flee") {
       a.fledAt ?? (a.fledAt = sim2.time);
+      a.dash = false;
+      if (a.vanishAt !== void 0) {
+        f.path = [];
+        if (sim2.time - a.vanishAt >= AS.vanishSeconds) {
+          const t = sim2.tribes.find((x) => x.id === f.team);
+          if (t) t.unitIds = t.unitIds.filter((id) => id !== f.id);
+          sim2.removeFoe(f);
+        }
+        return;
+      }
+      if ((a.strikeUntil ?? 0) > sim2.time) {
+        f.path = [];
+        return;
+      }
       walkTo2(sim2, f, f.ai.camp.x, f.ai.camp.y);
-      if (dist(f, f.ai.camp) < 4 || sim2.time - a.fledAt > AS.fleeSeconds) {
-        const t = sim2.tribes.find((x) => x.id === f.team);
-        if (t) t.unitIds = t.unitIds.filter((id) => id !== f.id);
-        sim2.removeFoe(f);
+      if (dist(f, f.ai.camp) < 4 || sim2.time - a.fledAt > AS.fleeSeconds) a.vanishAt = sim2.time;
+    }
+  }
+  function tickFinisher(sim2, v, dt) {
+    void dt;
+    const x = v.exec;
+    if (x) {
+      const vic2 = sim2.get(x.id);
+      if (!x.hit && vic2 && vic2.health > 0 && dist(v, vic2) <= 1.2) {
+        x.hit = true;
+        sim2.hurt({ kind: "unit", id: vic2.id }, vic2.maxHealth * 10, "pierce", { x: v.x, y: v.y }, { unit: v });
+      }
+      if (!v.path.length || sim2.time - x.t > 2 || v.health <= 0) {
+        v.speed = x.base;
+        v.exec = void 0;
+        v.fight.obey = false;
+        v.path = [];
+        if (v.phase === "move") v.phase = "idle";
+      }
+      return;
+    }
+    if (v.health <= 0 || v.down > 0 || v.inside !== null || v.job !== "fight" || v.fight.obey || sim2.time < (v.execAt ?? 0)) return;
+    v.execAt = sim2.time + 0.3;
+    const vic = sim2.foes.find((f) => f.health > 0 && f.maxHealth > 0 && f.health < f.maxHealth * AS.executeBelow && dist(v, f) <= AS.executeRange && (f.fight.target?.id === v.id || v.fight.target?.id === f.id));
+    if (!vic) return;
+    const d = Math.max(0.1, dist(v, vic)), ux = (vic.x - v.x) / d, uy = (vic.y - v.y) / d, bx = vic.x + ux * AS.passBeyond, by = vic.y + uy * AS.passBeyond;
+    const spot2 = sim2.nearestFree(Math.floor(bx), Math.floor(by), /* @__PURE__ */ new Set()) ?? [Math.floor(bx), Math.floor(by)];
+    v.swing = null;
+    v.fight.target = null;
+    v.exec = { id: vic.id, t: sim2.time, hit: false, base: v.speed };
+    v.speed *= AS.passMul;
+    v.path = sim2.pathTo(v, spot2[0], spot2[1], 3e3);
+    v.phase = "move";
+    v.fight.obey = true;
+  }
+  function assassinPair(sim2) {
+    const t = sim2.tribes.find((x) => x.state === "free" && sim2.tribeWilling(x.id)) ?? sim2.tribes.find((x) => x.state === "free" && !x.boss && !x.bandit);
+    const def = specialistDef("assassin");
+    if (!t || !def) return "Kh\xF4ng c\xF3 l\xE0ng n\xE0o \u0111\u1EC3 l\u1EA5y \u0111\u1ECBch";
+    if (!sim2.tribeWilling(t.id)) t.relation = -100;
+    if (sim2.era !== "ancient") sim2.setEra("ancient");
+    const fire = sim2.campfire(), fx2 = fire ? fire.x + 1 : sim2.world.start.x, fy = fire ? fire.y + 5 : sim2.world.start.y + 4;
+    const a = sim2.nearestFree(Math.floor(fx2), Math.floor(fy), /* @__PURE__ */ new Set()) ?? [Math.floor(fx2), Math.floor(fy)];
+    const mine2 = sim2.makeVillager(a[0], a[1], "m", "player", sim2.frnd);
+    sim2.villagers.push(mine2);
+    sim2.registerUnit(mine2);
+    sim2.setJob([mine2.id], "fight");
+    mine2.arm = "foot";
+    mine2.spec = def.id;
+    mine2.rank = Math.max(4, Math.min(MAX_RANK, sim2.fireLevel()));
+    mine2.manualGear = true;
+    sim2.giveGear([mine2.id], def.weapon, "weapon");
+    sim2.giveGear([mine2.id], def.armor, "armor");
+    applyStats(sim2, mine2);
+    mine2.health = mine2.maxHealth;
+    sim2.orderHold([mine2.id]);
+    for (const [dx, level] of [[2, 1], [4, 6]]) {
+      const lv = Math.min(level, maxLevel("fence", "ancient"));
+      for (let y = a[1] - 6; y <= a[1] + 6; y++) {
+        const x = a[0] + dx;
+        if (sim2.world.isBlocked(x, y)) continue;
+        try {
+          const w = sim2.addBuilding("fence", x, y, true);
+          w.level = lv;
+          w.hp = Math.max(w.hp, 1);
+        } catch {
+        }
       }
     }
+    sim2.wallCache = null;
+    const b = sim2.nearestFree(a[0] + 6, a[1], /* @__PURE__ */ new Set()) ?? [a[0] + 6, a[1]], r10 = rankDef("foot", MAX_RANK);
+    const foe = sim2.makeVillager(b[0], b[1], "m", t.id, sim2.frnd);
+    foe.weapon = r10?.weapon ?? "bronze_sword";
+    foe.armor = r10?.armor ?? "bronze";
+    foe.arm = "foot";
+    foe.rank = MAX_RANK;
+    foe.ai = { role: "raider", camp: t.camp, wander: 0, goal: null, raid: 0 };
+    sim2.addFoe(foe);
+    t.unitIds.push(foe.id);
+    for (const s of ["hp", "atk"]) foe.fac[s] = rankStatMult(MAX_RANK, s) * branchStatMult("foot", s);
+    applyStats(sim2, foe);
+    foe.health = foe.maxHealth;
+    foe.speed = 0;
+    sim2.fogDirty = true;
+    return { mine: mine2, foe };
+  }
+  function assassinTest(sim2) {
+    const t = sim2.tribes.find((x) => x.state === "free" && !x.boss && !x.bandit) ?? sim2.tribes.find((x) => !x.bandit);
+    if (!t) return "Kh\xF4ng c\xF3 l\xE0ng n\xE0o \u0111\u1EC3 g\u1EEDi s\xE1t th\u1EE7";
+    const target = pickTarget(sim2);
+    if (!target) return "Kh\xF4ng c\xF3 d\xE2n n\xE0o \u0111\u1EC3 l\xE0m m\u1EE5c ti\xEAu";
+    const spot2 = sim2.nearestFree(Math.floor(target.x) + 9, Math.floor(target.y), /* @__PURE__ */ new Set()) ?? [Math.floor(target.x) + 9, Math.floor(target.y)];
+    const f = sendAssassin(sim2, t.id, target.id, { at: [spot2[0], spot2[1]], shown: true });
+    return f ? { f, target } : "Kh\xF4ng g\u1EEDi \u0111\u01B0\u1EE3c s\xE1t th\u1EE7";
   }
 
   // src/data/walls.json
   var walls_default = {
-    _note: "Walkable walls (doc PLAN.md, Phase 3): from `minLevel` the fences, gates and towers have a top that soldiers (ours and the enemy's) stand and walk on, in a layer of their own over the ground. Stairs: the ground tiles next to a gate or a tower (stairKinds) lead up to it, from both sides. A soldier on a wall is drawn `lift` pixels higher; a blow of the sword or the spear passes only between two units of the same layer (the two on the same tile of the stairs excepted), a missile goes any way; an archer on a wall shoots as one in a tower (`archer`). The tops are looked at again every `refreshSeconds`.",
+    _note: "vault: a unit whose specialist has `vault` (the assassin) crosses a fence of ours or the enemy: a low one (below minLevel) he jumps (path cost jumpCost, speed x jumpSpeed), a high wall he climbs (climbCost, x climbSpeed). Walkable walls (doc PLAN.md, Phase 3): from `minLevel` the fences, gates and towers have a top that soldiers (ours and the enemy's) stand and walk on, in a layer of their own over the ground. Stairs: the ground tiles next to a gate or a tower (stairKinds) lead up to it, from both sides. A soldier on a wall is drawn `lift` pixels higher; a blow of the sword or the spear passes only between two units of the same layer (the two on the same tile of the stairs excepted), a missile goes any way; an archer on a wall shoots as one in a tower (`archer`). The tops are looked at again every `refreshSeconds`.",
     minLevel: { default: 6, tower: 6 },
     kinds: ["fence", "gate", "tower"],
     stairKinds: ["gate", "tower"],
     lift: 26,
     archer: { damage: 1.25, range: 2 },
+    vault: { jumpCost: 0.5, climbCost: 1.5, jumpSpeed: 0.7, climbSpeed: 0.45 },
     refreshSeconds: 1
   };
 
@@ -206663,13 +207370,22 @@ ${risk.lines.join("\n")}`);
         if (STAIR_KINDS.has(b.kind)) edge2.push({ x, y });
       }
     }
+    const fences = /* @__PURE__ */ new Map(), leap = /* @__PURE__ */ new Map(), V = walls_default.vault;
+    for (const b of sim2.buildings) {
+      if (b.kind !== "fence" || !b.done || b.hp <= 0) continue;
+      const f = footOf(b), high = b.level >= (MIN.fence ?? MIN.default);
+      for (let y = b.y; y < b.y + f.h; y++) for (let x = b.x; x < b.x + f.w; x++) {
+        fences.set(y * N + x, b.level);
+        leap.set(y * N + x, high ? V.climbCost : V.jumpCost);
+      }
+    }
     const stairs = [];
     for (const { x, y } of edge2) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const gx = x + dx, gy = y + dy;
       if (!sim2.world.inBounds(gx, gy) || tiles.has(gy * N + gx) || sim2.world.isBlocked(gx, gy)) continue;
       stairs.push({ top: y * N + x, ground: gy * N + gx });
     }
-    return { at: sim2.time, tiles, stairs };
+    return { at: sim2.time, tiles, stairs, fences, leap };
   }
   function tops(sim2) {
     if (!sim2.wallCache || sim2.time - sim2.wallCache.at >= walls_default.refreshSeconds || sim2.time < sim2.wallCache.at) sim2.wallCache = build2(sim2);
@@ -206680,6 +207396,28 @@ ${risk.lines.join("\n")}`);
     const t = tops(sim2);
     return t.tiles.size > 0 && t.tiles.has(Math.floor(v.y) * sim2.world.size + Math.floor(v.x));
   };
+  var canVault = (v) => !!specialistDef(v.spec)?.vault;
+  var fenceLevel = (sim2, x, y) => tops(sim2).fences.get(Math.floor(y) * sim2.world.size + Math.floor(x)) ?? 0;
+  var vaultAt = (sim2, v, x, y) => canVault(v) && fenceLevel(sim2, x, y) > 0;
+  var vaultCosts = (sim2, v) => {
+    if (!canVault(v)) return null;
+    const l = tops(sim2).leap;
+    return l.size ? l : null;
+  };
+  var isHigh = (level) => level >= (MIN.fence ?? MIN.default);
+  function vaultPose(sim2, v) {
+    if (!canVault(v)) return null;
+    let lvl = fenceLevel(sim2, v.x, v.y);
+    if (!lvl && v.path.length) {
+      const [px, py] = v.path[0];
+      if (Math.hypot(px + 0.5 - v.x, py + 0.5 - v.y) <= 0.45) lvl = fenceLevel(sim2, px, py);
+    }
+    return lvl ? isHigh(lvl) ? "dagger_climb" : "dagger_leap" : null;
+  }
+  function vaultSpeed(sim2, v) {
+    const pose = vaultPose(sim2, v);
+    return pose === "dagger_climb" ? walls_default.vault.climbSpeed : pose === "dagger_leap" ? walls_default.vault.jumpSpeed : 1;
+  }
   function bfs(tiles, from, N) {
     const dist3 = /* @__PURE__ */ new Map([[from, 0]]), prev = /* @__PURE__ */ new Map(), queue = [from];
     for (let i = 0; i < queue.length; i++) {
@@ -208385,7 +209123,7 @@ ${risk.lines.join("\n")}`);
   function unstickWalker(sim2, v, dt) {
     if (v.inside !== null) return;
     const w = sim2.world, ours = passOf(v);
-    if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v)) {
+    if ((v.phase === "idle" || v.phase === "wait") && !v.slide && !v.path.length && w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v) && !sim2.vaultAt(v, v.x, v.y)) {
       const spot2 = freeSpotNear(sim2, v.x, v.y);
       if (spot2) {
         v.x = spot2[0];
@@ -208398,7 +209136,7 @@ ${risk.lines.join("\n")}`);
       return;
     }
     const goal = v.path[v.path.length - 1];
-    const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours) && !sim2.topAt(v.path[0][0], v.path[0][1]);
+    const blocked = v.path.length > 1 && w.isBlockedFor(v.path[0][0], v.path[0][1], ours) && !sim2.topAt(v.path[0][0], v.path[0][1]) && !sim2.vaultAt(v, v.path[0][0], v.path[0][1]);
     const p = progress.get(v);
     if (!p) progress.set(v, { x: v.x, y: v.y, t: 0 });
     else {
@@ -208414,7 +209152,7 @@ ${risk.lines.join("\n")}`);
     const stuck = !!p && p.t === 99;
     if (!blocked && !stuck) return;
     progress.delete(v);
-    const [gx, gy] = goal, standing3 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v) ? freeSpotNear(sim2, v.x, v.y) : null;
+    const [gx, gy] = goal, standing3 = w.isBlockedFor(Math.floor(v.x), Math.floor(v.y), ours) && !sim2.onWall(v) && !sim2.vaultAt(v, v.x, v.y) ? freeSpotNear(sim2, v.x, v.y) : null;
     if (standing3) {
       v.x = standing3[0];
       v.y = standing3[1];
@@ -208439,7 +209177,7 @@ ${risk.lines.join("\n")}`);
   }
   function moveUnit(sim2, v, dt) {
     unstickWalker(sim2, v, dt);
-    const walk2 = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * sim2.mountSpeed(v) * (sim2.warIds.has(v.id) ? sim2.march.speed * (v.hurry ? 2.5 : v.job === "supply" ? 1.25 : 1) : 1);
+    const walk2 = v.speed * WEATHER[sim2.weather].speed * (v.phase === "flee" ? 1.3 : 1) * sim2.mountSpeed(v) * sim2.vaultSpeed(v) * (sim2.warIds.has(v.id) ? sim2.march.speed * (v.hurry ? 2.5 : v.job === "supply" ? 1.25 : 1) : 1);
     if (v.swing) return;
     let left = walk2 * dt;
     while (left > 0 && v.path.length) {
@@ -208488,8 +209226,27 @@ ${risk.lines.join("\n")}`);
     };
     const ready = v.phase === "fight" || v.fight.mode !== "none" && !post;
     const carrying = !!v.weapon && (v.job === "fight" || v.job === "hunt" || !!v.ai && v.ai.role !== "civ");
+    const kill = v.ai?.assassin;
     if (v.down > 0) anim = "down";
-    else if (v.swing) {
+    else if (kill?.vanishAt !== void 0) {
+      anim = "dagger_vanish";
+      hold = armed();
+    } else if ((v.dodgeUntil ?? 0) > sim2.time) {
+      anim = "dagger_dodge";
+      hold = armed();
+    } else if (v.exec) {
+      anim = "dagger_dash";
+      hold = armed();
+    } else if (sim2.vaultPose(v)) {
+      anim = sim2.vaultPose(v);
+      hold = armed();
+    } else if (kill && (kill.strikeUntil ?? 0) > sim2.time) {
+      anim = "dagger_stab";
+      hold = armed();
+    } else if (kill && walking) {
+      anim = kill.dash ? "dagger_dash" : "dagger_run";
+      hold = armed();
+    } else if (v.swing) {
       anim = poseOf(v.weapon, "attack", post);
       hold = armed();
     } else if (v.flinch > 0) anim = "hit";
@@ -208537,7 +209294,7 @@ ${risk.lines.join("\n")}`);
   }
   function standTile(sim2, v) {
     const fx2 = Math.floor(v.x), fy = Math.floor(v.y);
-    if (!sim2.world.isBlockedFor(fx2, fy, passOf(v))) return [fx2, fy];
+    if (!sim2.world.isBlockedFor(fx2, fy, passOf(v)) || sim2.vaultAt(v, fx2, fy)) return [fx2, fy];
     let best = [fx2, fy], bd = Infinity;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const x = fx2 + dx, y = fy + dy;
@@ -208551,10 +209308,11 @@ ${risk.lines.join("\n")}`);
     return best;
   }
   function pathTo(sim2, v, gx, gy, maxNodes = 14e3, fresh = false) {
-    const up = sim2.wallPath(v, gx, gy, (a, b, c, d) => findPath(sim2.world, a, b, c, d, maxNodes, passOf(v), fresh));
+    const leap = sim2.vaultCosts(v);
+    const up = sim2.wallPath(v, gx, gy, (a, b, c, d) => findPath(sim2.world, a, b, c, d, maxNodes, passOf(v), fresh, leap));
     if (up) return up;
     const [sx, sy] = standTile(sim2, v), off = sx !== Math.floor(v.x) || sy !== Math.floor(v.y);
-    const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh);
+    const p = gx === sx && gy === sy ? [] : findPath(sim2.world, sx, sy, gx, gy, maxNodes, passOf(v), fresh, leap);
     return off ? [[sx, sy], ...p] : p;
   }
   function routeTo(sim2, v, tiles, tries = 3, maxNodes = 14e3) {
@@ -209274,7 +210032,7 @@ ${risk.lines.join("\n")}`);
           v.facing = "front";
         } else {
           sim2.exitBuilding(v);
-          goHome(sim2, v);
+          goHome2(sim2, v);
         }
       } else {
         sim2.animate(v, dt);
@@ -209286,7 +210044,7 @@ ${risk.lines.join("\n")}`);
     const fighting = brained && (v.phase === "fight" || v.phase === "flee" || v.phase === "rescue");
     const asleep = v.phase === "goHome" || v.phase === "sleep";
     if (sim2.shouldSleep(v, fighting)) {
-      if (!asleep) goHome(sim2, v);
+      if (!asleep) goHome2(sim2, v);
     } else if (asleep && !sim2.hides(v)) {
       if (atWork(sim2, v) && v.phase === "sleep") v.phase = "inside";
       else {
@@ -209309,7 +210067,7 @@ ${risk.lines.join("\n")}`);
     const b = v.inside === null ? void 0 : sim2.getBuilding(v.inside);
     return !!b && b.staff.includes(v.id);
   }
-  function goHome(sim2, v) {
+  function goHome2(sim2, v) {
     if (sim2.warIds.has(v.id)) {
       sim2.resetTask(v);
       sim2.clearCombat(v);
@@ -213755,7 +214513,7 @@ ${risk.lines.join("\n")}`);
     }
     /** → villagers.goHome */
     goHome(v) {
-      return goHome(this, v);
+      return goHome2(this, v);
     }
     /** → roles.warLock */
     warLock() {
@@ -214061,6 +214819,18 @@ ${risk.lines.join("\n")}`);
     sendAssassin(tribeId, targetId) {
       return sendAssassin(this, tribeId, targetId);
     }
+    /** → specialists.assassinPair: the dev test of the assassin's movement (one of ours, one enemy) */
+    assassinPair() {
+      return assassinPair(this);
+    }
+    /** → specialists.assassinTest: the dev pair (a shown killer and his target) */
+    assassinTest() {
+      return assassinTest(this);
+    }
+    /** → specialists.tickFinisher: the assassin of ours finishing a nearly dead enemy */
+    tickFinisher(v, dt) {
+      return tickFinisher(this, v, dt);
+    }
     /** → specialists.tickAssassin */
     tickAssassin(f, dt) {
       return tickAssassin(this, f, dt);
@@ -214079,6 +214849,21 @@ ${risk.lines.join("\n")}`);
     }
     wallArcher() {
       return wallArcher();
+    }
+    /** → walltop.vaultAt: a fence tile this unit (the assassin) may jump or climb */
+    vaultAt(v, x, y) {
+      return vaultAt(this, v, x, y);
+    }
+    /** → walltop.vaultCosts: the fence tiles and their cost for his path search (null: he cannot cross) */
+    vaultCosts(v) {
+      return vaultCosts(this, v);
+    }
+    /** → walltop.vaultPose / vaultSpeed: the leap or climb pose while he crosses, and his speed then */
+    vaultPose(v) {
+      return vaultPose(this, v);
+    }
+    vaultSpeed(v) {
+      return vaultSpeed(this, v);
     }
     /** → walltop.topAt */
     topAt(x, y) {
@@ -216005,7 +216790,9 @@ ${risk.lines.join("\n")}`);
   // src/ui/dialogue.ts
   var busts = /* @__PURE__ */ new Map();
   function portraitOf(c, unitId) {
-    const v = c.sim.get(unitId);
+    return portraitFrom(c, c.sim.get(unitId));
+  }
+  function portraitFrom(c, v) {
     const out = document.createElement("canvas");
     if (!v) {
       out.width = out.height = 1;
@@ -216232,6 +217019,912 @@ ${risk.lines.join("\n")}`);
       if (!v || !this.full || v.line < v.lines.length - 1 || !v.choices[pos] || performance.now() - this.fullAt < ENC.inputGuardMs) return;
       const e = v.choices[pos].blocked ? v.choices[pos].blocked : this.c.sim.encounterChoose(v.choices[pos].index);
       if (e) this.c.toast(e);
+    }
+  };
+
+  // src/data/stages/bdd_1_1.json
+  var bdd_1_1_default = {
+    _note: "C\u1EA3nh 1.1 Ba D\u1EA5u \u1EA4n (doc/Ba D\u1EA5u \u1EA4n \u2013 K\u1ECBch b\u1EA3n chi ti\u1EBFt.md) ch\u1EA1y tr\xEAn s\xE2n kh\u1EA5u ri\xEAng (ui/stage.ts), kh\xF4ng d\xF9ng b\u1EA3n \u0111\u1ED3. To\u1EA1 \u0111\u1ED9 s\xE2n kh\u1EA5u 1800x900, \u0111\u01B0\u1EDDng ch\xE2n tr\u1EDDi y=560, camera = [x, y, zoom] (zoom 1 nh\xECn cao 700 \u0111\u01A1n v\u1ECB). M\u1ED7i shot: stage (hall | insert_book | river_far), dur = th\u1EDDi gian t\u1ED1i thi\u1EC3u c\u1EE7a d\xE3y s\u1EF1 ki\u1EC7n (gi\xE2y), camDur = th\u1EDDi gian camera ch\u1EA1y (m\u1EB7c \u0111\u1ECBnh dur), cam = [x,y,z] ho\u1EB7c {from,to}, blur = l\xE0m m\u1EDD l\u1EDBp L0 v\xE0 L1. S\u1EF1 ki\u1EC7n: t = gi\xE2y t\xEDnh t\u1EEB \u0111\u1EA7u shot (\u0111\u1ED3ng h\u1ED3 s\u1EF1 ki\u1EC7n d\u1EEBng khi \u0111ang c\xF3 l\u1EDDi tho\u1EA1i ho\u1EB7c l\u1EF1a ch\u1ECDn). do = pose | place | move | say | choice | porters | crowd | fade. Pose ch\u01B0a c\xF3 clip ri\xEAng (flip_book, lean_in, lean_back, look_up, look_down, tap, sit) \u0111\u01B0\u1EE3c gi\u1EA3 b\u1EB1ng nghi\xEAng/nh\xFAn sprite idle. D\u1EA5u \u1EA9n (marks) ghi s\u1EB5n nh\u01B0ng ch\u01B0a n\u1ED1i v\xE0o game; ch\u1EC9 c\u1EDD (flag) \u0111\u01B0\u1EE3c ghi qua sim.setStoryFlag. Ch\u01B0a c\xF3 \xE2m thanh (sfx) v\xE0 ch\u01B0a c\xF3 c\u1EA3nh 1.2.",
+    id: "bdd_1_1",
+    title: "C\u1EA3nh 1.1. \u0110\u1EA1i s\u1EA3nh v\u1EEBa x\xE2y xong",
+    timeout: 60,
+    cast: {
+      muc: { char: "ba_muc", name: "B\xE0 M\u1EF1c", x: 1e3, y: 700, face: "front", pose: "sit" },
+      chu: { name: "Ch\u1EE7 L\xE0ng", look: { sex: "m", skin: "#e0ac69", hair: "#3b2a1a", hide: "#8a6a3a", pants: "#4a4032" }, outfit: "peasant_hood_brown", x: -400, y: 650, face: "right", pose: "idle", hidden: true }
+    },
+    shots: [
+      {
+        id: "1",
+        stage: "hall",
+        dur: 3,
+        cam: { from: [800, 300, 1], to: [800, 480, 1] },
+        events: [
+          { t: 0, do: "fade", from: 1, to: 0, dur: 1.6 }
+        ]
+      },
+      {
+        id: "2",
+        stage: "insert_book",
+        dur: 2,
+        cam: [900, 450, 1],
+        events: []
+      },
+      {
+        id: "3",
+        stage: "hall",
+        dur: 1.5,
+        cam: [980, 520, 1.6],
+        blur: true,
+        events: [
+          { t: 0, do: "pose", who: "muc", pose: "flip_book" },
+          { t: 0.6, do: "say", who: "muc", expr: "b\xECnh th\u01B0\u1EDDng", text: "S\u1ED5 n\xE0y ghi t\u1EEB h\u1ED3i l\xE0ng c\xF2n xin l\u1EEDa nh\xE0 h\xE0ng x\xF3m. Ch\u1EEF x\u1EA5u, m\xE0 con s\u1ED1 th\xEC th\u1EADt." },
+          { t: 0.7, do: "pose", who: "muc", pose: "lean_in" },
+          { t: 0.8, do: "say", who: "muc", expr: "b\xECnh th\u01B0\u1EDDng", text: "Th\u1EADt l\xE0 th\u1EBF n\xE0y: h\u1EBFt th\xE1ng n\xE0y, h\u1EBFt g\u1EA1o." }
+        ]
+      },
+      {
+        id: "4",
+        stage: "hall",
+        dur: 3,
+        cam: { from: [980, 520, 1.4], to: [980, 520, 1.3] },
+        events: [
+          { t: 0, do: "pose", who: "muc", pose: "flip_book" },
+          { t: 0.2, do: "porters", dur: 2.6 },
+          { t: 1, do: "pose", who: "muc", pose: "look_up" },
+          { t: 2.2, do: "pose", who: "muc", pose: "look_down" }
+        ]
+      },
+      {
+        id: "5",
+        stage: "hall",
+        dur: 4,
+        cam: { from: [300, 520, 1.2], to: [800, 520, 1.2] },
+        ease: "linear",
+        events: [
+          { t: 0, do: "place", who: "chu", at: [230, 650], face: "right" },
+          { t: 0, do: "move", who: "chu", to: [880, 770], dur: 3.6, pose: "walk", face: "right" }
+        ]
+      },
+      {
+        id: "6",
+        stage: "hall",
+        dur: 2.4,
+        camDur: 6,
+        cam: { from: [900, 520, 1.3], to: [900, 520, 1.5] },
+        events: [
+          { t: 0, do: "pose", who: "muc", pose: "idle", face: "left" },
+          { t: 0.4, do: "say", who: "muc", expr: "b\xECnh th\u01B0\u1EDDng", text: "Anh ch\u1ECB t\u1EDBi \u0111\xFAng l\xFAc. Ta \u0111ang \u0111\u1EBFm." },
+          {
+            t: 0.5,
+            do: "choice",
+            default: 0,
+            options: [
+              {
+                text: "B\xE0 c\xF3 c\xE1ch g\xEC kh\xF4ng?",
+                say: "B\xE0 c\xF3 c\xE1ch g\xEC kh\xF4ng?",
+                flag: "bdd.1_1.A",
+                marks: "Nh\xE2n +1",
+                reply: [{ who: "muc", expr: "b\xECnh th\u01B0\u1EDDng", text: "C\xE1ch th\xEC ta kh\xF4ng c\xF3. Ta c\xF3 kinh nghi\u1EC7m. Kinh nghi\u1EC7m b\u1EA3o r\u1EB1ng khi m\u1ED9t l\xE0ng \u0111\xF3i m\xE0 v\u1EEBa th\u1EAFng tr\u1EADn, th\u1EBF n\xE0o c\u0169ng c\xF3 ng\u01B0\u1EDDi t\u1EDBi." }]
+              },
+              {
+                text: "\u0110\u1EEBng l\xE0m t\xF4i s\u1EE3. N\xF3i th\u1EB3ng \u0111i.",
+                say: "\u0110\u1EEBng l\xE0m t\xF4i s\u1EE3. N\xF3i th\u1EB3ng \u0111i.",
+                flag: "bdd.1_1.B",
+                marks: "Uy +1",
+                reply: [{ who: "muc", expr: "c\u01B0\u1EDDi kh\u1EBD", text: "N\xF3i th\u1EB3ng th\xEC \u0111\u1EEBng ch\u1EA1y ra \u0111\xF3n. K\u1EBB n\xE0o \u0111\xF3n v\u1ED9i th\u01B0\u1EDDng b\u1ECB nh\u1EADn l\xE0m ng\u01B0\u1EDDi nh\xE0 lu\xF4n." }]
+              },
+              {
+                text: "(Im l\u1EB7ng, nh\xECn cu\u1ED1n s\u1ED5)",
+                flag: "bdd.1_1.C",
+                marks: "T\xEDn +1, L\u1ED9 +1",
+                reply: [{ who: "muc", expr: "ng\u1EA9ng l\xEAn", text: "Anh ch\u1ECB kh\xF4ng h\u1ECFi? T\u1ED1t. Ng\u01B0\u1EDDi kh\xF4ng h\u1ECFi th\u01B0\u1EDDng t\u1EF1 bi\u1EBFt c\xE2u tr\u1EA3 l\u1EDDi. Ho\u1EB7c t\u1EF1 gi\u1EA5u ch\xFAng." }]
+              }
+            ]
+          },
+          { t: 0.6, do: "pose", who: "muc", pose: "lean_back" },
+          { t: 0.7, do: "pose", who: "muc", pose: "tap" }
+        ]
+      },
+      {
+        id: "7",
+        stage: "hall",
+        dur: 3.2,
+        cam: { from: [900, 520, 1.5], to: [1350, 480, 1.3] },
+        events: [
+          { t: 0, do: "pose", who: "muc", pose: "stand", face: "left" },
+          { t: 1.1, do: "move", who: "muc", to: [1330, 650], dur: 1.8, pose: "walk_slow", face: "right", end: "back" },
+          { t: 1.2, do: "crowd", mode: "stop" }
+        ]
+      },
+      {
+        id: "8",
+        stage: "river_far",
+        dur: 3,
+        cam: { from: [600, 300, 1], to: [780, 300, 1] },
+        events: [
+          { t: 2.3, do: "fade", from: 0, to: 1, dur: 0.7 }
+        ]
+      }
+    ]
+  };
+
+  // src/ui/stageart.ts
+  var SW = 1800;
+  var HORIZON = 560;
+  var WIN = { x0: 1150, x1: 1500, y0: 110, y1: 420 };
+  var DOOR = { x0: 130, x1: 330, y0: 220 };
+  var TABLE = { x0: 560, x1: 1080, far: 585, near: 625, bottom: 725 };
+  var hash3 = (n) => {
+    const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  };
+  function paintCourt(g) {
+    g.fillStyle = "#9fb59a";
+    g.beginPath();
+    g.moveTo(600, 330);
+    for (let x = 600; x <= 2100; x += 60) g.lineTo(x, 300 + hash3(x) * 50);
+    g.lineTo(2100, 420);
+    g.lineTo(600, 420);
+    g.fill();
+    g.fillStyle = "#7c8f6a";
+    for (let i = 0; i < 9; i++) {
+      const x = 700 + i * 150 + hash3(i) * 40;
+      g.fillRect(x, 350 - hash3(i + 9) * 30, 70, 70);
+      g.beginPath();
+      g.moveTo(x - 8, 350 - hash3(i + 9) * 30);
+      g.lineTo(x + 35, 318 - hash3(i + 9) * 30);
+      g.lineTo(x + 78, 350 - hash3(i + 9) * 30);
+      g.fill();
+    }
+    const ground = g.createLinearGradient(0, 400, 0, 560);
+    ground.addColorStop(0, "#c4a874");
+    ground.addColorStop(1, "#a3875a");
+    g.fillStyle = ground;
+    g.fillRect(-200, 400, 2600, 400);
+  }
+  function paintWall(g, t) {
+    g.save();
+    g.beginPath();
+    g.rect(-400, -400, 2600, HORIZON + 400);
+    g.rect(WIN.x0, WIN.y0, WIN.x1 - WIN.x0, WIN.y1 - WIN.y0);
+    g.rect(DOOR.x0, DOOR.y0, DOOR.x1 - DOOR.x0, HORIZON - DOOR.y0);
+    g.clip("evenodd");
+    for (let x = -400, i = 0; x < 2200; x += 54, i++) {
+      g.fillStyle = ["#7a5634", "#6f4e2f", "#835d38"][i % 3];
+      g.fillRect(x, -400, 54, HORIZON + 400);
+      g.fillStyle = "rgba(0,0,0,.22)";
+      g.fillRect(x + 52, -400, 2, HORIZON + 400);
+    }
+    for (const y of [60, 300]) {
+      g.fillStyle = "#4a3220";
+      g.fillRect(-400, y, 2600, 16);
+    }
+    const top = g.createLinearGradient(0, -300, 0, 300);
+    top.addColorStop(0, "rgba(10,6,2,.7)");
+    top.addColorStop(1, "rgba(10,6,2,0)");
+    g.fillStyle = top;
+    g.fillRect(-400, -300, 2600, 600);
+    g.restore();
+    g.fillStyle = "#3d2a1a";
+    g.fillRect(-400, HORIZON - 26, 2600, 26);
+    g.strokeStyle = "#3d2a1a";
+    g.lineWidth = 14;
+    g.strokeRect(WIN.x0 - 7, WIN.y0 - 7, WIN.x1 - WIN.x0 + 14, WIN.y1 - WIN.y0 + 14);
+    g.lineWidth = 8;
+    g.beginPath();
+    g.moveTo((WIN.x0 + WIN.x1) / 2, WIN.y0);
+    g.lineTo((WIN.x0 + WIN.x1) / 2, WIN.y1);
+    g.moveTo(WIN.x0, (WIN.y0 + WIN.y1) / 2);
+    g.lineTo(WIN.x1, (WIN.y0 + WIN.y1) / 2);
+    g.stroke();
+    g.lineWidth = 14;
+    g.strokeRect(DOOR.x0 - 7, DOOR.y0 - 7, DOOR.x1 - DOOR.x0 + 14, HORIZON - DOOR.y0 + 7);
+    const sh = g.createLinearGradient(WIN.x0, WIN.y0, WIN.x0 - 260, HORIZON);
+    sh.addColorStop(0, "rgba(255,240,190,.34)");
+    sh.addColorStop(1, "rgba(255,240,190,.04)");
+    g.fillStyle = sh;
+    g.beginPath();
+    g.moveTo(WIN.x0, WIN.y0);
+    g.lineTo(WIN.x1, WIN.y0);
+    g.lineTo(WIN.x1 - 260, HORIZON);
+    g.lineTo(WIN.x0 - 260, HORIZON);
+    g.fill();
+    for (let i = 0; i < 46; i++) {
+      const u = (hash3(i) + t * (0.01 + hash3(i + 50) * 0.02)) % 1, y = HORIZON - u * (HORIZON - WIN.y0), x = WIN.x0 - 260 * (1 - (y - WIN.y0) / (HORIZON - WIN.y0)) + hash3(i + 9) * (WIN.x1 - WIN.x0) + Math.sin(t * 0.7 + i) * 14;
+      g.fillStyle = `rgba(255,248,215,${0.25 + 0.35 * hash3(i + 3)})`;
+      g.fillRect(x, y, 2.4, 2.4);
+    }
+  }
+  function paintFloor(g) {
+    const f = g.createLinearGradient(0, HORIZON, 0, 1e3);
+    f.addColorStop(0, "#6a5440");
+    f.addColorStop(1, "#3a2d22");
+    g.fillStyle = f;
+    g.fillRect(-600, HORIZON, 3e3, 700);
+    g.strokeStyle = "rgba(0,0,0,.28)";
+    g.lineWidth = 3;
+    for (let i = -24; i <= 28; i++) {
+      const xh = 900 + i * 70;
+      g.beginPath();
+      g.moveTo(xh, HORIZON);
+      g.lineTo(900 + (xh - 900) * 2.2, 1e3);
+      g.stroke();
+    }
+    for (let i = 0; i < 9; i++) {
+      const y = HORIZON + (i * i * 7 + i * 16);
+      g.beginPath();
+      g.moveTo(-600, y);
+      g.lineTo(2400, y);
+      g.stroke();
+    }
+    g.fillStyle = "rgba(255,236,170,.15)";
+    g.beginPath();
+    g.moveTo(780, 600);
+    g.lineTo(1040, 600);
+    g.lineTo(900, 820);
+    g.lineTo(600, 820);
+    g.fill();
+    g.fillStyle = "rgba(40,24,10,.22)";
+    g.fillRect(780, 640, 5, 160);
+    g.fillRect(915, 640, 5, 160);
+  }
+  function paintTable(g) {
+    const { x0, x1, far: far3, near: near2, bottom } = TABLE;
+    g.fillStyle = "rgba(0,0,0,.28)";
+    g.beginPath();
+    g.ellipse((x0 + x1) / 2, bottom + 6, (x1 - x0) / 2 + 30, 18, 0, 0, Math.PI * 2);
+    g.fill();
+    const face2 = g.createLinearGradient(0, near2, 0, bottom);
+    face2.addColorStop(0, "#8d877b");
+    face2.addColorStop(1, "#5c574e");
+    g.fillStyle = face2;
+    g.fillRect(x0, near2, x1 - x0, bottom - near2);
+    g.fillStyle = "#4c473f";
+    for (const x of [x0 + 20, x1 - 70, (x0 + x1) / 2 - 25]) g.fillRect(x, near2, 50, bottom - near2);
+    const top = g.createLinearGradient(0, far3, 0, near2);
+    top.addColorStop(0, "#b3ac9c");
+    top.addColorStop(1, "#9a9384");
+    g.fillStyle = top;
+    g.beginPath();
+    g.moveTo(x0 + 24, far3);
+    g.lineTo(x1 - 24, far3);
+    g.lineTo(x1, near2);
+    g.lineTo(x0, near2);
+    g.fill();
+    g.strokeStyle = "rgba(0,0,0,.25)";
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x0, near2);
+    g.lineTo(x1, near2);
+    g.stroke();
+    g.fillStyle = "rgba(255,236,170,.2)";
+    g.fillRect(x0 + 200, far3 + 6, 120, 22);
+  }
+  function paintChairs(g, seat) {
+    for (const x of [640, 760, 880, 1e3, 1120]) {
+      const big = Math.abs(x - seat) < 70;
+      g.fillStyle = "#4a3220";
+      g.fillRect(x - 36, big ? 470 : 520, 72, big ? 190 : 150);
+      g.fillStyle = "#5c4029";
+      g.fillRect(x - 30, big ? 480 : 528, 60, big ? 90 : 60);
+    }
+  }
+  function paintPillar(g, x) {
+    const p = g.createLinearGradient(x - 62, 0, x + 62, 0);
+    p.addColorStop(0, "#1d1814");
+    p.addColorStop(0.45, "#4f4538");
+    p.addColorStop(1, "#171310");
+    g.fillStyle = p;
+    g.fillRect(x - 62, -500, 124, 1700);
+    g.fillStyle = "#2a231c";
+    g.fillRect(x - 80, -500, 160, 60);
+    g.fillRect(x - 80, 1e3, 160, 60);
+  }
+  function paintBook(g, W2, H2, t) {
+    g.fillStyle = "#0d0905";
+    g.fillRect(0, 0, W2, H2);
+    const bw = Math.min(W2 * 0.78, H2 * 1.45), bh = bw * 0.62, x = (W2 - bw) / 2, y = (H2 - bh) / 2 + Math.sin(t * 1.3) * 2, mid = x + bw / 2;
+    g.fillStyle = "#3a2314";
+    g.fillRect(x - 16, y - 14, bw + 32, bh + 30);
+    g.fillStyle = "#2b190d";
+    for (const [cx, cy] of [[x - 16, y - 14], [x + bw + 16, y - 14], [x - 16, y + bh + 16], [x + bw + 16, y + bh + 16]]) {
+      g.beginPath();
+      g.arc(cx, cy, 14, 0, Math.PI * 2);
+      g.fill();
+    }
+    const left = g.createLinearGradient(x, 0, mid, 0);
+    left.addColorStop(0, "#e6d6ae");
+    left.addColorStop(1, "#c9b78a");
+    g.fillStyle = left;
+    g.fillRect(x, y, bw / 2, bh);
+    const lifted = t >= 1;
+    const right = g.createLinearGradient(mid, 0, x + bw, 0);
+    right.addColorStop(0, "#c9b78a");
+    right.addColorStop(1, "#e6d6ae");
+    g.fillStyle = right;
+    g.fillRect(mid, y, bw / 2, bh);
+    g.strokeStyle = "rgba(40,24,10,.75)";
+    g.lineCap = "round";
+    for (let r = 0; r < 12; r++) {
+      const ly = y + 34 + r * (bh - 70) / 12;
+      g.lineWidth = 2.2;
+      g.beginPath();
+      g.moveTo(x + 28, ly);
+      for (let s = 0; s < 22; s++) g.lineTo(x + 28 + s * ((bw / 2 - 56) / 22) * (r === 11 ? 0.45 : 1), ly + (hash3(r * 40 + s) - 0.5) * 9);
+      g.stroke();
+    }
+    if (!lifted) for (let r = 0; r < 12; r++) {
+      const ly = y + 34 + r * (bh - 70) / 12;
+      g.lineWidth = 2.6;
+      g.beginPath();
+      for (let d = 0; d < 3 + Math.floor(hash3(r) * 3); d++) {
+        const dx = mid + 40 + d * 22;
+        g.moveTo(dx, ly - 6);
+        g.lineTo(dx + 9, ly + 6);
+        g.moveTo(dx + 9, ly - 6);
+        g.lineTo(dx, ly + 6);
+      }
+      g.stroke();
+    }
+    g.fillStyle = "rgba(0,0,0,.28)";
+    g.fillRect(mid - 5, y, 10, bh);
+    if (lifted) {
+      g.fillStyle = "#dccba0";
+      g.beginPath();
+      g.moveTo(mid, y);
+      g.lineTo(x + bw - bw * 0.2, y - 18);
+      g.lineTo(x + bw - bw * 0.2, y + bh - 28);
+      g.lineTo(mid, y + bh);
+      g.fill();
+      g.fillStyle = "rgba(0,0,0,.18)";
+      g.beginPath();
+      g.moveTo(mid, y);
+      g.lineTo(mid + bw * 0.18, y + 4);
+      g.lineTo(mid + bw * 0.18, y + bh - 8);
+      g.lineTo(mid, y + bh);
+      g.fill();
+    }
+    const hx = x + bw - (lifted ? bw * 0.2 : 20), hy = y + bh * (lifted ? 0.35 : 0.8);
+    g.fillStyle = "#b87f45";
+    g.beginPath();
+    g.ellipse(hx + 36, hy + 20, 70, 34, -0.35, 0, Math.PI * 2);
+    g.fill();
+    for (let f = 0; f < 4; f++) {
+      g.beginPath();
+      g.ellipse(hx - 14 - f * 6, hy + f * 18 - 10, 38, 11, 0.12, 0, Math.PI * 2);
+      g.fill();
+    }
+    const v = g.createRadialGradient(W2 / 2, H2 / 2, Math.min(W2, H2) * 0.22, W2 / 2, H2 / 2, Math.max(W2, H2) * 0.65);
+    v.addColorStop(0, "rgba(0,0,0,0)");
+    v.addColorStop(1, "rgba(0,0,0,.92)");
+    g.fillStyle = v;
+    g.fillRect(0, 0, W2, H2);
+  }
+  function paintRiver(g, W2, H2, camX2, t) {
+    const k = H2 / 700, shift = (p) => W2 / 2 - (900 + (camX2 - 900) * p) * k;
+    const sky = g.createLinearGradient(0, 0, 0, H2);
+    sky.addColorStop(0, "#9fb0b8");
+    sky.addColorStop(0.55, "#d9ddd2");
+    sky.addColorStop(1, "#c4cdc6");
+    g.fillStyle = sky;
+    g.fillRect(0, 0, W2, H2);
+    g.setTransform(k, 0, 0, k, shift(0.12), 0);
+    g.fillStyle = "rgba(120,138,140,.55)";
+    g.beginPath();
+    g.moveTo(-600, 380);
+    for (let x = -600; x <= 2600; x += 70) g.lineTo(x, 300 + hash3(x * 0.3) * 70);
+    g.lineTo(2600, 420);
+    g.lineTo(-600, 420);
+    g.fill();
+    g.setTransform(k, 0, 0, k, shift(0.3), 0);
+    g.fillStyle = "rgba(96,114,112,.7)";
+    g.beginPath();
+    g.moveTo(-600, 440);
+    for (let x = -600; x <= 2600; x += 55) g.lineTo(x, 370 + hash3(x * 0.7 + 3) * 50);
+    g.lineTo(2600, 450);
+    g.lineTo(-600, 450);
+    g.fill();
+    g.fillStyle = "#4a4540";
+    g.fillRect(1010, 462, 120, 8);
+    for (const sx of [1030, 1065, 1100]) {
+      g.beginPath();
+      g.moveTo(sx, 380);
+      g.lineTo(sx + 26, 458);
+      g.lineTo(sx - 4, 458);
+      g.fill();
+    }
+    g.setTransform(k, 0, 0, k, shift(0.6), 0);
+    const water = g.createLinearGradient(0, 450, 0, 700);
+    water.addColorStop(0, "#9fb6b6");
+    water.addColorStop(1, "#6f8c90");
+    g.fillStyle = water;
+    g.fillRect(-600, 450, 3200, 300);
+    g.strokeStyle = "rgba(255,255,255,.35)";
+    g.lineWidth = 2;
+    for (let i = 0; i < 40; i++) {
+      const x = hash3(i) * 3e3 - 500, y = 470 + hash3(i + 7) * 200 + Math.sin(t + i) * 2;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + 30 + hash3(i + 2) * 50, y);
+      g.stroke();
+    }
+    g.setTransform(k, 0, 0, k, shift(1), 0);
+    g.fillStyle = "#6d6a63";
+    g.beginPath();
+    g.moveTo(-600, 700);
+    for (let x = -600; x <= 2600; x += 90) g.lineTo(x, 640 + hash3(x) * 40);
+    g.lineTo(2600, 760);
+    g.lineTo(-600, 760);
+    g.fill();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    const mist = g.createLinearGradient(0, H2 * 0.4, 0, H2 * 0.8);
+    mist.addColorStop(0, "rgba(235,238,230,0)");
+    mist.addColorStop(0.5, "rgba(235,238,230,.45)");
+    mist.addColorStop(1, "rgba(235,238,230,0)");
+    g.fillStyle = mist;
+    g.fillRect(0, 0, W2, H2);
+  }
+
+  // src/ui/stage.ts
+  var SCENES = { bdd_1_1: bdd_1_1_default };
+  var POSES = {
+    idle: { anim: "idle" },
+    sit: { anim: "idle" },
+    stand: { anim: "idle" },
+    walk: { anim: "walk" },
+    walk_slow: { anim: "walk", rate: 0.5 },
+    flip_book: { anim: "idle", rot: 4, bob: [2.5, 0.9] },
+    lean_in: { anim: "idle", rot: 8 },
+    lean_back: { anim: "idle", rot: -6 },
+    look_up: { anim: "idle", rot: -3, dy: -3 },
+    look_down: { anim: "idle", rot: 3, dy: 2 },
+    tap: { anim: "idle", rot: -4, bob: [2.2, 2.6] }
+  };
+  var ACTOR_H = 190;
+  var CROWD_H = 70;
+  var PORTER_H = 340;
+  var ease2 = (u) => u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+  var lerp2 = (a, b, u) => a + (b - a) * u;
+  var fakeOf = (look, outfit) => ({ look, outfit, armor: void 0, team: "player", anim: "idle", animClock: 0, facing: "front", hold: null, carry: null, lit: false, speed: 1.5, id: 0 });
+  function measure2(spr) {
+    const px = spr.getContext("2d").getImageData(0, 0, spr.width, spr.height).data;
+    let y0 = spr.height, y1 = -1;
+    for (let y = 0; y < spr.height; y++) for (let x = 0; x < spr.width; x++) if (px[(y * spr.width + x) * 4 + 3] > 0) {
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+    return y1 < 0 ? { bottom: spr.height, h: spr.height } : { bottom: y1 + 1, h: y1 - y0 + 1 };
+  }
+  var StagePlayer = class {
+    constructor(c, root) {
+      this.c = c;
+      this.root = root;
+      this.scene = null;
+      this.actors = /* @__PURE__ */ new Map();
+      this.crowd = [];
+      this.porters = null;
+      this.stopped = false;
+      this.shotIx = -1;
+      this.camT = 0;
+      this.evT = 0;
+      this.evIx = 0;
+      this.stT = 0;
+      this.blurT = 0;
+      this.blur = 0;
+      this.fade = { a: 1, from: 1, to: 1, t: 0, dur: 0 };
+      this.queue = [];
+      this.talk = null;
+      this.choice = null;
+      this.done = false;
+      this.defFlag = "";
+      this.canvas = document.createElement("canvas");
+      this.bust = h("div", { class: "st-bust" });
+      this.plate = h("div", { class: "st-plate" });
+      this.text = h("p", { class: "st-text" });
+      this.more = h("span", { class: "st-more", text: "\u25BC b\u1EA5m \u0111\u1EC3 ti\u1EBFp", hidden: true });
+      this.cards = h("div", { class: "st-cards" });
+      this.timer = h("div", { class: "st-timer" });
+      this.panel = h("div", { class: "st-panel", hidden: true }, this.plate, h("div", { class: "st-frame" }, this.text, this.more), this.cards, this.timer);
+      this.small = document.createElement("canvas");
+      this.silhouettes = /* @__PURE__ */ new WeakMap();
+      root.append(this.canvas, h("div", { class: "st-ui" }, h("button", { class: "sm st-skip", type: "button", text: "B\u1ECF qua \u25B8\u25B8", onclick: () => this.finish() }), this.bust, this.panel));
+      root.addEventListener("click", (e) => {
+        if (!e.target.closest("button")) this.next();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (!this.active) return;
+        if (e.key === " " || e.key === "Enter") this.next();
+        else if (/^[1-9]$/.test(e.key)) this.pick(Number(e.key) - 1);
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }, true);
+    }
+    /** A scene is on (the village waits). */
+    get active() {
+      return !this.root.hidden;
+    }
+    /** Play a scene of data/stages now. Returns an error text, or null. */
+    play(id) {
+      const sc = SCENES[id];
+      if (!sc) return "Kh\xF4ng c\xF3 c\u1EA3nh n\xE0y";
+      if (this.active) return "\u0110ang c\xF3 m\u1ED9t c\u1EA3nh ch\u1EA1y";
+      this.scene = sc;
+      this.done = false;
+      this.queue = [];
+      this.talk = null;
+      this.choice = null;
+      this.porters = null;
+      this.stopped = false;
+      this.fade = { a: 1, from: 1, to: 1, t: 0, dur: 0 };
+      this.defFlag = "";
+      this.actors.clear();
+      const era = this.c.sim.era;
+      for (const [key, k] of Object.entries(sc.cast)) {
+        const ch = characterOf(k.char), look = ch?.look ?? k.look, outfit = ch ? ch[era].armor ?? void 0 : k.outfit;
+        this.actors.set(key, { id: key, name: ch?.name ?? k.name, fake: fakeOf(look, outfit), x: k.x, y: k.y, face: k.face, pose: k.pose, clock: 0, rot: 0, hidden: !!k.hidden });
+      }
+      const outfits = ["peasant_hood_grey", "peasant_hood_brown"], skins = ["#e0ac69", "#c68642", "#f0c8a0"];
+      this.crowd = [0, 1, 2, 3].map((i) => ({ a: { id: `c${i}`, name: "", fake: fakeOf({ sex: i % 2 ? "f" : "m", skin: skins[i % 3], hair: "#3b2a1a", hide: "#8a6a3a", pants: "#4a4032" }, outfits[i % 2]), x: 1100 + i * 130, y: 405 + i % 2 * 14, face: "right", pose: "walk_slow", clock: i, rot: 0, hidden: false }, x0: 1100 + i * 130, dir: i % 2 ? -1 : 1 }));
+      this.root.hidden = false;
+      this.root.classList.remove("st-over");
+      this.enterShot(0);
+      return null;
+    }
+    shot() {
+      return this.scene?.shots[this.shotIx];
+    }
+    enterShot(i) {
+      const s = this.scene?.shots[i];
+      if (!s) {
+        this.finish();
+        return;
+      }
+      this.shotIx = i;
+      this.camT = 0;
+      this.evT = 0;
+      this.evIx = 0;
+      this.stT = 0;
+      this.blurT = s.blur ? 1 : 0;
+      this.blur = this.blurT;
+      this.porters = null;
+    }
+    // ---------------------------------------------------------------- the clock
+    /** Every frame while a scene plays: the shot's time, its events, the actors, then the picture. */
+    update(dt) {
+      if (!this.active || !this.scene) return;
+      dt = Math.min(dt, 0.05);
+      const s = this.shot();
+      if (!s) return;
+      this.camT += dt;
+      this.stT += dt;
+      this.blur += (this.blurT - this.blur) * Math.min(1, dt * 5);
+      this.talkStep();
+      let blocked = !!this.talk || this.queue.length > 0 || !!this.choice;
+      if (!blocked) this.evT += dt;
+      while (!blocked && this.evIx < s.events.length && s.events[this.evIx].t <= this.evT) {
+        this.run(s.events[this.evIx++]);
+        blocked = !!this.talk || this.queue.length > 0 || !!this.choice;
+      }
+      if (this.choice) {
+        this.choice.left -= dt;
+        if (this.choice.left <= 0) this.pick(this.choice.def);
+        else this.timer.textContent = `T\u1EF1 ch\u1ECDn sau ${Math.ceil(this.choice.left)} gi\xE2y`;
+      }
+      for (const a of this.actors.values()) this.stepActor(a, dt);
+      for (const k of this.crowd) this.stepCrowd(k, dt);
+      if (this.porters) {
+        this.porters.t += dt;
+        if (this.porters.t > this.porters.dur) this.porters = null;
+      }
+      if (this.fade.dur > 0) {
+        this.fade.t += dt;
+        const u = Math.min(1, this.fade.t / this.fade.dur);
+        this.fade.a = lerp2(this.fade.from, this.fade.to, u);
+        if (u >= 1) this.fade.dur = 0;
+      }
+      if (!blocked && this.evIx >= s.events.length && this.evT >= s.dur && this.fade.dur === 0) {
+        this.enterShot(this.shotIx + 1);
+        if (!this.scene) return;
+      }
+      this.draw();
+    }
+    run(e) {
+      const a = e.who ? this.actors.get(e.who) : void 0;
+      switch (e.do) {
+        case "pose":
+          if (a) {
+            if (e.face) a.face = e.face;
+            if (e.pose === "stand") a.move = { x0: a.x, y0: a.y, x1: a.x, y1: 655, t: 0, dur: 1, pose: "stand", face: a.face };
+            else a.pose = e.pose ?? "idle";
+          }
+          break;
+        case "place":
+          if (a && e.at) {
+            a.x = e.at[0];
+            a.y = e.at[1];
+            a.hidden = false;
+            if (e.face) a.face = e.face;
+          }
+          break;
+        case "move":
+          if (a && Array.isArray(e.to)) a.move = { x0: a.x, y0: a.y, x1: e.to[0], y1: e.to[1], t: 0, dur: e.dur ?? 1, pose: e.pose ?? "walk", face: e.face ?? a.face, end: e.end };
+          break;
+        case "say":
+          this.queue.push({ who: e.who ?? "", expr: e.expr, text: e.text ?? "" });
+          break;
+        case "choice":
+          this.openChoice(e);
+          break;
+        case "porters":
+          this.porters = { t: 0, dur: e.dur ?? 2.6 };
+          break;
+        case "crowd":
+          this.stopped = e.mode === "stop";
+          break;
+        case "fade":
+          this.fade = { a: e.from ?? 0, from: e.from ?? 0, to: typeof e.to === "number" ? e.to : 0, t: 0, dur: e.dur ?? 1 };
+          break;
+      }
+    }
+    stepActor(a, dt) {
+      a.clock += dt;
+      const m = a.move;
+      if (!m) return;
+      m.t += dt;
+      const u = Math.min(1, m.t / m.dur);
+      a.x = lerp2(m.x0, m.x1, u);
+      a.y = lerp2(m.y0, m.y1, u);
+      a.face = m.face;
+      a.pose = m.pose;
+      if (u >= 1) {
+        a.move = void 0;
+        a.pose = "idle";
+        if (m.end) a.face = m.end;
+      }
+    }
+    stepCrowd(k, dt) {
+      const a = k.a;
+      a.clock += dt;
+      if (this.stopped) {
+        a.pose = "idle";
+        a.face = "left";
+        return;
+      }
+      a.pose = "walk_slow";
+      a.x += k.dir * 26 * dt;
+      if (a.x > 1700) k.dir = -1;
+      else if (a.x < 1020) k.dir = 1;
+      a.face = k.dir > 0 ? "right" : "left";
+    }
+    // ---------------------------------------------------------------- the words
+    talkStep() {
+      if (!this.talk && this.queue.length) this.startLine(this.queue.shift());
+      const t = this.talk;
+      if (!t) return;
+      const now = performance.now(), n = t.full ? t.line.text.length : Math.min(t.line.text.length, Math.floor((now - t.t0) / 1e3 * ENC.typeCps));
+      if (n !== t.shown) {
+        t.shown = n;
+        this.text.textContent = t.line.text.slice(0, n);
+      }
+      if (n >= t.line.text.length && !t.full) {
+        t.full = true;
+        t.fullAt = now;
+      }
+      this.more.hidden = !(t.full && !this.choice);
+    }
+    startLine(l) {
+      const a = this.actors.get(l.who);
+      this.talk = { line: l, shown: 0, t0: performance.now(), full: false, fullAt: 0 };
+      this.plate.replaceChildren(h("b", { text: (a?.name ?? "").toUpperCase() }), ...l.expr ? [h("i", { text: `(${l.expr})` })] : []);
+      this.text.textContent = "";
+      this.cards.replaceChildren();
+      this.timer.textContent = "";
+      this.bust.replaceChildren(a ? portraitFrom(this.c, a.fake) : "");
+      this.bust.hidden = !a;
+      this.panel.hidden = false;
+    }
+    /** Click or Space: finish the line being typed, or go on to the next one. */
+    next() {
+      const t = this.talk;
+      if (!t || this.choice) return;
+      const now = performance.now();
+      if (!t.full) {
+        t.full = true;
+        t.fullAt = now;
+        this.text.textContent = t.line.text;
+        t.shown = t.line.text.length;
+        return;
+      }
+      if (now - t.fullAt < ENC.inputGuardMs) return;
+      this.talk = null;
+      if (!this.queue.length) {
+        this.panel.hidden = true;
+        this.bust.hidden = true;
+      }
+    }
+    openChoice(e) {
+      const opts = e.options ?? [], def = Math.min(e.default ?? 0, Math.max(0, opts.length - 1));
+      this.defFlag = opts[def]?.flag ?? "";
+      this.choice = { opts, def, left: this.scene?.timeout ?? 60 };
+      this.cards.replaceChildren(...opts.map((o, i) => h("button", { class: "st-card", type: "button", onclick: () => this.pick(i) }, h("span", { class: "st-num", text: String(i + 1) }), h("span", { text: o.text }))));
+      this.panel.hidden = false;
+      this.more.hidden = true;
+    }
+    pick(i) {
+      const ch = this.choice, o = ch?.opts[i];
+      if (!ch || !o) return;
+      this.choice = null;
+      this.cards.replaceChildren();
+      this.timer.textContent = "";
+      this.defFlag = "";
+      if (o.flag) this.c.sim.setStoryFlag(o.flag);
+      if (o.say) this.queue.push({ who: "chu", text: o.say });
+      this.queue.push(...o.reply);
+      this.talk = null;
+    }
+    /** The end of the scene (or a skip: the choice not made is taken by default). */
+    finish() {
+      if (this.done) return;
+      this.done = true;
+      if (this.defFlag) this.c.sim.setStoryFlag(this.defFlag);
+      this.root.hidden = true;
+      this.scene = null;
+      this.talk = null;
+      this.choice = null;
+      this.queue = [];
+      this.panel.hidden = true;
+      this.bust.hidden = true;
+    }
+    // ---------------------------------------------------------------- the picture
+    camNow(s) {
+      const c = s.cam;
+      if (!Array.isArray(c)) {
+        const u = Math.min(1, this.camT / (s.camDur ?? s.dur)), e = s.ease === "linear" ? u : ease2(u);
+        return [lerp2(c.from[0], c.to[0], e), lerp2(c.from[1], c.to[1], e), lerp2(c.from[2], c.to[2], e)];
+      }
+      return c;
+    }
+    draw() {
+      const s = this.shot();
+      if (!s) return;
+      const dpr = Math.min(1.5, window.devicePixelRatio || 1), W2 = Math.max(2, Math.round(this.root.clientWidth * dpr)), H2 = Math.max(2, Math.round(this.root.clientHeight * dpr));
+      if (this.canvas.width !== W2 || this.canvas.height !== H2) {
+        this.canvas.width = W2;
+        this.canvas.height = H2;
+      }
+      const g = this.canvas.getContext("2d");
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalAlpha = 1;
+      g.imageSmoothingEnabled = false;
+      const cam2 = this.camNow(s);
+      if (s.stage === "insert_book") paintBook(g, W2, H2, this.stT);
+      else if (s.stage === "river_far") paintRiver(g, W2, H2, cam2[0], this.stT);
+      else this.drawHall(g, W2, H2, cam2);
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      if (s.stage === "hall") {
+        const v = g.createRadialGradient(W2 / 2, H2 / 2, Math.min(W2, H2) * 0.35, W2 / 2, H2 / 2, Math.max(W2, H2) * 0.75);
+        v.addColorStop(0, "rgba(0,0,0,0)");
+        v.addColorStop(1, "rgba(10,6,2,.5)");
+        g.fillStyle = v;
+        g.fillRect(0, 0, W2, H2);
+      }
+      if (this.fade.a > 1e-3) {
+        g.fillStyle = `rgba(0,0,0,${this.fade.a})`;
+        g.fillRect(0, 0, W2, H2);
+      }
+    }
+    drawHall(g, W2, H2, cam2) {
+      const [cx, cy, z] = cam2, k = H2 / (700 / z);
+      const at = (p) => g.setTransform(k, 0, 0, k, W2 / 2 - (SW / 2 + (cx - SW / 2) * p) * k, H2 / 2 - cy * k);
+      if (this.blur > 0.5) {
+        const w = Math.max(2, W2 >> 2), hh = Math.max(2, H2 >> 2);
+        if (this.small.width !== w || this.small.height !== hh) {
+          this.small.width = w;
+          this.small.height = hh;
+        }
+        const o = this.small.getContext("2d");
+        o.setTransform(1, 0, 0, 1, 0, 0);
+        o.clearRect(0, 0, w, hh);
+        this.back(o, w, hh, cam2);
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.imageSmoothingEnabled = true;
+        g.drawImage(this.small, 0, 0, W2, H2);
+        g.imageSmoothingEnabled = false;
+      } else this.back(g, W2, H2, cam2);
+      at(1);
+      paintFloor(g);
+      paintChairs(g, 1e3);
+      const list2 = [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q.y), table = TABLE.bottom - 20;
+      for (const a of list2) if (a.y <= table) this.drawActor(g, a, ACTOR_H);
+      paintTable(g);
+      for (const a of list2) if (a.y > table) this.drawActor(g, a, ACTOR_H);
+      for (const px of [470, 1560]) {
+        at(1.4);
+        paintPillar(g, px);
+      }
+    }
+    /** The layers behind the people: the sky, the courtyard (L0), the porters (L4), the wall (L1). Drawn at any size (`W`, `H`) so the out-of-focus shot can paint them small. */
+    back(g, W2, H2, cam2) {
+      const [cx, cy, z] = cam2, k = H2 / (700 / z);
+      const at = (p) => g.setTransform(k, 0, 0, k, W2 / 2 - (SW / 2 + (cx - SW / 2) * p) * k, H2 / 2 - cy * k);
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      const sky = g.createLinearGradient(0, 0, 0, H2);
+      sky.addColorStop(0, "#9dc0d8");
+      sky.addColorStop(1, "#efe3c0");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, W2, H2);
+      at(0.2);
+      paintCourt(g);
+      this.drawCrowd(g);
+      at(1.2);
+      this.drawPorters(g);
+      at(0.5);
+      paintWall(g, this.stT);
+    }
+    drawCrowd(g) {
+      for (const k of this.crowd) this.drawActor(g, k.a, CROWD_H, false);
+    }
+    drawPorters(g) {
+      const p = this.porters;
+      if (!p) return;
+      const u = p.t / p.dur;
+      for (let i = 0; i < 2; i++) {
+        const x = 1900 - 1050 * u + i * 180, a = { id: "p", name: "", fake: fakeOf({ sex: "m", skin: "#000", hair: "#000", hide: "#000", pants: "#000" }, "peasant_hood_grey"), x, y: 650, face: "left", pose: "walk_slow", clock: p.t + i * 0.4, rot: 0, hidden: false };
+        this.drawActor(g, a, PORTER_H, false, true);
+        const sy = a.y - PORTER_H * 0.78;
+        g.strokeStyle = "#000";
+        g.fillStyle = "#000";
+        g.lineWidth = 7;
+        g.beginPath();
+        g.moveTo(x - 95, sy);
+        g.lineTo(x + 95, sy);
+        g.stroke();
+        g.lineWidth = 3;
+        for (const bx of [x - 90, x + 90]) {
+          g.beginPath();
+          g.moveTo(bx, sy);
+          g.lineTo(bx, sy + 55);
+          g.stroke();
+          g.fillRect(bx - 22, sy + 55, 44, 40);
+        }
+      }
+    }
+    /** One actor with its feet at (x, y), `h` tall; `tint` paints it as a black shape. */
+    drawActor(g, a, hgt, shadow2 = true, tint = false) {
+      const def = POSES[a.pose] ?? POSES.idle;
+      a.fake.animClock = a.clock;
+      a.fake.speed = 1.5 * (def.rate ?? 1);
+      a.fake.facing = a.face;
+      const spr = this.c.sprites.villager(a.fake, def.anim, a.face);
+      a.m ?? (a.m = measure2(this.c.sprites.villager(a.fake, "idle", "front")));
+      const s = hgt / a.m.h, bob = def.bob ? Math.sin(a.clock * def.bob[1] * Math.PI * 2) * def.bob[0] : 0, sign = a.face === "left" ? -1 : 1;
+      if (shadow2) {
+        g.fillStyle = "rgba(0,0,0,.28)";
+        g.beginPath();
+        g.ellipse(a.x, a.y + 2, hgt * 0.22, hgt * 0.05, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.save();
+      g.translate(a.x, a.y + (def.dy ?? 0) + bob);
+      g.rotate((def.rot ?? 0) * sign * Math.PI / 180);
+      g.scale(s, s);
+      g.drawImage(tint ? this.silhouette(spr) : spr, -spr.width / 2, -a.m.bottom);
+      g.restore();
+    }
+    silhouette(spr) {
+      let out = this.silhouettes.get(spr);
+      if (!out) {
+        out = document.createElement("canvas");
+        out.width = spr.width;
+        out.height = spr.height;
+        const o = out.getContext("2d");
+        o.drawImage(spr, 0, 0);
+        o.globalCompositeOperation = "source-in";
+        o.fillStyle = "#000";
+        o.fillRect(0, 0, out.width, out.height);
+        this.silhouettes.set(spr, out);
+      }
+      return out;
     }
   };
 
@@ -218041,6 +219734,30 @@ ${risk.lines.join("\n")}`);
         toast2(f ? `S\xE1t th\u1EE7 c\u1EE7a ${t.def.name} \u0111\xE3 l\u1EBBn v\xE0o, nh\u1EAFm v\xE0o ${sim2.get(f.ai.assassin.target)?.name ?? "ai \u0111\xF3"}` : "Kh\xF4ng c\xF3 l\xE0ng n\xE0o \u0111\u1EC3 g\u1EEDi s\xE1t th\u1EE7");
         ctl2.onChange();
       }, "G\u1EEDi m\u1ED9t s\xE1t th\u1EE7 \u1EA9n c\u1EE7a m\u1ED9t l\xE0ng t\u1EDBi \xE1m s\xE1t m\u1ED9t d\xE2n l\xE0ng (\u01B0u ti\xEAn ng\u01B0\u1EDDi c\xF3 c\u1EADn v\u1EC7). L\xEDnh \u1EDF g\u1EA7n m\u1EDBi th\u1EA5y h\u1EAFn")));
+      page.append(h("div", { class: "devrow" }, btn("S\xE1t th\u1EE7 + m\u1EE5c ti\xEAu (xem)", () => {
+        const r = sim2.assassinTest();
+        if (typeof r === "string") {
+          toast2(r);
+          return;
+        }
+        toast2(`S\xE1t th\u1EE7 hi\u1EC7n h\xECnh, c\xE1ch ${r.target.name} 9 \xF4. B\u1EADt "B\u1EA5t t\u1EED" \u0111\u1EC3 xem l\u1EA1i nhi\u1EC1u l\u1EA7n.`);
+        ctl2.centerOn(r.target.x * TILE, r.target.y * TILE);
+        this.close();
+        ctl2.onChange();
+      }, "G\u1EEDi m\u1ED9t s\xE1t th\u1EE7 HI\u1EC6N H\xCCNH (kh\xF4ng \u1EA9n) t\u1EDBi \xE1m s\xE1t m\u1ED9t d\xE2n, \u0111\u1EB7t c\xE1ch ng\u01B0\u1EDDi \u0111\xF3 9 \xF4, r\u1ED3i d\u1EDDi camera t\u1EDBi xem: \u0111i v\xF2ng ra sau l\u01B0ng, l\u01B0\u1EDBt v\xE0o, ra \u0111\xF2n, r\xFAt, \u1EA9n r\u1ED3i th\u1EED l\u1EA1i. X\u1EBFp 3 l\xEDnh quanh m\u1EE5c ti\xEAu \u0111\u1EC3 xem h\u1EAFn ch\u1EDD ngo\xE0i")));
+      page.append(h("div", { class: "devrow" }, btn("S\xE1t th\u1EE7 c\u1EE7a ta + 1 \u0111\u1ECBch (\u0111i\u1EC1u khi\u1EC3n)", () => {
+        const r = sim2.assassinPair();
+        if (typeof r === "string") {
+          toast2(r);
+          return;
+        }
+        ctl2.selected.clear();
+        ctl2.selected.add(r.mine.id);
+        toast2("S\xE1t th\u1EE7 c\u1EE7a b\u1EA1n \u0111\xE3 \u0111\u01B0\u1EE3c ch\u1ECDn (gi\u1EEF v\u1ECB tr\xED): r\xE0o th\u1EA5p (l\u1ED9n qua), t\u01B0\u1EDDng cao (leo qua), r\u1ED3i b\u1ED9 binh c\u1EA5p 10 \u0111\u1EE9ng y\xEAn. \u0110\xE3 t\u1EF1 chuy\u1EC3n sang Th\u1EDDi Trung c\u1ED5 \u0111\u1EC3 c\xF3 t\u01B0\u1EDDng cao.");
+        ctl2.centerOn(r.mine.x * TILE, r.mine.y * TILE);
+        this.close();
+        ctl2.onChange();
+      }, "Th\xEAm m\u1ED9t s\xE1t th\u1EE7 c\u1EE7a ta (l\xEDnh, kh\xF4ng \u0111u\u1ED1c, sinh ra \u1EDF tr\u1EA1ng th\xE1i gi\u1EEF v\u1ECB tr\xED: \u0111\u1EE9ng y\xEAn ch\u1EDD l\u1EC7nh) c\u1EA1nh l\u1EEDa tr\u1EA1i, 2 h\xE0ng r\xE0o ch\u1EAFn ph\xEDa \u0111\xF4ng (r\xE0o th\u1EA5p: l\u1ED9n qua, t\u01B0\u1EDDng cao c\u1EA5p 6, ch\u1EC9 c\xF3 \u1EDF Th\u1EDDi Trung c\u1ED5: leo qua) v\xE0 m\u1ED9t b\u1ED9 binh c\u1EA5p 10 c\u1EE7a m\u1ED9t l\xE0ng \u0111\u1ECBch \u0111\u1EE9ng y\xEAn sau t\u01B0\u1EDDng")));
       page.append(h("div", { class: "devrow" }, toggle("M\u1EDF m\u1ECDi \u0111\u01A1n v\u1ECB v\xE0 c\xF4ng tr\xECnh chuy\xEAn", "B\u1ECF kh\xF3a di s\u1EA3n: d\xF9ng th\u1EED c\xE1c chuy\xEAn (data/story/unlocks.json) d\xF9 truy\u1EC7n ch\u01B0a m\u1EDF", () => sim2.dev.unlockAll, (on2) => {
         sim2.dev.unlockAll = on2;
       })));
@@ -218064,6 +219781,16 @@ ${risk.lines.join("\n")}`);
         { class: "devrow" },
         h("small", { text: "Th\u1EED nhi\u1EC7m v\u1EE5 ph\u1EE5:" }),
         ...sim2.sideQuestList().map((q) => btn(q.name, () => toast2(sim2.startSideQuest(q.id)), `${q.kind}: ng\u01B0\u1EDDi giao t\u1EDBi c\u1ED5ng ngay, c\xE1c b\u01B0\u1EDBc sau t\u1EDBi li\u1EC1n nhau (kh\xE1ch ch\u1EC9 t\u1EDBi ban ng\xE0y, khi kh\xF4ng c\xF3 chi\u1EBFn s\u1EF1)`))
+      ));
+      page.append(h(
+        "div",
+        { class: "devrow" },
+        h("small", { text: "Ba D\u1EA5u \u1EA4n:" }),
+        btn("C\u1EA3nh 1.1 (v\xE0o ngay)", () => {
+          const e = this.c.stage.play("bdd_1_1");
+          if (e) toast2(e);
+          else this.close();
+        }, "Ch\u1EA1y ngay c\u1EA3nh 1.1 nh\u01B0 phim: s\xE2n kh\u1EA5u ri\xEAng, 8 shot, l\u1EDDi tho\u1EA1i v\xE0 m\u1ED9t l\u1EF1a ch\u1ECDn. Th\u1EDDi gian trong l\xE0ng d\u1EEBng l\u1EA1i khi xem")
       ));
       page.append(h(
         "div",
@@ -221460,7 +223187,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
   };
 
   // src/ui/marchpane.ts
-  var WIN = 320;
+  var WIN2 = 320;
   var MIN_K = 2;
   var MAX_K = 40;
   var HOLD_MS = 450;
@@ -221504,7 +223231,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
       /** Called while the building panel is open (the tab), so that the page and the open map follow the game. */
       this.key = "";
       const { sim: sim2, ctl: ctl2, toast: toast2 } = c;
-      this.ground.width = this.ground.height = WIN;
+      this.ground.width = this.ground.height = WIN2;
       this.zoneChip.addEventListener("click", () => {
         this.zoning = !this.zoning;
         this.pending = null;
@@ -221666,10 +223393,10 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
     snapshot() {
       const { sim: sim2 } = this.c, N = sim2.world.size, f = sim2.campfire();
       const mx = f ? f.x + 1 : sim2.world.start.x, my = f ? f.y + 1 : sim2.world.start.y;
-      this.origin = { x: Math.max(0, Math.min(N - WIN, Math.round(mx - WIN / 2))), y: Math.max(0, Math.min(N - WIN, Math.round(my - WIN / 2))) };
-      const bctx = this.ground.getContext("2d"), img = bctx.createImageData(WIN, WIN), d = img.data;
-      for (let j = 0; j < WIN; j++) for (let i = 0; i < WIN; i++) {
-        const k = (this.origin.y + j) * N + this.origin.x + i, c = sim2.world.occ[k] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[k]] ?? [90, 90, 90], s = sim2.fog.state[k], m = s === 2 ? 1 : s === 1 ? 0.6 : 0.12, o = (j * WIN + i) * 4;
+      this.origin = { x: Math.max(0, Math.min(N - WIN2, Math.round(mx - WIN2 / 2))), y: Math.max(0, Math.min(N - WIN2, Math.round(my - WIN2 / 2))) };
+      const bctx = this.ground.getContext("2d"), img = bctx.createImageData(WIN2, WIN2), d = img.data;
+      for (let j = 0; j < WIN2; j++) for (let i = 0; i < WIN2; i++) {
+        const k = (this.origin.y + j) * N + this.origin.x + i, c = sim2.world.occ[k] ? [200, 150, 80] : TERRAIN[sim2.world.tiles[k]] ?? [90, 90, 90], s = sim2.fog.state[k], m = s === 2 ? 1 : s === 1 ? 0.6 : 0.12, o = (j * WIN2 + i) * 4;
         d[o] = c[0] * m + 8 * (1 - m);
         d[o + 1] = c[1] * m + 10 * (1 - m);
         d[o + 2] = c[2] * m + 20 * (1 - m);
@@ -221695,8 +223422,8 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
       this.limit();
     }
     limit() {
-      this.cx = Math.max(this.origin.x, Math.min(this.origin.x + WIN, this.cx));
-      this.cy = Math.max(this.origin.y, Math.min(this.origin.y + WIN, this.cy));
+      this.cx = Math.max(this.origin.x, Math.min(this.origin.x + WIN2, this.cx));
+      this.cy = Math.max(this.origin.y, Math.min(this.origin.y + WIN2, this.cy));
     }
     zoomBy(f, sx, sy) {
       const before = { x: (sx - this.W / 2) / this.k + this.cx, y: (sy - this.H / 2) / this.k + this.cy };
@@ -221792,7 +223519,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
       ctx2.fillStyle = "#1a1510";
       ctx2.fillRect(0, 0, this.W, this.H);
       ctx2.imageSmoothingEnabled = false;
-      ctx2.drawImage(this.ground, 0, 0, WIN, WIN, this.sx(this.origin.x), this.sy(this.origin.y), WIN * k, WIN * k);
+      ctx2.drawImage(this.ground, 0, 0, WIN2, WIN2, this.sx(this.origin.x), this.sy(this.origin.y), WIN2 * k, WIN2 * k);
       for (const z of sim2.zones) {
         ctx2.fillStyle = "rgba(255,255,255,.12)";
         ctx2.fillRect(this.sx(z.x), this.sy(z.y), z.w * k, z.h * k);
@@ -222256,7 +223983,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
   var clamp3 = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   var dist2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   var aim = (m) => m.target?.kind === "prop" ? m.target.at : void 0;
-  function hash3(x, y, salt = 0) {
+  function hash4(x, y, salt = 0) {
     let n = x * 374761393 + y * 668265263 + salt * 1442695041 | 0;
     n = Math.imul(n ^ n >>> 13, 1274126177);
     return ((n ^ n >>> 16) >>> 0) / 4294967296;
@@ -222295,7 +224022,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
   function paintGround(g, sim2, i) {
     const { box } = i, N = sim2.world.size, w = sim2.world;
     for (let y = box.y0; y < box.y1; y++) for (let x = box.x0; x < box.x1; x++) {
-      const px = (x - box.x0) * T, py = (y - box.y0) * T, t = w.tiles[y * N + x], shade2 = (hash3(x, y) - 0.5) * 14;
+      const px = (x - box.x0) * T, py = (y - box.y0) * T, t = w.tiles[y * N + x], shade2 = (hash4(x, y) - 0.5) * 14;
       const col = (r, gg, b) => `rgb(${Math.round(r + shade2)},${Math.round(gg + shade2)},${Math.round(b + shade2)})`;
       const base = t === Tile.Water ? col(63, 111, 154) : t === Tile.Mud ? col(122, 100, 66) : t === Tile.Rock ? col(124, 130, 120) : t === Tile.Ore ? col(108, 96, 90) : t === Tile.Mountain ? col(108, 102, 96) : col(134, 163, 85);
       g.fillStyle = base;
@@ -222304,7 +224031,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         g.fillStyle = col(150, 130, 90);
         g.fillRect(px, py, T, T);
         g.fillStyle = "rgba(70,50,25,0.35)";
-        for (let k = 0; k < 3; k++) g.fillRect(px + hash3(x, y, k + 3) * (T - 2), py + hash3(x, y, k + 7) * (T - 2), 2, 2);
+        for (let k = 0; k < 3; k++) g.fillRect(px + hash4(x, y, k + 3) * (T - 2), py + hash4(x, y, k + 7) * (T - 2), 2, 2);
         continue;
       }
       if (t === Tile.Grass || t === Tile.Bush || t === Tile.Tree) {
@@ -222312,7 +224039,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         g.lineWidth = 1;
         g.beginPath();
         for (let k = 0; k < 2; k++) {
-          const tx = px + 2 + hash3(x, y, k + 11) * (T - 4), ty = py + 4 + hash3(x, y, k + 13) * (T - 6);
+          const tx = px + 2 + hash4(x, y, k + 11) * (T - 4), ty = py + 4 + hash4(x, y, k + 13) * (T - 6);
           g.moveTo(tx, ty);
           g.lineTo(tx - 1, ty - 3);
           g.moveTo(tx, ty);
@@ -222376,7 +224103,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         g.fillStyle = "#c0392b";
         for (let k = 0; k < 4; k++) {
           g.beginPath();
-          g.arc(px + 4 + hash3(x, y, k + 21) * (T - 8), py + 6 + hash3(x, y, k + 23) * (T - 10), 1.5, 0, Math.PI * 2);
+          g.arc(px + 4 + hash4(x, y, k + 21) * (T - 8), py + 6 + hash4(x, y, k + 23) * (T - 10), 1.5, 0, Math.PI * 2);
           g.fill();
         }
       } else if (t === Tile.Water) {
@@ -222384,7 +224111,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         g.lineWidth = 1;
         g.beginPath();
         for (let k = 0; k < 2; k++) {
-          const wy = py + 4 + k * 7 + hash3(x, y, k + 31) * 2, wx = px + 1 + hash3(x, y, k + 33) * 4;
+          const wy = py + 4 + k * 7 + hash4(x, y, k + 31) * 2, wx = px + 1 + hash4(x, y, k + 33) * 4;
           g.moveTo(wx, wy);
           g.quadraticCurveTo(wx + 3, wy - 2, wx + 6, wy);
           g.quadraticCurveTo(wx + 9, wy + 2, wx + 12, wy);
@@ -222392,7 +224119,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
         g.stroke();
       } else if (t === Tile.Mud) {
         g.fillStyle = "rgba(60,40,20,0.35)";
-        for (let k = 0; k < 3; k++) g.fillRect(px + hash3(x, y, k + 41) * (T - 3), py + hash3(x, y, k + 43) * (T - 3), 3, 2);
+        for (let k = 0; k < 3; k++) g.fillRect(px + hash4(x, y, k + 41) * (T - 3), py + hash4(x, y, k + 43) * (T - 3), 3, 2);
       }
     }
   }
@@ -225479,7 +227206,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
     if (b && !b.disabled && (b.id === "btnArmy" || b.id === "btnArmyBar" || ORDER_BTN.test((b.textContent ?? "").trim()))) audio.order();
   }, true);
   session.onError = toast;
-  var ctx = { sim, ctl, sprites: sprites2, session, toast, sound, weatherFx };
+  var ctx = { sim, ctl, sprites: sprites2, session, toast, sound, weatherFx, stage: { play: (id) => stage2.play(id) } };
   var unitCard = new UnitCard($("ucard"), ctx, $("udetail"));
   var targetCard = new TargetCard($("tcard"), ctx);
   var buildingPanel = new BuildingPanel($("bpanel"), ctx);
@@ -225804,6 +227531,7 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
   });
   var weatherView = { head: "", rows: [] };
   var dialogue = new Dialogue(ctx, $("dlgscene"));
+  var stage2 = new StagePlayer(ctx, $("stagescene"));
   var journal = new Journal(ctx, { quests: $("qpanel"), notices: $("npanel") }, { quests: $("btnQuest"), notices: $("btnNotice") });
   journal.weather = () => weatherView;
   var fps = 60;
@@ -225995,6 +227723,8 @@ ${c2.ok ? `${s.hire ? "Thu\xEA" : "Luy\u1EC7n"}: ${bill}` : c2.missing.join("\n"
       seenGuests = guests;
     }
     dialogue.update();
+    stage2.update(dt);
+    if (stage2.active) return;
     if (skipping) runSkip();
     else sim.advance(dt, () => performance.now() - t0 > budget);
     if (sim.speed !== rateSpeed) {

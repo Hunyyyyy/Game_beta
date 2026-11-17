@@ -14,8 +14,24 @@
     "spawnDist": 26,
     "fleeSeconds": 90,
     "repath": 2,
-    "speedMul": 1.1,
-    "weapon": "bronze_sword"
+    "speedMul": 1.7,
+    "hpMul": 0.5,
+    "vanishSeconds": 0.75,
+    "strikeSeconds": 0.6,
+    "dashRange": 1.5,
+    "crowd": 3,
+    "crowdRadius": 3,
+    "lurkDist": 6,
+    "backDist": 1,
+    "followMult": 0.6,
+    "passes": 2,
+    "passBeyond": 1.5,
+    "passMul": 5,
+    "executeBelow": 0.15,
+    "executeRange": 1.5,
+    "passPause": 0.05,
+    "giveUpSeconds": 150,
+    "weapon": "dagger"
   },
   "units": [
     {
@@ -60,19 +76,22 @@
       "key": "unit:assassin",
       "name": "Sát thủ",
       "camp": "guard",
-      "weapon": "shortsword",
-      "armor": "archer",
+      "weapon": "dagger",
+      "armor": "assassin",
       "profile": {
-        "hp": 0.6,
-        "atk": 1.6,
-        "defm": 0.5,
-        "defr": 0.5,
-        "move": 1.3
+        "hp": 0.35,
+        "atk": 9,
+        "defm": 0.15,
+        "defr": 0.15,
+        "move": 1.7
       },
       "costMult": 1.3,
       "rationAdd": 1,
       "stealth": true,
-      "ambush": 2,
+      "ambush": 3,
+      "vault": true,
+      "dodge": 0.4,
+      "dodgeCd": 2.5,
       "about": "Ẩn khỏi mắt địch, đánh úp rất đau, chết rất nhanh. Dùng cho nhiệm vụ ám sát."
     },
     {

@@ -65,7 +65,7 @@ export interface FoeAI {
   /** A unit of a side quest on the map (missions.ts, brainstage.ts): its quest, what it is, how near a soldier of ours must be for a ward to walk on (`lead`), where a ward goes, whom a killer is after. */
   stage?: { run: string; kind: 'bandit' | 'killer' | 'ward'; lead: number; goal?: { x: number; y: number }; mark?: number };
   /** A hidden killer (specialists.ts): `target` the villager he is after, `hidden` unseen by our soldiers, `fledAt` when he began to run home. */
-  assassin?: { target: number; state: 'stalk' | 'flee'; hidden: boolean; revealedUntil: number; repath: number; born: number; pathAt?: number; fledAt?: number };
+  assassin?: { target: number; state: 'stalk' | 'pass' | 'duel' | 'flee'; hidden: boolean; revealedUntil: number; repath: number; born: number; pathAt?: number; fledAt?: number; dash?: boolean; strikeUntil?: number; vanishAt?: number; shown?: boolean; engaged?: boolean; passes?: number; passStart?: number; hitDone?: boolean; passTarget?: number; aim?: [number, number]; nextPass?: number; baseSpeed?: number };
   /** A target he could not get to (he only paced before it): left alone until this time. */
   skip?: { id: number; until: number };
   /** The fence or gate he has decided to break down (building id), 0 for none. */
@@ -86,6 +86,11 @@ export interface Villager {
   id: number;
   /** A specialist soldier (data/specialists.json `units`): his id. He wears the suit of his kind and is worth his rank (the Nhà chung's level when he was trained) by the profile of his kind. */
   spec?: string;
+  /** The assassin's dodge (battle.hurt): the time he may slip a blow again, and until when he is drawn in the dodge pose. */
+  dodgeAt?: number; dodgeUntil?: number;
+  /** The assassin of ours finishing a nearly dead enemy with a dash through him (specialists.tickFinisher): who, since when, whether the blow landed, and his own speed to give back. */
+  exec?: { id: number; t: number; hit: boolean; base: number };
+  execAt?: number;
   /** A bodyguard (specialists.ts): the villager he keeps; he takes a share of the blows meant for him. */
   wardOf?: number;
   name: string;
@@ -151,7 +156,7 @@ export interface Villager {
   loot: number;           // carcass id being skinned (-1 none)
   leader: boolean;        // best fighter of a group of 5+
   /** A blow in progress: damage lands when the animation reaches its hit frame. */
-  swing: { t: number; hitAt: number; end: number; target: Target } | null;
+  swing: { t: number; hitAt: number; end: number; target: Target; more?: number[] } | null; // more: the seconds of further blows inside the same animation (the assassin's three-blow combo)
   flinch: number;         // seconds left of the 'hit' animation
   /** Only tribal people: their role and where their camp is. */
   ai: FoeAI | null;

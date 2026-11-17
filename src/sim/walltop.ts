@@ -7,10 +7,11 @@ import type { Sim } from './sim';
 import type { Step } from './path';
 import type { Villager } from './model';
 import { footOf } from './buildings';
+import { specialistDef } from './specialdata';
 import WALLS from '../data/walls.json';
 
 /** The tops of the walls as they are now: their tiles, and the stairs (a top tile and the ground tile that leads up to it). */
-export interface Tops { at: number; tiles: Set<number>; stairs: Array<{ top: number; ground: number }> }
+export interface Tops { at: number; tiles: Set<number>; stairs: Array<{ top: number; ground: number }>; fences: Map<number, number>; leap: Map<number, number> }
 
 const MIN = WALLS.minLevel as Record<string, number>;
 const KINDS = new Set<string>(WALLS.kinds), STAIR_KINDS = new Set<string>(WALLS.stairKinds);
@@ -25,13 +26,20 @@ function build(sim: Sim): Tops {
     const f = footOf(b);
     for (let y = b.y; y < b.y + f.h; y++) for (let x = b.x; x < b.x + f.w; x++) { tiles.add(y * N + x); if (STAIR_KINDS.has(b.kind)) edge.push({ x, y }); }
   }
+  // every fence of ours that stands (any level): the assassin jumps over it, or climbs it when it is high
+  const fences = new Map<number, number>(), leap = new Map<number, number>(), V = WALLS.vault;
+  for (const b of sim.buildings) {
+    if (b.kind !== 'fence' || !b.done || b.hp <= 0) continue;
+    const f = footOf(b), high = b.level >= (MIN.fence ?? MIN.default);
+    for (let y = b.y; y < b.y + f.h; y++) for (let x = b.x; x < b.x + f.w; x++) { fences.set(y * N + x, b.level); leap.set(y * N + x, high ? V.climbCost : V.jumpCost); }
+  }
   const stairs: Tops['stairs'] = [];
   for (const { x, y } of edge) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
     const gx = x + dx, gy = y + dy;
     if (!sim.world.inBounds(gx, gy) || tiles.has(gy * N + gx) || sim.world.isBlocked(gx, gy)) continue;
     stairs.push({ top: y * N + x, ground: gy * N + gx });
   }
-  return { at: sim.time, tiles, stairs };
+  return { at: sim.time, tiles, stairs, fences, leap };
 }
 
 /** The tops now (made again when they are older than `refreshSeconds`). */
@@ -41,6 +49,29 @@ export function tops(sim: Sim): Tops {
 }
 export const topAt = (sim: Sim, x: number, y: number): boolean => tops(sim).tiles.has(Math.floor(y) * sim.world.size + Math.floor(x));
 export const onWall = (sim: Sim, v: Pick<Villager, 'x' | 'y'>): boolean => { const t = tops(sim); return t.tiles.size > 0 && t.tiles.has(Math.floor(v.y) * sim.world.size + Math.floor(v.x)); };
+
+// ---------------------------------------------------------------- over the fences (the assassin)
+/** Can this unit cross fences (his specialist has `vault`)? */
+export const canVault = (v: Pick<Villager, 'spec'>): boolean => !!specialistDef(v.spec)?.vault;
+/** The level of the fence on a tile (0: none). */
+export const fenceLevel = (sim: Sim, x: number, y: number): number => tops(sim).fences.get(Math.floor(y) * sim.world.size + Math.floor(x)) ?? 0;
+/** Is (x, y) a fence tile he may cross? */
+export const vaultAt = (sim: Sim, v: Pick<Villager, 'spec'>, x: number, y: number): boolean => canVault(v) && fenceLevel(sim, x, y) > 0;
+/** The fence tiles and their path cost for the ground search (null for one who cannot cross them). */
+export const vaultCosts = (sim: Sim, v: Pick<Villager, 'spec'>): Map<number, number> | null => { if (!canVault(v)) return null; const l = tops(sim).leap; return l.size ? l : null; };
+const isHigh = (level: number): boolean => level >= (MIN.fence ?? MIN.default);
+/** The pose of a crossing: he leaps over a low fence, climbs a high one, from a little before it until he is off it (null: not crossing). */
+export function vaultPose(sim: Sim, v: Pick<Villager, 'spec' | 'x' | 'y' | 'path'>): 'dagger_leap' | 'dagger_climb' | null {
+  if (!canVault(v)) return null;
+  let lvl = fenceLevel(sim, v.x, v.y);
+  if (!lvl && v.path.length) { const [px, py] = v.path[0]; if (Math.hypot(px + 0.5 - v.x, py + 0.5 - v.y) <= 0.45) lvl = fenceLevel(sim, px, py); }
+  return lvl ? (isHigh(lvl) ? 'dagger_climb' : 'dagger_leap') : null;
+}
+/** His speed factor while crossing (1 on the ground). */
+export function vaultSpeed(sim: Sim, v: Pick<Villager, 'spec' | 'x' | 'y' | 'path'>): number {
+  const pose = vaultPose(sim, v);
+  return pose === 'dagger_climb' ? WALLS.vault.climbSpeed : pose === 'dagger_leap' ? WALLS.vault.jumpSpeed : 1;
+}
 
 /** Breadth first over the tiles of the tops (four ways) from `from`: the steps to each tile, and the tile before it. */
 function bfs(tiles: Set<number>, from: number, N: number): { dist: Map<number, number>; prev: Map<number, number> } {

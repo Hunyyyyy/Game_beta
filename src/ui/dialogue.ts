@@ -13,8 +13,10 @@ import { resIcon } from './resicons';
 const busts = new Map<string, HTMLCanvasElement>();
 
 /** The portrait of a visitor: the rig cut to the upper body. One function so a painted bust can take its place later without touching the rest. */
-export function portraitOf(c: Ctx, unitId: number): HTMLCanvasElement {
-  const v = c.sim.get(unitId);
+export function portraitOf(c: Ctx, unitId: number): HTMLCanvasElement { return portraitFrom(c, c.sim.get(unitId)); }
+
+/** The same bust from a figure that need not be in the world (the actors of a film scene). */
+export function portraitFrom(c: Ctx, v: Villager | undefined): HTMLCanvasElement {
   const out = document.createElement('canvas');
   if (!v) { out.width = out.height = 1; return out; }
   const key = `${v.look.sex}|${v.look.skin}|${v.look.hair}|${v.look.hide}|${v.look.pants}|${v.armor ?? c.sprites.outfitOf(v) ?? '-'}`;

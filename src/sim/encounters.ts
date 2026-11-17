@@ -373,8 +373,7 @@ export function guestAttacked(sim: Sim, unitId: number): void {
 // ---------------------------------------------------------------- the dialogue
 export interface EncounterChoice { index: number; text: string; /** The group it is folded under on the screen, if any. */ group?: string; price: Array<{ res: Res; n: number }>; /** Why it cannot be taken now; empty when it can. */ blocked: string }
 export interface EncounterView {
-  visitorId: number; unitId: number; name: string; tribe: string; tribeId: string; relation: string; sex: 'm' | 'f';
-  /** What the player has just said (shown as a small bubble above the visitor's words, with them: no page of its own). */ you?: string;
+  visitorId: number; unitId: number; name: string; tribe: string; tribeId: string; relation: string; sex: 'm' | 'f';  /** What the player has just said (shown as a small bubble above the visitor's words, with them: no page of its own). */ you?: string;
   /** What the visitor says now, line by line. */ lines: Array<{ by: 'npc' | 'you'; text: string }>; line: number; choices: EncounterChoice[]; /** The clues seen so far, words filled in; the first says who came along. */ notes: string[]; /** How many are in the party. */ party: number;
   /** The key of the scene (who and which node): a new one rebuilds the screen. `rev` changes when only the notes or the choices do. */ key: string; rev: number;
 }
@@ -436,8 +435,7 @@ export function encounterView(sim: Sim): EncounterView | null {
     choices.push({ index, group: c.group, text: fillText(c.text, who), price: Object.entries(c.cost ?? {}).map(([res, n]) => ({ res: res as Res, n: n ?? 0 })), blocked: v.used.includes(`${a.node}:${index}`) ? 'Đã hỏi rồi' : lack ? `Thiếu ${RES_NAME[lack.res].toLowerCase()}: còn ${lack.have}/${lack.need}` : '' });
   });
   return {
-    visitorId: v.id, unitId: f.id, name: f.name, tribe: who.tribe, tribeId: v.tribe, relation: relationLabel(t?.relation ?? 0), sex: who.sex, lines, line: Math.min(a.line, lines.length - 1), choices,
-    you: a.said ? fillText(a.said, who) : undefined, party, notes: [...(v.placed ? ['Lính gác đang chặn người lạ lại trước cổng.'] : []), ...(partyNote ? [partyNote] : []), ...v.notes.map((n) => fillText(n, who))], key: `${v.id}|${a.node}`, rev: v.notes.length * 100 + v.used.length + (v.sold?.length ?? 0) * 10000,
+    visitorId: v.id, unitId: f.id, name: f.name, tribe: who.tribe, tribeId: v.tribe, relation: relationLabel(t?.relation ?? 0), sex: who.sex, lines, line: Math.min(a.line, lines.length - 1), choices,    you: a.said ? fillText(a.said, who) : undefined, party, notes: [...(v.placed ? ['Lính gác đang chặn người lạ lại trước cổng.'] : []), ...(partyNote ? [partyNote] : []), ...v.notes.map((n) => fillText(n, who))], key: `${v.id}|${a.node}`, rev: v.notes.length * 100 + v.used.length + (v.sold?.length ?? 0) * 10000,
   };
 }
 

@@ -1,0 +1,149 @@
+{
+ "_note": "Assassin (Sát thủ): thân mảnh, vải đen xám than quấn chặt tay chân, mũ trùm và khăn che mặt (chỉ hở một dải mắt), không có mảnh kim loại nào. Hai dao găm không nằm trong giáp: rig vẽ chúng bằng tool/tool2 (pose hip, hip2 khi không đánh).",
+ "name": "Áo sát thủ",
+ "palette": {
+  "cloth": "#3a3a42",
+  "clothL": "#55555f",
+  "clothD": "#232329",
+  "wrap": "#2b2b31",
+  "belt": "#17171b",
+  "sash": "#5b2b2b",
+  "glove": "#1d1d22",
+  "scarf": "#2e2e36"
+ },
+ "side": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {"h": "cloth", "H": "clothL", "D": "clothD", "m": "wrap", "b": "belt"},
+   "rows": [
+    "....hhhh.....",
+    "..hhHHhhhh...",
+    ".hhHHhhhhhD..",
+    "hhHhhhhhhhhD.",
+    "hhhhhhhhhhhhD",
+    "DDDDDDDDDDDDD",
+    "hhhhhhh......",
+    "hhhhhhh......",
+    "hhhhhhhmmmmmD",
+    "hhhhhhhmmmmD.",
+    ".hhhhhhmmmD..",
+    "..DDDDDDDD...",
+    "............."
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {"c": "cloth", "L": "clothL", "d": "clothD", "B": "belt", "S": "sash"},
+   "rows": [
+    "ccccccd",
+    "LcLcccd",
+    "ccLLccd",
+    "cccccLd",
+    "ccccccd",
+    "ccSSScd",
+    "BBBBBBB",
+    "ddddddd",
+    ".ddddd.",
+    "..ddd.."
+   ]
+  },
+  "over": {
+   "ox": -4,
+   "oy": 0,
+   "legend": {"s": "scarf", "d": "clothD"},
+   "rows": [
+    "ss....",
+    ".ss...",
+    "..sd..",
+    "...s.."
+   ]
+  }
+ },
+ "wraps": {
+  "leg": {"dy": 4, "w": 3, "h": 6, "color": "cloth", "edge": "clothD"},
+  "arm": {"full": true, "color": "cloth", "far": "clothD", "hand": "glove", "w": 3, "h": 2}
+ },
+ "legs": {"near": "cloth", "far": "clothD"},
+ "front": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {"h": "cloth", "H": "clothL", "D": "clothD", "m": "wrap"},
+   "rows": [
+    "....hhhh....",
+    "..hhHHhhhh..",
+    ".hhHHhhhhhD.",
+    "hhHhhhhhhhhD",
+    "hhhhhhhhhhhD",
+    "DDDDDDDDDDDD",
+    "hh........hh",
+    "hh........hh",
+    "hhmmmmmmmmhh",
+    "hhmmmmmmmmhh",
+    ".hhmmmmmmhh.",
+    "..DDDDDDDD..",
+    "............"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {"c": "cloth", "L": "clothL", "d": "clothD", "B": "belt", "S": "sash"},
+   "rows": [
+    "cccccccccc",
+    "LcccccLccc",
+    "cLcccLcccc",
+    "ccLcLccccc",
+    "cccLcccccc",
+    "ccccLccccc",
+    "BBBBBBBBBB",
+    "SSSSSSSSSS",
+    "dddddddddd",
+    ".dddddddd.",
+    "..dddddd.."
+   ]
+  }
+ },
+ "back": {
+  "head": {
+   "ox": 0,
+   "oy": -2,
+   "legend": {"h": "cloth", "H": "clothL", "D": "clothD"},
+   "rows": [
+    "....hhhh....",
+    "..hhHHhhhh..",
+    ".hhHHhhhhhD.",
+    "hhHhhhhhhhhD",
+    "hhhhhhhhhhhD",
+    "hhhhhhhhhhhD",
+    "hhhhhhhhhhhD",
+    "hhhhhhhhhhhD",
+    "hhhhhhhhhhhD",
+    ".hhhhhhhhhD.",
+    "..hhhhhhhD..",
+    "..DDDDDDDD..",
+    "............"
+   ]
+  },
+  "torso": {
+   "ox": 0,
+   "oy": 0,
+   "legend": {"c": "cloth", "L": "clothL", "d": "clothD", "B": "belt", "S": "sash"},
+   "rows": [
+    "cccccccccc",
+    "LcccccLccc",
+    "cLcccLcccc",
+    "ccLcLccccc",
+    "cccLcccccc",
+    "ccccLccccc",
+    "BBBBBBBBBB",
+    "SSSSSSSSSS",
+    "dddddddddd",
+    ".dddddddd.",
+    "..dddddd.."
+   ]
+  }
+ }
+}

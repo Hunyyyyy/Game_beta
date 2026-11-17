@@ -1,0 +1,32 @@
+// ---- the film player (ui/stage.ts): a scene of the story on a stage of its own, over the whole screen ----
+#stagescene {
+  position: fixed; inset: 0; z-index: 60; background: #000; cursor: pointer; user-select: none;
+  &[hidden] { display: none; }
+
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .st-ui { position: absolute; inset: 0; pointer-events: none; > * { pointer-events: auto; } }
+  .st-skip { position: absolute; top: calc(10px + var(--sat)); right: calc(10px + var(--sar)); opacity: .75; }
+
+  .st-bust {
+    position: absolute; left: calc(1.5vw + var(--sal)); bottom: 0; height: min(32vh, 300px); display: flex; align-items: flex-end; pointer-events: none;
+    &[hidden] { display: none; }
+    canvas { position: static; height: 100%; width: auto; image-rendering: pixelated; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .55)); }
+  }
+
+  .st-panel {
+    position: absolute; bottom: calc(10px + var(--sab)); left: calc(1.5vw + min(19vh, 180px) + var(--sal)); width: min(620px, calc(100vw - 3vw - min(19vh, 180px) - var(--sal) - var(--sar)));
+    display: flex; flex-direction: column; gap: 8px; cursor: default;
+    &[hidden] { display: none; }
+  }
+  .st-plate { display: flex; align-items: baseline; gap: 8px; color: #f3e6c8; b { letter-spacing: .06em; } i { font-size: 12px; opacity: .8; } }
+  .st-frame { position: relative; padding: 12px 16px; border-radius: 10px; background: rgba(12, 8, 4, .82); border: 1px solid rgba(255, 230, 170, .22); color: #f6ecd2; }
+  .st-text { margin: 0; font-size: clamp(14px, 1.9vw, 18px); line-height: 1.45; min-height: 2.9em; }
+  .st-more { position: absolute; right: 16px; bottom: 6px; font-size: 11px; opacity: .7; }
+  .st-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 5px; }
+  .st-card {
+    display: flex; gap: 8px; align-items: baseline; text-align: left; padding: 8px 12px; border-radius: 8px; background: rgba(12, 8, 4, .86); border: 1px solid rgba(255, 230, 170, .3); color: #f6ecd2; cursor: pointer;
+    &:hover { background: rgba(60, 40, 18, .92); }
+  }
+  .st-num { font-weight: 700; color: #e8c06a; }
+  .st-timer { font-size: 11px; color: #e8d9b0; opacity: .7; text-align: right; &:empty { display: none; } }
+}

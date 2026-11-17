@@ -1,0 +1,23 @@
+{
+  "id": "ba_muc",
+  "name": "Bà Mực",
+  "role": "scribe",
+  "look": {
+    "sex": "f",
+    "skin": "#c68642",
+    "hair": "#9a968c",
+    "hide": "#5a4a6a",
+    "pants": "#3a3040"
+  },
+  "stone": {
+    "armor": "hide",
+    "weapon": null,
+    "handtool": null
+  },
+  "ancient": {
+    "armor": "peasant_hood_grey",
+    "weapon": null,
+    "handtool": null
+  },
+  "shape": "Bà lão ghi sổ của làng, tóc muối tiêu, tay dính mực, cuốn sổ da mòn góc không rời tay."
+}

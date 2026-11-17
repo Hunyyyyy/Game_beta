@@ -78,11 +78,13 @@ import royalguardArmor from '../data/armors/royalguard.json';
 import eliteguardArmor from '../data/armors/eliteguard.json';
 import kingsguardArmor from '../data/armors/kingsguard.json';
 // gen-ranks:end
+import daggerTool from '../data/handtools/dagger.json';
+import assassinArmor from '../data/armors/assassin.json';
 
 /* Hand-held tools are drawn from JSON (src/data/handtools). handTools may be replaced at runtime (the animation viewer uses this to try out designs). */
-const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe, arming_sword: armingSword, shortsword, lance, composite_bow: compositeBow, thrown_stone: thrownStone, warhammer, greatsword, alloy_crossbow: alloyCrossbow, knight_sword: knightSword, yew_longbow: yewLongbow, paladin_lance: paladinLance, longbow, heavy_lance: heavyLance, short_spear: shortSpear, pike, ward_sword: armingSword, bronze_bow: bow, /*gen-ranks*/ halberd: halberdTool, bastard_sword: bastardSwordTool, royal_blade: royalBladeTool, heavy_crossbow: heavyCrossbowTool, fire_lance: fireLanceTool, hand_cannon: handCannonTool, long_lance: longLanceTool, knight_lance: knightLanceTool, royal_lance: royalLanceTool, glaive: glaiveTool, poleaxe: poleaxeTool, partisan: partisanTool };
+const handTools = { axe, pick, hammer, hoe, club, spear, mace, hatchet, sling, bow, bronze_spear: bronzeSpear, bronze_sword: bronzeSword, bronze_axe: bronzeAxe, arming_sword: armingSword, shortsword, lance, composite_bow: compositeBow, thrown_stone: thrownStone, warhammer, greatsword, alloy_crossbow: alloyCrossbow, knight_sword: knightSword, yew_longbow: yewLongbow, paladin_lance: paladinLance, longbow, heavy_lance: heavyLance, short_spear: shortSpear, pike, ward_sword: armingSword, bronze_bow: bow, dagger: daggerTool, /*gen-ranks*/ halberd: halberdTool, bastard_sword: bastardSwordTool, royal_blade: royalBladeTool, heavy_crossbow: heavyCrossbowTool, fire_lance: fireLanceTool, hand_cannon: handCannonTool, long_lance: longLanceTool, knight_lance: knightLanceTool, royal_lance: royalLanceTool, glaive: glaiveTool, poleaxe: poleaxeTool, partisan: partisanTool };
 /* Worn armour, drawn over the body from JSON (src/data/armors). */
-const armors = { grass: grassArmor, hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor, /*gen-ranks*/ halberdier: halberdierArmor, footknight: footknightArmor, captain: captainArmor, arbalist: arbalistArmor, firelancer: firelancerArmor, gunner: gunnerArmor, heavyrider: heavyriderArmor, knight: knightArmor, kingsrider: kingsriderArmor, royalguard: royalguardArmor, eliteguard: eliteguardArmor, kingsguard: kingsguardArmor };
+const armors = { grass: grassArmor, hide: hideArmor, bone: boneArmor, bronze: bronzeArmor, footman: footmanArmor, archer: archerArmor, rider: riderArmor, guard: guardArmor, marksman: marksmanArmor, royalrider: royalRiderArmor, templar: templarArmor, sniper: sniperArmor, paladin: paladinArmor, watchman: watchmanArmor, sergeant: sergeantArmor, warden: wardenArmor, peasant_hood_brown: peasantHoodBrownArmor, peasant_hood_grey: peasantHoodGreyArmor, peasant_straw_brown: peasantStrawBrownArmor, peasant_straw_grey: peasantStrawGreyArmor, assassin: assassinArmor, /*gen-ranks*/ halberdier: halberdierArmor, footknight: footknightArmor, captain: captainArmor, arbalist: arbalistArmor, firelancer: firelancerArmor, gunner: gunnerArmor, heavyrider: heavyriderArmor, knight: knightArmor, kingsrider: kingsriderArmor, royalguard: royalguardArmor, eliteguard: eliteguardArmor, kingsguard: kingsguardArmor };
 /* Shields, held in the off hand: hand-drawn poses written as rows of letters (see src/data/shields). */
 const shields = { heater: heaterShield, tower: towerShield, aegis: aegisShield, wood: woodShield };
 
@@ -336,6 +338,7 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
   const side = view === 'side', back = view === 'back', front = view === 'front';
   const bob = f.bob || 0, lean = f.lean || 0;
   const tool = f.tool && f.tool.on ? f.tool : null;
+  const tool2 = f.tool2 && f.tool2.on ? f.tool2 : null; // a second blade in the off hand (the assassin's pair of daggers)
   const carry = f.carry && f.carry.on ? f.carry : null;
   const hold = !!(tool || carry);
   const SH = ov && ov.shield && shields[ov.shield], shieldF = SH && f.shield && f.shield.on ? f.shield : null;
@@ -390,6 +393,7 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
     const hx0 = CX + 0.5;
     const pL = armPts(f.armL, hx0 + tDx), pR = armPts(f.armR, hx0 + tDx);
     arm(pL, P.skinD);
+    if (tool2) drawTool(b, side, pL.hx, pL.hy, tool2, ov, P); // behind the body, like the far arm
     leg(f.legL, hx0, P.skinD);
     leg(f.legR, hx0, P.skin);
     if (AD) drawArmorLayer(b, AD, AC, 'side', 'back', CX - 3 + tDx, TY);
@@ -424,6 +428,7 @@ function drawCharacter(b, view, f, P, sex, ov, armorId, extra) {
     if (carry) bundle();
     if (!back) { arm(pR, P.skin); arm(pL, P.skin); }
     if (!back && tool) drawToolFacing(b, false, pR.hx - 3, pR.hy, tool, ov, P); // held at his right side: to the left of the picture
+    if (!back && tool2) drawToolFacing(b, false, pL.hx + 3, pL.hy, tool2, ov, P);
   }
   if (extra && extra.torch !== undefined) drawTorch(b, pL.hx + (front ? 1 : -1), pL.hy, extra.torch);
 }
@@ -449,6 +454,47 @@ function shadow(b, dx) {
       if (x >= 0 && x < BW && !b[k + 3]) { b[k] = 0; b[k + 1] = 0; b[k + 2] = 0; b[k + 3] = 70; }
     }
   });
+}
+/* Effects of a frame, applied to the finished picture (facing right): `ghost` {dx, n, a} leaves n fainter copies of him behind, dx pixels apart (a dash, a dodge);
+   `fade` 0..1 lets him go see-through (hiding); `smoke` 0..1 breaks him into grey puffs from the bottom up (vanishing). Pure pixel work, deterministic. */
+function postFx(b, f, side) {
+  const src = new Uint8ClampedArray(b), gh = f.ghost;
+  if (gh && side) {
+    for (let k = gh.n; k >= 1; k--) {
+      const al = (gh.a === undefined ? 0.5 : gh.a) * (1 - (k - 1) / gh.n);
+      for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+        const s = (y * BW + x) * 4;
+        if (!src[s + 3]) continue;
+        const X = x - k * gh.dx; if (X < 0 || X >= BW) continue;
+        const d = (y * BW + X) * 4;
+        if (b[d + 3] > 0) continue;
+        const g = Math.round((src[s] + src[s + 1] + src[s + 2]) / 3 * 0.6 + 20);
+        b[d] = g; b[d + 1] = g; b[d + 2] = g + 8; b[d + 3] = Math.round(255 * al);
+      }
+    }
+  }
+  if (f.fade !== undefined && f.fade < 1) for (let i = 3; i < b.length; i += 4) b[i] = Math.round(b[i] * Math.max(0, f.fade));
+  if (f.smoke) {
+    const cut = Math.round(f.smoke * 40); // rows below this are gone
+    for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+      const i = (y * BW + x) * 4;
+      if (!b[i + 3]) continue;
+      const dy = (BH - 1 - y), keep = dy >= cut ? 1 : 0, hash = ((x * 7 + y * 13 + Math.round(f.smoke * 10)) % 5);
+      if (!keep && hash > 1) { b[i] = 70; b[i + 1] = 70; b[i + 2] = 76; b[i + 3] = 150; }
+      else if (!keep) b[i + 3] = 0;
+    }
+  }
+}
+/* The picture turned `deg` degrees clockwise about the middle of the body (a somersault over a fence); nearest pixel, so the pixel art stays crisp. */
+function spin(b, deg, bob) {
+  const o = new Uint8ClampedArray(b.length), cx = CX + OX, cy = 28 + OY + bob * 0.85, a = deg * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const dx = x - cx, dy = y - cy, sx = Math.round(cx + dx * co + dy * si), sy = Math.round(cy - dx * si + dy * co);
+    if (sx < 0 || sy < 0 || sx >= BW || sy >= BH) continue;
+    const s = (sy * BW + sx) * 4, d = (y * BW + x) * 4;
+    o[d] = b[s]; o[d + 1] = b[s + 1]; o[d + 2] = b[s + 2]; o[d + 3] = b[s + 3];
+  }
+  return o;
 }
 function flipH(b) {
   const o = new Uint8ClampedArray(b.length);
@@ -517,8 +563,10 @@ function renderFrame(anims, name, idx, view, look, kind, toolOv, armorId, extra)
     const b = new Uint8ClampedArray(FW * FH * 4);
     const v = (view === 'left' || view === 'right') ? 'side' : view;
     drawCharacter(b, v, f, P, look.sex, toolOv, armorId, extra);
-    const o = outline(b, P.line);
+    let o = outline(b, P.line);
+    if (f.rot) o = spin(o, f.rot, f.bob || 0); // a tumble turns the whole body (the shadow stays on the ground)
     shadow(o, v === 'side' ? 1 : 0);
+    if (f.ghost || f.fade !== undefined) postFx(o, f, v === 'side');
     return view === 'left' ? flipH(o) : o;
   } finally { BW = W; BH = H; OX = 0; OY = 0; }
 }

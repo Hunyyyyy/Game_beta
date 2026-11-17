@@ -12,6 +12,7 @@ import { SettingsPanel } from './ui/settingspanel';
 import { EraDialog } from './ui/eradialog';
 import { Journal } from './ui/journal';
 import { Dialogue } from './ui/dialogue';
+import { StagePlayer } from './ui/stage';
 import { dlg, GameDialog } from './ui/gamedialog';
 import { StatsOverview } from './ui/statsoverview';
 import { resIcon } from './ui/resicons';
@@ -96,7 +97,7 @@ ctl.onOrder = (ids) => { audio.order(); if (ids.some((id) => { const v = sim.get
 const ORDER_BTN = /Triển khai|^\W*Đánh$|Rút|^Gọi (tất cả|cả trại|quân)|^Cho (về hết|cả trại về|quân về)/;
 document.addEventListener('click', (e) => { const b = (e.target as Element | null)?.closest('button'); if (b && !b.disabled && (b.id === 'btnArmy' || b.id === 'btnArmyBar' || ORDER_BTN.test((b.textContent ?? '').trim()))) audio.order(); }, true);
 session.onError = toast;
-const ctx: Ctx = { sim, ctl, sprites, session, toast, sound, weatherFx };
+const ctx: Ctx = { sim, ctl, sprites, session, toast, sound, weatherFx, stage: { play: (id) => stage.play(id) } };
 
 // ---------------------------------------------------------------- panels, menu, maps
 const unitCard = new UnitCard($('ucard'), ctx, $('udetail')), targetCard = new TargetCard($('tcard'), ctx), buildingPanel = new BuildingPanel($('bpanel'), ctx);
@@ -266,6 +267,7 @@ let settingsOpen = false;
 $('btnSettings').addEventListener('click', () => { if (statsDlg.isOpen) { statsDlg.hide(); settingsOpen = false; return; } settingsPanel.opened(); statsDlg.show(settingsPanel.card); settingsOpen = true; });
 let weatherView: { head: string; rows: Array<[string, string]> } = { head: '', rows: [] };
 const dialogue = new Dialogue(ctx, $('dlgscene'));
+const stage = new StagePlayer(ctx, $('stagescene'));
 const journal = new Journal(ctx, { quests: $('qpanel'), notices: $('npanel') }, { quests: $('btnQuest'), notices: $('btnNotice') });
 journal.weather = () => weatherView;
 let fps = 60, lastHud = 0, logKey = '', pending: string | null = null, lastTopH = -1;
@@ -384,6 +386,8 @@ function frameBody(t: number) {
   const simT0 = sim.time, budget = sim.speed >= 4 ? quality.fastBudgetMs : quality.simBudgetMs; // fast-forwarded, the simulation takes less of the frame so the screen and the touches are not starved
   { const guests = started ? sim.guestsWaiting().length : 0; if (skipping && (sim.encounters.active || guests > seenGuests)) stopSkip('Có người lạ đến cổng'); seenGuests = guests; } // a visitor at the gate ends the night skip
   dialogue.update();
+  stage.update(dt);
+  if (stage.active) return; // a film scene plays like a loading screen: the village is not simulated, drawn or counted until it ends
   if (skipping) runSkip(); else sim.advance(dt, () => performance.now() - t0 > budget);
   if (sim.speed !== rateSpeed) { rateSpeed = sim.speed; realRate = sim.speed; }
   if (dt > 0 && !skipping && sim.speed > 1) realRate = realRate * 0.95 + ((sim.time - simT0) / dt) * 0.05; // the speed the game really runs at

@@ -1,0 +1,86 @@
+{
+  "_note": "Cảnh 1.1 Ba Dấu Ấn (doc/Ba Dấu Ấn – Kịch bản chi tiết.md) chạy trên sân khấu riêng (ui/stage.ts), không dùng bản đồ. Toạ độ sân khấu 1800x900, đường chân trời y=560, camera = [x, y, zoom] (zoom 1 nhìn cao 700 đơn vị). Mỗi shot: stage (hall | insert_book | river_far), dur = thời gian tối thiểu của dãy sự kiện (giây), camDur = thời gian camera chạy (mặc định dur), cam = [x,y,z] hoặc {from,to}, blur = làm mờ lớp L0 và L1. Sự kiện: t = giây tính từ đầu shot (đồng hồ sự kiện dừng khi đang có lời thoại hoặc lựa chọn). do = pose | place | move | say | choice | porters | crowd | fade. Pose chưa có clip riêng (flip_book, lean_in, lean_back, look_up, look_down, tap, sit) được giả bằng nghiêng/nhún sprite idle. Dấu ẩn (marks) ghi sẵn nhưng chưa nối vào game; chỉ cờ (flag) được ghi qua sim.setStoryFlag. Chưa có âm thanh (sfx) và chưa có cảnh 1.2.",
+  "id": "bdd_1_1",
+  "title": "Cảnh 1.1. Đại sảnh vừa xây xong",
+  "timeout": 60,
+  "cast": {
+    "muc": { "char": "ba_muc", "name": "Bà Mực", "x": 1000, "y": 700, "face": "front", "pose": "sit" },
+    "chu": { "name": "Chủ Làng", "look": { "sex": "m", "skin": "#e0ac69", "hair": "#3b2a1a", "hide": "#8a6a3a", "pants": "#4a4032" }, "outfit": "peasant_hood_brown", "x": -400, "y": 650, "face": "right", "pose": "idle", "hidden": true }
+  },
+  "shots": [
+    {
+      "id": "1", "stage": "hall", "dur": 3, "cam": { "from": [800, 300, 1], "to": [800, 480, 1] },
+      "events": [
+        { "t": 0, "do": "fade", "from": 1, "to": 0, "dur": 1.6 }
+      ]
+    },
+    {
+      "id": "2", "stage": "insert_book", "dur": 2, "cam": [900, 450, 1],
+      "events": []
+    },
+    {
+      "id": "3", "stage": "hall", "dur": 1.5, "cam": [980, 520, 1.6], "blur": true,
+      "events": [
+        { "t": 0, "do": "pose", "who": "muc", "pose": "flip_book" },
+        { "t": 0.6, "do": "say", "who": "muc", "expr": "bình thường", "text": "Sổ này ghi từ hồi làng còn xin lửa nhà hàng xóm. Chữ xấu, mà con số thì thật." },
+        { "t": 0.7, "do": "pose", "who": "muc", "pose": "lean_in" },
+        { "t": 0.8, "do": "say", "who": "muc", "expr": "bình thường", "text": "Thật là thế này: hết tháng này, hết gạo." }
+      ]
+    },
+    {
+      "id": "4", "stage": "hall", "dur": 3, "cam": { "from": [980, 520, 1.4], "to": [980, 520, 1.3] },
+      "events": [
+        { "t": 0, "do": "pose", "who": "muc", "pose": "flip_book" },
+        { "t": 0.2, "do": "porters", "dur": 2.6 },
+        { "t": 1, "do": "pose", "who": "muc", "pose": "look_up" },
+        { "t": 2.2, "do": "pose", "who": "muc", "pose": "look_down" }
+      ]
+    },
+    {
+      "id": "5", "stage": "hall", "dur": 4, "cam": { "from": [300, 520, 1.2], "to": [800, 520, 1.2] }, "ease": "linear",
+      "events": [
+        { "t": 0, "do": "place", "who": "chu", "at": [230, 650], "face": "right" },
+        { "t": 0, "do": "move", "who": "chu", "to": [880, 770], "dur": 3.6, "pose": "walk", "face": "right" }
+      ]
+    },
+    {
+      "id": "6", "stage": "hall", "dur": 2.4, "camDur": 6, "cam": { "from": [900, 520, 1.3], "to": [900, 520, 1.5] },
+      "events": [
+        { "t": 0, "do": "pose", "who": "muc", "pose": "idle", "face": "left" },
+        { "t": 0.4, "do": "say", "who": "muc", "expr": "bình thường", "text": "Anh chị tới đúng lúc. Ta đang đếm." },
+        {
+          "t": 0.5, "do": "choice", "default": 0, "options": [
+            {
+              "text": "Bà có cách gì không?", "say": "Bà có cách gì không?", "flag": "bdd.1_1.A", "marks": "Nhân +1",
+              "reply": [{ "who": "muc", "expr": "bình thường", "text": "Cách thì ta không có. Ta có kinh nghiệm. Kinh nghiệm bảo rằng khi một làng đói mà vừa thắng trận, thế nào cũng có người tới." }]
+            },
+            {
+              "text": "Đừng làm tôi sợ. Nói thẳng đi.", "say": "Đừng làm tôi sợ. Nói thẳng đi.", "flag": "bdd.1_1.B", "marks": "Uy +1",
+              "reply": [{ "who": "muc", "expr": "cười khẽ", "text": "Nói thẳng thì đừng chạy ra đón. Kẻ nào đón vội thường bị nhận làm người nhà luôn." }]
+            },
+            {
+              "text": "(Im lặng, nhìn cuốn sổ)", "flag": "bdd.1_1.C", "marks": "Tín +1, Lộ +1",
+              "reply": [{ "who": "muc", "expr": "ngẩng lên", "text": "Anh chị không hỏi? Tốt. Người không hỏi thường tự biết câu trả lời. Hoặc tự giấu chúng." }]
+            }
+          ]
+        },
+        { "t": 0.6, "do": "pose", "who": "muc", "pose": "lean_back" },
+        { "t": 0.7, "do": "pose", "who": "muc", "pose": "tap" }
+      ]
+    },
+    {
+      "id": "7", "stage": "hall", "dur": 3.2, "cam": { "from": [900, 520, 1.5], "to": [1350, 480, 1.3] },
+      "events": [
+        { "t": 0, "do": "pose", "who": "muc", "pose": "stand", "face": "left" },
+        { "t": 1.1, "do": "move", "who": "muc", "to": [1330, 650], "dur": 1.8, "pose": "walk_slow", "face": "right", "end": "back" },
+        { "t": 1.2, "do": "crowd", "mode": "stop" }
+      ]
+    },
+    {
+      "id": "8", "stage": "river_far", "dur": 3, "cam": { "from": [600, 300, 1], "to": [780, 300, 1] },
+      "events": [
+        { "t": 2.3, "do": "fade", "from": 0, "to": 1, "dur": 0.7 }
+      ]
+    }
+  ]
+}
