@@ -1,6 +1,6 @@
 # PLAN: medieval to rank 10, levelled buildings, characters, story tree
 
-Source prompt: `doc/PROMPT_claude_code_fable.md`. Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 6 (acceptance) done; open items listed in "Phase 6 report"**.
+Source prompt: `E:/Game_beta_ref/PROMPT_claude_code_fable.md` (outside the repo; art pack and art brief are there too). Story: `doc/story_tree.md` (the prompt says `docs/`, the file is in `doc/`). Status: **Phase 6 (acceptance) done; open items listed in "Phase 6 report"**.
 
 ## Survey facts (what the code has today)
 

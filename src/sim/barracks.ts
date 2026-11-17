@@ -64,7 +64,7 @@ export function specialistCheck(sim: Sim, def: SpecialistDef): { missing: string
   if (!def.hire) {
     if (!sim.hasWorkshop() && !sim.building('armory')) missing.push('Cần có Nhà chế tạo hoặc Kho vũ khí để lấy đồ');
     else {
-      if ((sim.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing.push(`Kho hết ${WEAPONS[def.weapon].name.toLowerCase()}: hãy chế thêm`);
+      if ((sim.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing.push(`Kho hết ${(WEAPONS[def.weapon]?.name ?? def.weapon).toLowerCase()}: hãy chế thêm`);
       if (ARMORS[def.armor] && (sim.toolStock[armorKey(def.armor)] ?? 0) <= 0) missing.push(`Kho hết ${ARMORS[def.armor].name.toLowerCase()}: hãy chế thêm`);
     }
   }

@@ -6682,6 +6682,21 @@ body.war .bbar, body.war .sheet > :not(.selbar):not(#ucard):not(#tcard), body.wa
         tier: 3,
         rank: 4
       },
+      shortsword: {
+        cost: { iron: 3, hardwood: 1, leather: 1 },
+        time: 90,
+        name: "Ki\u1EBFm ng\u1EAFn",
+        type: "slash",
+        range: 1,
+        damage: 14,
+        cycle: 0.9,
+        style: "swing",
+        anims: {
+          attack: "slash"
+        },
+        tier: 4,
+        rank: 5
+      },
       bronze_bow: {
         cost: { hardwood: 2, sinew: 2, feather: 2, bronze: 1 },
         time: 80,
@@ -210164,7 +210179,7 @@ ${risk.lines.join("\n")}`);
     if (!def.hire) {
       if (!sim2.hasWorkshop() && !sim2.building("armory")) missing2.push("C\u1EA7n c\xF3 Nh\xE0 ch\u1EBF t\u1EA1o ho\u1EB7c Kho v\u0169 kh\xED \u0111\u1EC3 l\u1EA5y \u0111\u1ED3");
       else {
-        if ((sim2.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing2.push(`Kho h\u1EBFt ${WEAPONS[def.weapon].name.toLowerCase()}: h\xE3y ch\u1EBF th\xEAm`);
+        if ((sim2.toolStock[weaponKey(def.weapon)] ?? 0) <= 0) missing2.push(`Kho h\u1EBFt ${(WEAPONS[def.weapon]?.name ?? def.weapon).toLowerCase()}: h\xE3y ch\u1EBF th\xEAm`);
         if (ARMORS[def.armor] && (sim2.toolStock[armorKey2(def.armor)] ?? 0) <= 0) missing2.push(`Kho h\u1EBFt ${ARMORS[def.armor].name.toLowerCase()}: h\xE3y ch\u1EBF th\xEAm`);
       }
     }

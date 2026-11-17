@@ -6,7 +6,7 @@ import { dirname, resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
-const outDir = resolve(process.argv[2] ?? 'doc/art_pack'), S = Number(process.argv[3] ?? 3);
+const outDir = resolve(process.argv[2] ?? '../Game_beta_ref/art_pack'), S = Number(process.argv[3] ?? 3);
 await import(pathToFileURL(join(root, 'src/blueprint/engine.js')).href);
 const BP = globalThis.Blueprint;
 

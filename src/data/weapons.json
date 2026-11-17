@@ -284,6 +284,21 @@
       "tier": 3,
       "rank": 4
     },
+    "shortsword": {
+      "cost": {"iron": 3, "hardwood": 1, "leather": 1},
+      "time": 90,
+      "name": "Kiếm ngắn",
+      "type": "slash",
+      "range": 1.0,
+      "damage": 14,
+      "cycle": 0.9,
+      "style": "swing",
+      "anims": {
+        "attack": "slash"
+      },
+      "tier": 4,
+      "rank": 5
+    },
     "bronze_bow": {
       "cost": {"hardwood": 2, "sinew": 2, "feather": 2, "bronze": 1},
       "time": 80,
